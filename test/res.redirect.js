@@ -59,6 +59,31 @@ describe('res', function(){
       .expect('Location', 'http://google.com')
       .expect(303, done)
     })
+
+    it('should support empty arguments', function (done) {
+      var app = express()
+
+      app.use(function (req, res) {
+        res.redirect()
+      })
+
+      request(app)
+      .get('/')
+      .expect('Location', 'undefined')
+      .expect(302, done)
+    })
+
+    it('should 500 for non-number status', function (done) {
+      var app = express()
+
+      app.use(function (req, res) {
+        res.redirect('302', '/foo')
+      })
+
+      request(app)
+      .get('/')
+      .expect(500, /Invalid status code/, done)
+    })
   })
 
   describe('when the request method is HEAD', function(){

@@ -270,7 +270,7 @@ describe('express.static()', function () {
 
       it('should fall-through when traversing past root', function (done) {
         request(this.app)
-          .get('/users/../../todo.txt')
+          .get('/users/..%2F..%2Ftodo.txt')
           .expect(404, 'Not Found', done)
       })
 
@@ -345,7 +345,7 @@ describe('express.static()', function () {
 
       it('should 403 when traversing past root', function (done) {
         request(this.app)
-          .get('/users/../../todo.txt')
+          .get('/users/..%2F..%2Ftodo.txt')
           .expect(403, /ForbiddenError/, done)
       })
 
@@ -579,13 +579,13 @@ describe('express.static()', function () {
 
     it('should catch urlencoded ../', function (done) {
       request(this.app)
-        .get('/users/%2e%2e/%2e%2e/todo.txt')
+        .get('/users/%2e%2e%2f%2e%2e%2ftodo.txt')
         .expect(403, done)
     })
 
     it('should not allow root path disclosure', function (done) {
       request(this.app)
-        .get('/users/../../fixtures/todo.txt')
+        .get('/users/..%2F..%2Ffixtures/todo.txt')
         .expect(403, done)
     })
   })

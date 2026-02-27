@@ -37,10 +37,10 @@ describe('downloads', function(){
     })
   })
 
-  describe('GET /files/../index.js', function () {
+  describe('GET /files/..%2Findex.js', function () {
     it('should respond with 403', function (done) {
       request(app)
-        .get('/files/../index.js')
+        .get('/files/..%2Findex.js')
         .expect(403, done)
     })
   })
