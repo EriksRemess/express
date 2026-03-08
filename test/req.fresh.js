@@ -61,7 +61,7 @@ describe('req', function(){
 
       request(app)
         .get('/')
-        .set('If-Modified-Since', new Date(now - 1000).toUTCString)
+        .set('If-Modified-Since', new Date(now - 1000).toUTCString())
         .set('If-None-Match', etag)
         .expect(304, done);
     })

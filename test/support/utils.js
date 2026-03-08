@@ -5,6 +5,7 @@
  */
 
 var assert = require('node:assert');
+var http = require('node:http');
 const { Buffer } = require('node:buffer');
 
 /**
@@ -16,6 +17,7 @@ exports.shouldHaveBody = shouldHaveBody
 exports.shouldHaveHeader = shouldHaveHeader
 exports.shouldNotHaveBody = shouldNotHaveBody
 exports.shouldNotHaveHeader = shouldNotHaveHeader;
+exports.rawRequest = rawRequest
 exports.shouldSkipQuery = shouldSkipQuery
 
 /**
@@ -72,6 +74,58 @@ function shouldNotHaveHeader(header) {
   };
 }
 
+function rawRequest(app, options, callback) {
+  if (typeof options === 'string') {
+    options = { path: options };
+  }
+
+  var requestOptions = {
+    method: 'GET',
+    host: '127.0.0.1',
+    ...options
+  };
+  var server = typeof app === 'function'
+    ? http.createServer(app)
+    : app;
+  var settled = false;
+
+  server.listen(0, '127.0.0.1', function () {
+    requestOptions.port = server.address().port;
+
+    var req = http.request(requestOptions, function (res) {
+      var chunks = [];
+
+      res.on('data', function (chunk) {
+        chunks.push(chunk);
+      });
+
+      res.on('end', function () {
+        finish(null, {
+          headers: res.headers,
+          statusCode: res.statusCode,
+          text: Buffer.concat(chunks).toString('utf8')
+        });
+      });
+    });
+
+    req.on('error', finish);
+    req.end();
+  });
+
+  server.on('error', finish);
+
+  function finish(err, res) {
+    if (settled) {
+      return;
+    }
+
+    settled = true;
+    server.close(function (closeErr) {
+      callback(err || closeErr, res);
+    });
+  }
+}
+
 function getMajorVersion(versionString) {
   return versionString.split('.')[0];
 }
@@ -83,4 +137,3 @@ function shouldSkipQuery(versionString) {
   // express tracking issue: https://github.com/expressjs/express/issues/5615
   return Number(getMajorVersion(versionString)) < 22
 }
-

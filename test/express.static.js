@@ -269,9 +269,12 @@ describe('express.static()', function () {
       })
 
       it('should fall-through when traversing past root', function (done) {
-        request(this.app)
-          .get('/users/../../todo.txt')
-          .expect(404, 'Not Found', done)
+        utils.rawRequest(this.app, '/users/../../todo.txt', function (err, res) {
+          if (err) return done(err)
+          assert.strictEqual(res.statusCode, 404)
+          assert.strictEqual(res.text, 'Not Found')
+          done()
+        })
       })
 
       it('should fall-through when URL too long', function (done) {
@@ -344,9 +347,12 @@ describe('express.static()', function () {
       })
 
       it('should 403 when traversing past root', function (done) {
-        request(this.app)
-          .get('/users/../../todo.txt')
-          .expect(403, /ForbiddenError/, done)
+        utils.rawRequest(this.app, '/users/../../todo.txt', function (err, res) {
+          if (err) return done(err)
+          assert.strictEqual(res.statusCode, 403)
+          assert.match(res.text, /ForbiddenError/)
+          done()
+        })
       })
 
       it('should 404 when URL too long', function (done) {
@@ -578,15 +584,19 @@ describe('express.static()', function () {
     })
 
     it('should catch urlencoded ../', function (done) {
-      request(this.app)
-        .get('/users/%2e%2e/%2e%2e/todo.txt')
-        .expect(403, done)
+      utils.rawRequest(this.app, '/users/%2e%2e/%2e%2e/todo.txt', function (err, res) {
+        if (err) return done(err)
+        assert.strictEqual(res.statusCode, 403)
+        done()
+      })
     })
 
     it('should not allow root path disclosure', function (done) {
-      request(this.app)
-        .get('/users/../../fixtures/todo.txt')
-        .expect(403, done)
+      utils.rawRequest(this.app, '/users/../../fixtures/todo.txt', function (err, res) {
+        if (err) return done(err)
+        assert.strictEqual(res.statusCode, 403)
+        done()
+      })
     })
   })
 

@@ -1,6 +1,8 @@
 
 var app = require('../../examples/downloads')
+  , assert = require('node:assert')
   , request = require('supertest');
+var utils = require('../support/utils')
 
 describe('downloads', function(){
   describe('GET /', function(){
@@ -39,9 +41,11 @@ describe('downloads', function(){
 
   describe('GET /files/../index.js', function () {
     it('should respond with 403', function (done) {
-      request(app)
-        .get('/files/../index.js')
-        .expect(403, done)
+      utils.rawRequest(app, '/files/../index.js', function (err, res) {
+        if (err) return done(err)
+        assert.strictEqual(res.statusCode, 403)
+        done()
+      })
     })
   })
 })
