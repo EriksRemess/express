@@ -1,737 +1,724 @@
-'use strict'
+"use strict";
 
-var assert = require('node:assert')
-var express = require('..')
-var path = require('node:path')
-const { Buffer } = require('node:buffer');
-
-var request = require('supertest')
-var utils = require('./support/utils')
-
-var fixtures = path.join(__dirname, '/fixtures')
-var relative = path.relative(process.cwd(), fixtures)
-
-var skipRelative = ~relative.indexOf('..') || path.resolve(relative) === relative
-
-describe('express.static()', function () {
-  describe('basic operations', function () {
+var { describe, it, before } = require("node:test");
+var __testApp;
+var assert = require("node:assert");
+var express = require("..");
+var path = require("node:path");
+const { Buffer } = require("node:buffer");
+var request = require("supertest");
+var utils = require("./support/utils");
+var fixtures = path.join(__dirname, "/fixtures");
+var relative = path.relative(process.cwd(), fixtures);
+var skipRelative =
+  ~relative.indexOf("..") || path.resolve(relative) === relative;
+describe("express.static()", function () {
+  describe("basic operations", function () {
     before(function () {
-      this.app = createApp()
-    })
-
-    it('should require root path', function () {
-      assert.throws(express.static.bind(), /root path required/)
-    })
-
-    it('should require root path to be string', function () {
-      assert.throws(express.static.bind(null, 42), /root path.*string/)
-    })
-
-    it('should serve static files', function (done) {
-      request(this.app)
-        .get('/todo.txt')
-        .expect(200, '- groceries', done)
-    })
-
-    it('should support nesting', function (done) {
-      request(this.app)
-        .get('/users/tobi.txt')
-        .expect(200, 'ferret', done)
-    })
-
-    it('should set Content-Type', function (done) {
-      request(this.app)
-        .get('/todo.txt')
-        .expect('Content-Type', 'text/plain; charset=utf-8')
-        .expect(200, done)
-    })
-
-    it('should set Last-Modified', function (done) {
-      request(this.app)
-        .get('/todo.txt')
-        .expect('Last-Modified', /\d{2} \w{3} \d{4}/)
-        .expect(200, done)
-    })
-
-    it('should default max-age=0', function (done) {
-      request(this.app)
-        .get('/todo.txt')
-        .expect('Cache-Control', 'public, max-age=0')
-        .expect(200, done)
-    })
-
-    it('should support urlencoded pathnames', function (done) {
-      request(this.app)
-        .get('/%25%20of%20dogs.txt')
-        .expect(200, '20%', done)
-    })
-
-    it('should not choke on auth-looking URL', function (done) {
-      request(this.app)
-        .get('//todo@txt')
-        .expect(404, 'Not Found', done)
-    })
-
-    it('should support index.html', function (done) {
-      request(this.app)
-        .get('/users/')
+      __testApp = createApp();
+    });
+    it("should require root path", function () {
+      assert.throws(express.static.bind(), /root path required/);
+    });
+    it("should require root path to be string", function () {
+      assert.throws(express.static.bind(null, 42), /root path.*string/);
+    });
+    it("should serve static files", async function () {
+      await request(__testApp).get("/todo.txt").expect(200, "- groceries");
+    });
+    it("should support nesting", async function () {
+      await request(__testApp).get("/users/tobi.txt").expect(200, "ferret");
+    });
+    it("should set Content-Type", async function () {
+      await request(__testApp)
+        .get("/todo.txt")
+        .expect("Content-Type", "text/plain; charset=utf-8")
+        .expect(200);
+    });
+    it("should set Last-Modified", async function () {
+      await request(__testApp)
+        .get("/todo.txt")
+        .expect("Last-Modified", /\d{2} \w{3} \d{4}/)
+        .expect(200);
+    });
+    it("should default max-age=0", async function () {
+      await request(__testApp)
+        .get("/todo.txt")
+        .expect("Cache-Control", "public, max-age=0")
+        .expect(200);
+    });
+    it("should support urlencoded pathnames", async function () {
+      await request(__testApp).get("/%25%20of%20dogs.txt").expect(200, "20%");
+    });
+    it("should not choke on auth-looking URL", async function () {
+      await request(__testApp).get("//todo@txt").expect(404, "Not Found");
+    });
+    it("should support index.html", async function () {
+      await request(__testApp)
+        .get("/users/")
         .expect(200)
-        .expect('Content-Type', /html/)
-        .expect('<p>tobi, loki, jane</p>', done)
-    })
-
-    it('should support ../', function (done) {
-      request(this.app)
-        .get('/users/../todo.txt')
-        .expect(200, '- groceries', done)
-    })
-
-    it('should support HEAD', function (done) {
-      request(this.app)
-        .head('/todo.txt')
+        .expect("Content-Type", /html/)
+        .expect("<p>tobi, loki, jane</p>");
+    });
+    it("should support ../", async function () {
+      await request(__testApp)
+        .get("/users/../todo.txt")
+        .expect(200, "- groceries");
+    });
+    it("should support HEAD", async function () {
+      await request(__testApp)
+        .head("/todo.txt")
         .expect(200)
-        .expect(utils.shouldNotHaveBody())
-        .end(done)
-    })
-
-    it('should skip POST requests', function (done) {
-      request(this.app)
-        .post('/todo.txt')
-        .expect(404, 'Not Found', done)
-    })
-
-    it('should support conditional requests', function (done) {
-      var app = this.app
-
-      request(app)
-        .get('/todo.txt')
-        .end(function (err, res) {
-          if (err) throw err
-          request(app)
-            .get('/todo.txt')
-            .set('If-None-Match', res.headers.etag)
-            .expect(304, done)
-        })
-    })
-
-    it('should support precondition checks', function (done) {
-      request(this.app)
-        .get('/todo.txt')
-        .set('If-Match', '"foo"')
-        .expect(412, done)
-    })
-
-    it('should serve zero-length files', function (done) {
-      request(this.app)
-        .get('/empty.txt')
-        .expect(200, '', done)
-    })
-
-    it('should ignore hidden files', function (done) {
-      request(this.app)
-        .get('/.name')
-        .expect(404, 'Not Found', done)
-    })
+        .expect(utils.shouldNotHaveBody());
+    });
+    it("should skip POST requests", async function () {
+      await request(__testApp).post("/todo.txt").expect(404, "Not Found");
+    });
+    it("should support conditional requests", async function () {
+      var app = __testApp;
+      var res = await request(app).get("/todo.txt").expect(200);
+      await request(app)
+        .get("/todo.txt")
+        .set("If-None-Match", res.headers.etag)
+        .expect(304);
+    });
+    it("should support precondition checks", async function () {
+      await request(__testApp)
+        .get("/todo.txt")
+        .set("If-Match", '"foo"')
+        .expect(412);
+    });
+    it("should serve zero-length files", async function () {
+      await request(__testApp).get("/empty.txt").expect(200, "");
+    });
+    it("should ignore hidden files", async function () {
+      await request(__testApp).get("/.name").expect(404, "Not Found");
+    });
   });
-
-  (skipRelative ? describe.skip : describe)('current dir', function () {
+  (skipRelative ? describe.skip : describe)("current dir", function () {
     before(function () {
-      this.app = createApp('.')
-    })
-
-    it('should be served with "."', function (done) {
-      var dest = relative.split(path.sep).join('/')
-      request(this.app)
-        .get('/' + dest + '/todo.txt')
-        .expect(200, '- groceries', done)
-    })
-  })
-
-  describe('acceptRanges', function () {
-    describe('when false', function () {
-      it('should not include Accept-Ranges', function (done) {
-        request(createApp(fixtures, { 'acceptRanges': false }))
-          .get('/nums.txt')
-          .expect(utils.shouldNotHaveHeader('Accept-Ranges'))
-          .expect(200, '123456789', done)
-      })
-
-      it('should ignore Rage request header', function (done) {
-        request(createApp(fixtures, { 'acceptRanges': false }))
-          .get('/nums.txt')
-          .set('Range', 'bytes=0-3')
-          .expect(utils.shouldNotHaveHeader('Accept-Ranges'))
-          .expect(utils.shouldNotHaveHeader('Content-Range'))
-          .expect(200, '123456789', done)
-      })
-    })
-
-    describe('when true', function () {
-      it('should include Accept-Ranges', function (done) {
-        request(createApp(fixtures, { 'acceptRanges': true }))
-          .get('/nums.txt')
-          .expect('Accept-Ranges', 'bytes')
-          .expect(200, '123456789', done)
-      })
-
-      it('should obey Rage request header', function (done) {
-        request(createApp(fixtures, { 'acceptRanges': true }))
-          .get('/nums.txt')
-          .set('Range', 'bytes=0-3')
-          .expect('Accept-Ranges', 'bytes')
-          .expect('Content-Range', 'bytes 0-3/9')
-          .expect(206, '1234', done)
-      })
-    })
-  })
-
-  describe('cacheControl', function () {
-    describe('when false', function () {
-      it('should not include Cache-Control', function (done) {
-        request(createApp(fixtures, { 'cacheControl': false }))
-          .get('/nums.txt')
-          .expect(utils.shouldNotHaveHeader('Cache-Control'))
-          .expect(200, '123456789', done)
-      })
-
-      it('should ignore maxAge', function (done) {
-        request(createApp(fixtures, { 'cacheControl': false, 'maxAge': 12000 }))
-          .get('/nums.txt')
-          .expect(utils.shouldNotHaveHeader('Cache-Control'))
-          .expect(200, '123456789', done)
-      })
-    })
-
-    describe('when true', function () {
-      it('should include Cache-Control', function (done) {
-        request(createApp(fixtures, { 'cacheControl': true }))
-          .get('/nums.txt')
-          .expect('Cache-Control', 'public, max-age=0')
-          .expect(200, '123456789', done)
-      })
-    })
-  })
-
-  describe('extensions', function () {
-    it('should be not be enabled by default', function (done) {
-      request(createApp(fixtures))
-        .get('/todo')
-        .expect(404, done)
-    })
-
-    it('should be configurable', function (done) {
-      request(createApp(fixtures, { 'extensions': 'txt' }))
-        .get('/todo')
-        .expect(200, '- groceries', done)
-    })
-
-    it('should support disabling extensions', function (done) {
-      request(createApp(fixtures, { 'extensions': false }))
-        .get('/todo')
-        .expect(404, done)
-    })
-
-    it('should support fallbacks', function (done) {
-      request(createApp(fixtures, { 'extensions': ['htm', 'html', 'txt'] }))
-        .get('/todo')
-        .expect(200, '<li>groceries</li>', done)
-    })
-
-    it('should 404 if nothing found', function (done) {
-      request(createApp(fixtures, { 'extensions': ['htm', 'html', 'txt'] }))
-        .get('/bob')
-        .expect(404, done)
-    })
-  })
-
-  describe('fallthrough', function () {
-    it('should default to true', function (done) {
-      request(createApp())
-        .get('/does-not-exist')
-        .expect(404, 'Not Found', done)
-    })
-
-    describe('when true', function () {
+      __testApp = createApp(".");
+    });
+    it('should be served with "."', async function () {
+      var dest = relative.split(path.sep).join("/");
+      await request(__testApp)
+        .get("/" + dest + "/todo.txt")
+        .expect(200, "- groceries");
+    });
+  });
+  describe("acceptRanges", function () {
+    describe("when false", function () {
+      it("should not include Accept-Ranges", async function () {
+        await request(
+          createApp(fixtures, {
+            acceptRanges: false,
+          }),
+        )
+          .get("/nums.txt")
+          .expect(utils.shouldNotHaveHeader("Accept-Ranges"))
+          .expect(200, "123456789");
+      });
+      it("should ignore Rage request header", async function () {
+        await request(
+          createApp(fixtures, {
+            acceptRanges: false,
+          }),
+        )
+          .get("/nums.txt")
+          .set("Range", "bytes=0-3")
+          .expect(utils.shouldNotHaveHeader("Accept-Ranges"))
+          .expect(utils.shouldNotHaveHeader("Content-Range"))
+          .expect(200, "123456789");
+      });
+    });
+    describe("when true", function () {
+      it("should include Accept-Ranges", async function () {
+        await request(
+          createApp(fixtures, {
+            acceptRanges: true,
+          }),
+        )
+          .get("/nums.txt")
+          .expect("Accept-Ranges", "bytes")
+          .expect(200, "123456789");
+      });
+      it("should obey Rage request header", async function () {
+        await request(
+          createApp(fixtures, {
+            acceptRanges: true,
+          }),
+        )
+          .get("/nums.txt")
+          .set("Range", "bytes=0-3")
+          .expect("Accept-Ranges", "bytes")
+          .expect("Content-Range", "bytes 0-3/9")
+          .expect(206, "1234");
+      });
+    });
+  });
+  describe("cacheControl", function () {
+    describe("when false", function () {
+      it("should not include Cache-Control", async function () {
+        await request(
+          createApp(fixtures, {
+            cacheControl: false,
+          }),
+        )
+          .get("/nums.txt")
+          .expect(utils.shouldNotHaveHeader("Cache-Control"))
+          .expect(200, "123456789");
+      });
+      it("should ignore maxAge", async function () {
+        await request(
+          createApp(fixtures, {
+            cacheControl: false,
+            maxAge: 12000,
+          }),
+        )
+          .get("/nums.txt")
+          .expect(utils.shouldNotHaveHeader("Cache-Control"))
+          .expect(200, "123456789");
+      });
+    });
+    describe("when true", function () {
+      it("should include Cache-Control", async function () {
+        await request(
+          createApp(fixtures, {
+            cacheControl: true,
+          }),
+        )
+          .get("/nums.txt")
+          .expect("Cache-Control", "public, max-age=0")
+          .expect(200, "123456789");
+      });
+    });
+  });
+  describe("extensions", function () {
+    it("should be not be enabled by default", async function () {
+      await request(createApp(fixtures)).get("/todo").expect(404);
+    });
+    it("should be configurable", async function () {
+      await request(
+        createApp(fixtures, {
+          extensions: "txt",
+        }),
+      )
+        .get("/todo")
+        .expect(200, "- groceries");
+    });
+    it("should support disabling extensions", async function () {
+      await request(
+        createApp(fixtures, {
+          extensions: false,
+        }),
+      )
+        .get("/todo")
+        .expect(404);
+    });
+    it("should support fallbacks", async function () {
+      await request(
+        createApp(fixtures, {
+          extensions: ["htm", "html", "txt"],
+        }),
+      )
+        .get("/todo")
+        .expect(200, "<li>groceries</li>");
+    });
+    it("should 404 if nothing found", async function () {
+      await request(
+        createApp(fixtures, {
+          extensions: ["htm", "html", "txt"],
+        }),
+      )
+        .get("/bob")
+        .expect(404);
+    });
+  });
+  describe("fallthrough", function () {
+    it("should default to true", async function () {
+      await request(createApp())
+        .get("/does-not-exist")
+        .expect(404, "Not Found");
+    });
+    describe("when true", function () {
       before(function () {
-        this.app = createApp(fixtures, { 'fallthrough': true })
-      })
-
-      it('should fall-through when OPTIONS request', function (done) {
-        request(this.app)
-          .options('/todo.txt')
-          .expect(404, 'Not Found', done)
-      })
-
-      it('should fall-through when URL malformed', function (done) {
-        request(this.app)
-          .get('/%')
-          .expect(404, 'Not Found', done)
-      })
-
-      it('should fall-through when traversing past root', function (done) {
-        utils.rawRequest(this.app, '/users/../../todo.txt', function (err, res) {
-          if (err) return done(err)
-          assert.strictEqual(res.statusCode, 404)
-          assert.strictEqual(res.text, 'Not Found')
-          done()
-        })
-      })
-
-      it('should fall-through when URL too long', function (done) {
-        var app = express()
-        var root = fixtures + Array(10000).join('/foobar')
-
-        app.use(express.static(root, { 'fallthrough': true }))
+        __testApp = createApp(fixtures, {
+          fallthrough: true,
+        });
+      });
+      it("should fall-through when OPTIONS request", async function () {
+        await request(__testApp).options("/todo.txt").expect(404, "Not Found");
+      });
+      it("should fall-through when URL malformed", async function () {
+        await request(__testApp).get("/%").expect(404, "Not Found");
+      });
+      it("should fall-through when traversing past root", async function () {
+        await new Promise((resolve, reject) => {
+          utils.rawRequest(
+            __testApp,
+            "/users/../../todo.txt",
+            function (err, res) {
+              if (err) return reject(err);
+              assert.strictEqual(res.statusCode, 404);
+              assert.strictEqual(res.text, "Not Found");
+              resolve();
+            },
+          );
+        });
+      });
+      it("should fall-through when URL too long", async function () {
+        var app = express();
+        var root = fixtures + Array(10000).join("/foobar");
+        app.use(
+          express.static(root, {
+            fallthrough: true,
+          }),
+        );
         app.use(function (req, res, next) {
-          res.sendStatus(404)
-        })
-
-        request(app)
-          .get('/')
-          .expect(404, 'Not Found', done)
-      })
-
-      describe('with redirect: true', function () {
+          res.sendStatus(404);
+        });
+        await request(app).get("/").expect(404, "Not Found");
+      });
+      describe("with redirect: true", function () {
         before(function () {
-          this.app = createApp(fixtures, { 'fallthrough': true, 'redirect': true })
-        })
-
-        it('should fall-through when directory', function (done) {
-          request(this.app)
-            .get('/pets/')
-            .expect(404, 'Not Found', done)
-        })
-
-        it('should redirect when directory without slash', function (done) {
-          request(this.app)
-            .get('/pets')
-            .expect(301, /Redirecting/, done)
-        })
-      })
-
-      describe('with redirect: false', function () {
+          __testApp = createApp(fixtures, {
+            fallthrough: true,
+            redirect: true,
+          });
+        });
+        it("should fall-through when directory", async function () {
+          await request(__testApp).get("/pets/").expect(404, "Not Found");
+        });
+        it("should redirect when directory without slash", async function () {
+          await request(__testApp)
+            .get("/pets")
+            .expect(301, /Redirecting/);
+        });
+      });
+      describe("with redirect: false", function () {
         before(function () {
-          this.app = createApp(fixtures, { 'fallthrough': true, 'redirect': false })
-        })
-
-        it('should fall-through when directory', function (done) {
-          request(this.app)
-            .get('/pets/')
-            .expect(404, 'Not Found', done)
-        })
-
-        it('should fall-through when directory without slash', function (done) {
-          request(this.app)
-            .get('/pets')
-            .expect(404, 'Not Found', done)
-        })
-      })
-    })
-
-    describe('when false', function () {
+          __testApp = createApp(fixtures, {
+            fallthrough: true,
+            redirect: false,
+          });
+        });
+        it("should fall-through when directory", async function () {
+          await request(__testApp).get("/pets/").expect(404, "Not Found");
+        });
+        it("should fall-through when directory without slash", async function () {
+          await request(__testApp).get("/pets").expect(404, "Not Found");
+        });
+      });
+    });
+    describe("when false", function () {
       before(function () {
-        this.app = createApp(fixtures, { 'fallthrough': false })
-      })
-
-      it('should 405 when OPTIONS request', function (done) {
-        request(this.app)
-          .options('/todo.txt')
-          .expect('Allow', 'GET, HEAD')
-          .expect(405, done)
-      })
-
-      it('should 400 when URL malformed', function (done) {
-        request(this.app)
-          .get('/%')
-          .expect(400, /BadRequestError/, done)
-      })
-
-      it('should 403 when traversing past root', function (done) {
-        utils.rawRequest(this.app, '/users/../../todo.txt', function (err, res) {
-          if (err) return done(err)
-          assert.strictEqual(res.statusCode, 403)
-          assert.match(res.text, /ForbiddenError/)
-          done()
-        })
-      })
-
-      it('should 404 when URL too long', function (done) {
-        var app = express()
-        var root = fixtures + Array(10000).join('/foobar')
-
-        app.use(express.static(root, { 'fallthrough': false }))
+        __testApp = createApp(fixtures, {
+          fallthrough: false,
+        });
+      });
+      it("should 405 when OPTIONS request", async function () {
+        await request(__testApp)
+          .options("/todo.txt")
+          .expect("Allow", "GET, HEAD")
+          .expect(405);
+      });
+      it("should 400 when URL malformed", async function () {
+        await request(__testApp)
+          .get("/%")
+          .expect(400, /BadRequestError/);
+      });
+      it("should 403 when traversing past root", async function () {
+        await new Promise((resolve, reject) => {
+          utils.rawRequest(
+            __testApp,
+            "/users/../../todo.txt",
+            function (err, res) {
+              if (err) return reject(err);
+              assert.strictEqual(res.statusCode, 403);
+              assert.match(res.text, /ForbiddenError/);
+              resolve();
+            },
+          );
+        });
+      });
+      it("should 404 when URL too long", async function () {
+        var app = express();
+        var root = fixtures + Array(10000).join("/foobar");
+        app.use(
+          express.static(root, {
+            fallthrough: false,
+          }),
+        );
         app.use(function (req, res, next) {
-          res.sendStatus(404)
-        })
-
-        request(app)
-          .get('/')
-          .expect(404, /ENAMETOOLONG/, done)
-      })
-
-      describe('with redirect: true', function () {
+          res.sendStatus(404);
+        });
+        await request(app)
+          .get("/")
+          .expect(404, /ENAMETOOLONG/);
+      });
+      describe("with redirect: true", function () {
         before(function () {
-          this.app = createApp(fixtures, { 'fallthrough': false, 'redirect': true })
-        })
-
-        it('should 404 when directory', function (done) {
-          request(this.app)
-            .get('/pets/')
-            .expect(404, /NotFoundError|ENOENT/, done)
-        })
-
-        it('should redirect when directory without slash', function (done) {
-          request(this.app)
-            .get('/pets')
-            .expect(301, /Redirecting/, done)
-        })
-      })
-
-      describe('with redirect: false', function () {
+          __testApp = createApp(fixtures, {
+            fallthrough: false,
+            redirect: true,
+          });
+        });
+        it("should 404 when directory", async function () {
+          await request(__testApp)
+            .get("/pets/")
+            .expect(404, /NotFoundError|ENOENT/);
+        });
+        it("should redirect when directory without slash", async function () {
+          await request(__testApp)
+            .get("/pets")
+            .expect(301, /Redirecting/);
+        });
+      });
+      describe("with redirect: false", function () {
         before(function () {
-          this.app = createApp(fixtures, { 'fallthrough': false, 'redirect': false })
-        })
-
-        it('should 404 when directory', function (done) {
-          request(this.app)
-            .get('/pets/')
-            .expect(404, /NotFoundError|ENOENT/, done)
-        })
-
-        it('should 404 when directory without slash', function (done) {
-          request(this.app)
-            .get('/pets')
-            .expect(404, /NotFoundError|ENOENT/, done)
-        })
-      })
-    })
-  })
-
-  describe('hidden files', function () {
+          __testApp = createApp(fixtures, {
+            fallthrough: false,
+            redirect: false,
+          });
+        });
+        it("should 404 when directory", async function () {
+          await request(__testApp)
+            .get("/pets/")
+            .expect(404, /NotFoundError|ENOENT/);
+        });
+        it("should 404 when directory without slash", async function () {
+          await request(__testApp)
+            .get("/pets")
+            .expect(404, /NotFoundError|ENOENT/);
+        });
+      });
+    });
+  });
+  describe("hidden files", function () {
     before(function () {
-      this.app = createApp(fixtures, { 'dotfiles': 'allow' })
-    })
-
-    it('should be served when dotfiles: "allow" is given', function (done) {
-      request(this.app)
-        .get('/.name')
+      __testApp = createApp(fixtures, {
+        dotfiles: "allow",
+      });
+    });
+    it('should be served when dotfiles: "allow" is given', async function () {
+      await request(__testApp)
+        .get("/.name")
         .expect(200)
-        .expect(utils.shouldHaveBody(Buffer.from('tobi')))
-        .end(done)
-    })
-  })
-
-  describe('immutable', function () {
-    it('should default to false', function (done) {
-      request(createApp(fixtures))
-        .get('/nums.txt')
-        .expect('Cache-Control', 'public, max-age=0', done)
-    })
-
-    it('should set immutable directive in Cache-Control', function (done) {
-      request(createApp(fixtures, { 'immutable': true, 'maxAge': '1h' }))
-        .get('/nums.txt')
-        .expect('Cache-Control', 'public, max-age=3600, immutable', done)
-    })
-  })
-
-  describe('lastModified', function () {
-    describe('when false', function () {
-      it('should not include Last-Modified', function (done) {
-        request(createApp(fixtures, { 'lastModified': false }))
-          .get('/nums.txt')
-          .expect(utils.shouldNotHaveHeader('Last-Modified'))
-          .expect(200, '123456789', done)
-      })
-    })
-
-    describe('when true', function () {
-      it('should include Last-Modified', function (done) {
-        request(createApp(fixtures, { 'lastModified': true }))
-          .get('/nums.txt')
-          .expect('Last-Modified', /^\w{3}, \d+ \w+ \d+ \d+:\d+:\d+ \w+$/)
-          .expect(200, '123456789', done)
-      })
-    })
-  })
-
-  describe('maxAge', function () {
-    it('should accept string', function (done) {
-      request(createApp(fixtures, { 'maxAge': '30d' }))
-        .get('/todo.txt')
-        .expect('cache-control', 'public, max-age=' + (60 * 60 * 24 * 30))
-        .expect(200, done)
-    })
-
-    it('should be reasonable when infinite', function (done) {
-      request(createApp(fixtures, { 'maxAge': Infinity }))
-        .get('/todo.txt')
-        .expect('cache-control', 'public, max-age=' + (60 * 60 * 24 * 365))
-        .expect(200, done)
-    })
-  })
-
-  describe('redirect', function () {
+        .expect(utils.shouldHaveBody(Buffer.from("tobi")));
+    });
+  });
+  describe("immutable", function () {
+    it("should default to false", async function () {
+      await request(createApp(fixtures))
+        .get("/nums.txt")
+        .expect("Cache-Control", "public, max-age=0");
+    });
+    it("should set immutable directive in Cache-Control", async function () {
+      await request(
+        createApp(fixtures, {
+          immutable: true,
+          maxAge: "1h",
+        }),
+      )
+        .get("/nums.txt")
+        .expect("Cache-Control", "public, max-age=3600, immutable");
+    });
+  });
+  describe("lastModified", function () {
+    describe("when false", function () {
+      it("should not include Last-Modified", async function () {
+        await request(
+          createApp(fixtures, {
+            lastModified: false,
+          }),
+        )
+          .get("/nums.txt")
+          .expect(utils.shouldNotHaveHeader("Last-Modified"))
+          .expect(200, "123456789");
+      });
+    });
+    describe("when true", function () {
+      it("should include Last-Modified", async function () {
+        await request(
+          createApp(fixtures, {
+            lastModified: true,
+          }),
+        )
+          .get("/nums.txt")
+          .expect("Last-Modified", /^\w{3}, \d+ \w+ \d+ \d+:\d+:\d+ \w+$/)
+          .expect(200, "123456789");
+      });
+    });
+  });
+  describe("maxAge", function () {
+    it("should accept string", async function () {
+      await request(
+        createApp(fixtures, {
+          maxAge: "30d",
+        }),
+      )
+        .get("/todo.txt")
+        .expect("cache-control", "public, max-age=" + 60 * 60 * 24 * 30)
+        .expect(200);
+    });
+    it("should be reasonable when infinite", async function () {
+      await request(
+        createApp(fixtures, {
+          maxAge: Infinity,
+        }),
+      )
+        .get("/todo.txt")
+        .expect("cache-control", "public, max-age=" + 60 * 60 * 24 * 365)
+        .expect(200);
+    });
+  });
+  describe("redirect", function () {
     before(function () {
-      this.app = express()
-      this.app.use(function (req, res, next) {
-        req.originalUrl = req.url =
-          req.originalUrl.replace(/\/snow(\/|$)/, '/snow \u2603$1')
-        next()
-      })
-      this.app.use(express.static(fixtures))
-    })
-
-    it('should redirect directories', function (done) {
-      request(this.app)
-        .get('/users')
-        .expect('Location', '/users/')
-        .expect(301, done)
-    })
-
-    it('should include HTML link', function (done) {
-      request(this.app)
-        .get('/users')
-        .expect('Location', '/users/')
-        .expect(301, /\/users\//, done)
-    })
-
-    it('should redirect directories with query string', function (done) {
-      request(this.app)
-        .get('/users?name=john')
-        .expect('Location', '/users/?name=john')
-        .expect(301, done)
-    })
-
-    it('should not redirect to protocol-relative locations', function (done) {
-      request(this.app)
-        .get('//users')
-        .expect('Location', '/users/')
-        .expect(301, done)
-    })
-
-    it('should ensure redirect URL is properly encoded', function (done) {
-      request(this.app)
-        .get('/snow')
-        .expect('Location', '/snow%20%E2%98%83/')
-        .expect('Content-Type', /html/)
-        .expect(301, />Redirecting to \/snow%20%E2%98%83\/</, done)
-    })
-
-    it('should respond with default Content-Security-Policy', function (done) {
-      request(this.app)
-        .get('/users')
-        .expect('Content-Security-Policy', "default-src 'none'")
-        .expect(301, done)
-    })
-
-    it('should not redirect incorrectly', function (done) {
-      request(this.app)
-        .get('/')
-        .expect(404, done)
-    })
-
-    describe('when false', function () {
+      __testApp = express();
+      __testApp.use(function (req, res, next) {
+        req.originalUrl = req.url = req.originalUrl.replace(
+          /\/snow(\/|$)/,
+          "/snow \u2603$1",
+        );
+        next();
+      });
+      __testApp.use(express.static(fixtures));
+    });
+    it("should redirect directories", async function () {
+      await request(__testApp)
+        .get("/users")
+        .expect("Location", "/users/")
+        .expect(301);
+    });
+    it("should include HTML link", async function () {
+      await request(__testApp)
+        .get("/users")
+        .expect("Location", "/users/")
+        .expect(301, /\/users\//);
+    });
+    it("should redirect directories with query string", async function () {
+      await request(__testApp)
+        .get("/users?name=john")
+        .expect("Location", "/users/?name=john")
+        .expect(301);
+    });
+    it("should not redirect to protocol-relative locations", async function () {
+      await request(__testApp)
+        .get("//users")
+        .expect("Location", "/users/")
+        .expect(301);
+    });
+    it("should ensure redirect URL is properly encoded", async function () {
+      await request(__testApp)
+        .get("/snow")
+        .expect("Location", "/snow%20%E2%98%83/")
+        .expect("Content-Type", /html/)
+        .expect(301, />Redirecting to \/snow%20%E2%98%83\/</);
+    });
+    it("should respond with default Content-Security-Policy", async function () {
+      await request(__testApp)
+        .get("/users")
+        .expect("Content-Security-Policy", "default-src 'none'")
+        .expect(301);
+    });
+    it("should not redirect incorrectly", async function () {
+      await request(__testApp).get("/").expect(404);
+    });
+    describe("when false", function () {
       before(function () {
-        this.app = createApp(fixtures, { 'redirect': false })
-      })
-
-      it('should disable redirect', function (done) {
-        request(this.app)
-          .get('/users')
-          .expect(404, done)
-      })
-    })
-  })
-
-  describe('setHeaders', function () {
+        __testApp = createApp(fixtures, {
+          redirect: false,
+        });
+      });
+      it("should disable redirect", async function () {
+        await request(__testApp).get("/users").expect(404);
+      });
+    });
+  });
+  describe("setHeaders", function () {
     before(function () {
-      this.app = express()
-      this.app.use(express.static(fixtures, { 'setHeaders': function (res) {
-        res.setHeader('x-custom', 'set')
-      } }))
-    })
-
-    it('should reject non-functions', function () {
-      assert.throws(express.static.bind(null, fixtures, { 'setHeaders': 3 }), /setHeaders.*function/)
-    })
-
-    it('should get called when sending file', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .expect('x-custom', 'set')
-        .expect(200, done)
-    })
-
-    it('should not get called on 404', function (done) {
-      request(this.app)
-        .get('/bogus')
-        .expect(utils.shouldNotHaveHeader('x-custom'))
-        .expect(404, done)
-    })
-
-    it('should not get called on redirect', function (done) {
-      request(this.app)
-        .get('/users')
-        .expect(utils.shouldNotHaveHeader('x-custom'))
-        .expect(301, done)
-    })
-  })
-
-  describe('when traversing past root', function () {
+      __testApp = express();
+      __testApp.use(
+        express.static(fixtures, {
+          setHeaders: function (res) {
+            res.setHeader("x-custom", "set");
+          },
+        }),
+      );
+    });
+    it("should reject non-functions", function () {
+      assert.throws(
+        express.static.bind(null, fixtures, {
+          setHeaders: 3,
+        }),
+        /setHeaders.*function/,
+      );
+    });
+    it("should get called when sending file", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .expect("x-custom", "set")
+        .expect(200);
+    });
+    it("should not get called on 404", async function () {
+      await request(__testApp)
+        .get("/bogus")
+        .expect(utils.shouldNotHaveHeader("x-custom"))
+        .expect(404);
+    });
+    it("should not get called on redirect", async function () {
+      await request(__testApp)
+        .get("/users")
+        .expect(utils.shouldNotHaveHeader("x-custom"))
+        .expect(301);
+    });
+  });
+  describe("when traversing past root", function () {
     before(function () {
-      this.app = createApp(fixtures, { 'fallthrough': false })
-    })
-
-    it('should catch urlencoded ../', function (done) {
-      utils.rawRequest(this.app, '/users/%2e%2e/%2e%2e/todo.txt', function (err, res) {
-        if (err) return done(err)
-        assert.strictEqual(res.statusCode, 403)
-        done()
-      })
-    })
-
-    it('should not allow root path disclosure', function (done) {
-      utils.rawRequest(this.app, '/users/../../fixtures/todo.txt', function (err, res) {
-        if (err) return done(err)
-        assert.strictEqual(res.statusCode, 403)
-        done()
-      })
-    })
-  })
-
+      __testApp = createApp(fixtures, {
+        fallthrough: false,
+      });
+    });
+    it("should catch urlencoded ../", async function () {
+      await new Promise((resolve, reject) => {
+        utils.rawRequest(
+          __testApp,
+          "/users/%2e%2e/%2e%2e/todo.txt",
+          function (err, res) {
+            if (err) return reject(err);
+            assert.strictEqual(res.statusCode, 403);
+            resolve();
+          },
+        );
+      });
+    });
+    it("should not allow root path disclosure", async function () {
+      await new Promise((resolve, reject) => {
+        utils.rawRequest(
+          __testApp,
+          "/users/../../fixtures/todo.txt",
+          function (err, res) {
+            if (err) return reject(err);
+            assert.strictEqual(res.statusCode, 403);
+            resolve();
+          },
+        );
+      });
+    });
+  });
   describe('when request has "Range" header', function () {
     before(function () {
-      this.app = createApp()
-    })
-
-    it('should support byte ranges', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=0-4')
-        .expect('12345', done)
-    })
-
-    it('should be inclusive', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=0-0')
-        .expect('1', done)
-    })
-
-    it('should set Content-Range', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=2-5')
-        .expect('Content-Range', 'bytes 2-5/9', done)
-    })
-
-    it('should support -n', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=-3')
-        .expect('789', done)
-    })
-
-    it('should support n-', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=3-')
-        .expect('456789', done)
-    })
-
-    it('should respond with 206 "Partial Content"', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=0-4')
-        .expect(206, done)
-    })
-
-    it('should set Content-Length to the # of octets transferred', function (done) {
-      request(this.app)
-        .get('/nums.txt')
-        .set('Range', 'bytes=2-3')
-        .expect('Content-Length', '2')
-        .expect(206, '34', done)
-    })
-
-    describe('when last-byte-pos of the range is greater than current length', function () {
-      it('is taken to be equal to one less than the current length', function (done) {
-        request(this.app)
-          .get('/nums.txt')
-          .set('Range', 'bytes=2-50')
-          .expect('Content-Range', 'bytes 2-8/9', done)
-      })
-
-      it('should adapt the Content-Length accordingly', function (done) {
-        request(this.app)
-          .get('/nums.txt')
-          .set('Range', 'bytes=2-50')
-          .expect('Content-Length', '7')
-          .expect(206, done)
-      })
-    })
-
-    describe('when the first- byte-pos of the range is greater than the current length', function () {
-      it('should respond with 416', function (done) {
-        request(this.app)
-          .get('/nums.txt')
-          .set('Range', 'bytes=9-50')
-          .expect(416, done)
-      })
-
-      it('should include a Content-Range header of complete length', function (done) {
-        request(this.app)
-          .get('/nums.txt')
-          .set('Range', 'bytes=9-50')
-          .expect('Content-Range', 'bytes */9')
-          .expect(416, done)
-      })
-    })
-
-    describe('when syntactically invalid', function () {
-      it('should respond with 200 and the entire contents', function (done) {
-        request(this.app)
-          .get('/nums.txt')
-          .set('Range', 'asdf')
-          .expect('123456789', done)
-      })
-    })
-  })
-
-  describe('when index at mount point', function () {
+      __testApp = createApp();
+    });
+    it("should support byte ranges", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=0-4")
+        .expect("12345");
+    });
+    it("should be inclusive", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=0-0")
+        .expect("1");
+    });
+    it("should set Content-Range", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=2-5")
+        .expect("Content-Range", "bytes 2-5/9");
+    });
+    it("should support -n", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=-3")
+        .expect("789");
+    });
+    it("should support n-", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=3-")
+        .expect("456789");
+    });
+    it('should respond with 206 "Partial Content"', async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=0-4")
+        .expect(206);
+    });
+    it("should set Content-Length to the # of octets transferred", async function () {
+      await request(__testApp)
+        .get("/nums.txt")
+        .set("Range", "bytes=2-3")
+        .expect("Content-Length", "2")
+        .expect(206, "34");
+    });
+    describe("when last-byte-pos of the range is greater than current length", function () {
+      it("is taken to be equal to one less than the current length", async function () {
+        await request(__testApp)
+          .get("/nums.txt")
+          .set("Range", "bytes=2-50")
+          .expect("Content-Range", "bytes 2-8/9");
+      });
+      it("should adapt the Content-Length accordingly", async function () {
+        await request(__testApp)
+          .get("/nums.txt")
+          .set("Range", "bytes=2-50")
+          .expect("Content-Length", "7")
+          .expect(206);
+      });
+    });
+    describe("when the first- byte-pos of the range is greater than the current length", function () {
+      it("should respond with 416", async function () {
+        await request(__testApp)
+          .get("/nums.txt")
+          .set("Range", "bytes=9-50")
+          .expect(416);
+      });
+      it("should include a Content-Range header of complete length", async function () {
+        await request(__testApp)
+          .get("/nums.txt")
+          .set("Range", "bytes=9-50")
+          .expect("Content-Range", "bytes */9")
+          .expect(416);
+      });
+    });
+    describe("when syntactically invalid", function () {
+      it("should respond with 200 and the entire contents", async function () {
+        await request(__testApp)
+          .get("/nums.txt")
+          .set("Range", "asdf")
+          .expect("123456789");
+      });
+    });
+  });
+  describe("when index at mount point", function () {
     before(function () {
-      this.app = express()
-      this.app.use('/users', express.static(fixtures + '/users'))
-    })
-
-    it('should redirect correctly', function (done) {
-      request(this.app)
-        .get('/users')
-        .expect('Location', '/users/')
-        .expect(301, done)
-    })
-  })
-
-  describe('when mounted', function () {
+      __testApp = express();
+      __testApp.use("/users", express.static(fixtures + "/users"));
+    });
+    it("should redirect correctly", async function () {
+      await request(__testApp)
+        .get("/users")
+        .expect("Location", "/users/")
+        .expect(301);
+    });
+  });
+  describe("when mounted", function () {
     before(function () {
-      this.app = express()
-      this.app.use('/static', express.static(fixtures))
-    })
-
-    it('should redirect relative to the originalUrl', function (done) {
-      request(this.app)
-        .get('/static/users')
-        .expect('Location', '/static/users/')
-        .expect(301, done)
-    })
-
-    it('should not choke on auth-looking URL', function (done) {
-      request(this.app)
-        .get('//todo@txt')
-        .expect(404, done)
-    })
-  })
+      __testApp = express();
+      __testApp.use("/static", express.static(fixtures));
+    });
+    it("should redirect relative to the originalUrl", async function () {
+      await request(__testApp)
+        .get("/static/users")
+        .expect("Location", "/static/users/")
+        .expect(301);
+    });
+    it("should not choke on auth-looking URL", async function () {
+      await request(__testApp).get("//todo@txt").expect(404);
+    });
+  });
 
   //
   // NOTE: This is not a real part of the API, but
@@ -741,85 +728,66 @@ describe('express.static()', function () {
   //
   describe('when mounted "root" as a file', function () {
     before(function () {
-      this.app = express()
-      this.app.use('/todo.txt', express.static(fixtures + '/todo.txt'))
-    })
-
-    it('should load the file when on trailing slash', function (done) {
-      request(this.app)
-        .get('/todo.txt')
-        .expect(200, '- groceries', done)
-    })
-
-    it('should 404 when trailing slash', function (done) {
-      request(this.app)
-        .get('/todo.txt/')
-        .expect(404, done)
-    })
-  })
-
-  describe('when responding non-2xx or 304', function () {
-    it('should not alter the status', function (done) {
-      var app = express()
-
+      __testApp = express();
+      __testApp.use("/todo.txt", express.static(fixtures + "/todo.txt"));
+    });
+    it("should load the file when on trailing slash", async function () {
+      await request(__testApp).get("/todo.txt").expect(200, "- groceries");
+    });
+    it("should 404 when trailing slash", async function () {
+      await request(__testApp).get("/todo.txt/").expect(404);
+    });
+  });
+  describe("when responding non-2xx or 304", function () {
+    it("should not alter the status", async function () {
+      var app = express();
       app.use(function (req, res, next) {
-        res.status(501)
-        next()
-      })
-      app.use(express.static(fixtures))
-
-      request(app)
-        .get('/todo.txt')
-        .expect(501, '- groceries', done)
-    })
-  })
-
-  describe('when index file serving disabled', function () {
+        res.status(501);
+        next();
+      });
+      app.use(express.static(fixtures));
+      await request(app).get("/todo.txt").expect(501, "- groceries");
+    });
+  });
+  describe("when index file serving disabled", function () {
     before(function () {
-      this.app = express()
-      this.app.use('/static', express.static(fixtures, { 'index': false }))
-      this.app.use(function (req, res, next) {
-        res.sendStatus(404)
-      })
-    })
-
-    it('should next() on directory', function (done) {
-      request(this.app)
-        .get('/static/users/')
-        .expect(404, 'Not Found', done)
-    })
-
-    it('should redirect to trailing slash', function (done) {
-      request(this.app)
-        .get('/static/users')
-        .expect('Location', '/static/users/')
-        .expect(301, done)
-    })
-
-    it('should next() on mount point', function (done) {
-      request(this.app)
-        .get('/static/')
-        .expect(404, 'Not Found', done)
-    })
-
-    it('should redirect to trailing slash mount point', function (done) {
-      request(this.app)
-        .get('/static')
-        .expect('Location', '/static/')
-        .expect(301, done)
-    })
-  })
-})
-
-function createApp (dir, options, fn) {
-  var app = express()
-  var root = dir || fixtures
-
-  app.use(express.static(root, options))
-
+      __testApp = express();
+      __testApp.use(
+        "/static",
+        express.static(fixtures, {
+          index: false,
+        }),
+      );
+      __testApp.use(function (req, res, next) {
+        res.sendStatus(404);
+      });
+    });
+    it("should next() on directory", async function () {
+      await request(__testApp).get("/static/users/").expect(404, "Not Found");
+    });
+    it("should redirect to trailing slash", async function () {
+      await request(__testApp)
+        .get("/static/users")
+        .expect("Location", "/static/users/")
+        .expect(301);
+    });
+    it("should next() on mount point", async function () {
+      await request(__testApp).get("/static/").expect(404, "Not Found");
+    });
+    it("should redirect to trailing slash mount point", async function () {
+      await request(__testApp)
+        .get("/static")
+        .expect("Location", "/static/")
+        .expect(301);
+    });
+  });
+});
+function createApp(dir, options, fn) {
+  var app = express();
+  var root = dir || fixtures;
+  app.use(express.static(root, options));
   app.use(function (req, res, next) {
-    res.sendStatus(404)
-  })
-
-  return app
+    res.sendStatus(404);
+  });
+  return app;
 }

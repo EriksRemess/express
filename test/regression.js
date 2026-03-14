@@ -1,20 +1,17 @@
-'use strict'
+"use strict";
+var { describe, it } = require("node:test");
+var express = require("../"),
+  request = require("supertest");
 
-var express = require('../')
-  , request = require('supertest');
-
-describe('throw after .end()', function(){
-  it('should fail gracefully', function(done){
+describe("throw after .end()", function () {
+  it("should fail gracefully", async function () {
     var app = express();
 
-    app.get('/', function(req, res){
-      res.end('yay');
-      throw new Error('boom');
+    app.get("/", function (req, res) {
+      res.end("yay");
+      throw new Error("boom");
     });
 
-    request(app)
-    .get('/')
-    .expect('yay')
-    .expect(200, done);
-  })
-})
+    await request(app).get("/").expect("yay").expect(200);
+  });
+});

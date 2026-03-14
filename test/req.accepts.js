@@ -1,125 +1,114 @@
-'use strict'
+"use strict";
+var { describe, it } = require("node:test");
+var express = require("../"),
+  request = require("supertest");
 
-var express = require('../')
-  , request = require('supertest');
-
-describe('req', function(){
-  describe('.accepts(type)', function(){
-    it('should return true when Accept is not present', function(done){
+describe("req", function () {
+  describe(".accepts(type)", function () {
+    it("should return true when Accept is not present", async function () {
       var app = express();
 
-      app.use(function(req, res, next){
-        res.end(req.accepts('json') ? 'yes' : 'no');
+      app.use(function (req, res, next) {
+        res.end(req.accepts("json") ? "yes" : "no");
       });
 
-      request(app)
-      .get('/')
-      .expect('yes', done);
-    })
-
-    it('should return true when present', function(done){
-      var app = express();
-
-      app.use(function(req, res, next){
-        res.end(req.accepts('json') ? 'yes' : 'no');
-      });
-
-      request(app)
-      .get('/')
-      .set('Accept', 'application/json')
-      .expect('yes', done);
-    })
-
-    it('should return false otherwise', function(done){
-      var app = express();
-
-      app.use(function(req, res, next){
-        res.end(req.accepts('json') ? 'yes' : 'no');
-      });
-
-      request(app)
-      .get('/')
-      .set('Accept', 'text/html')
-      .expect('no', done);
-    })
-  })
-
-  it('should accept an argument list of type names', function(done){
-    var app = express();
-
-    app.use(function(req, res, next){
-      res.end(req.accepts('json', 'html'));
+      await request(app).get("/").expect("yes");
     });
 
-    request(app)
-    .get('/')
-    .set('Accept', 'application/json')
-    .expect('json', done);
-  })
-
-  describe('.accepts(types)', function(){
-    it('should return the first when Accept is not present', function(done){
+    it("should return true when present", async function () {
       var app = express();
 
-      app.use(function(req, res, next){
-        res.end(req.accepts(['json', 'html']));
+      app.use(function (req, res, next) {
+        res.end(req.accepts("json") ? "yes" : "no");
       });
 
-      request(app)
-      .get('/')
-      .expect('json', done);
-    })
+      await request(app)
+        .get("/")
+        .set("Accept", "application/json")
+        .expect("yes");
+    });
 
-    it('should return the first acceptable type', function(done){
+    it("should return false otherwise", async function () {
       var app = express();
 
-      app.use(function(req, res, next){
-        res.end(req.accepts(['json', 'html']));
+      app.use(function (req, res, next) {
+        res.end(req.accepts("json") ? "yes" : "no");
       });
 
-      request(app)
-      .get('/')
-      .set('Accept', 'text/html')
-      .expect('html', done);
-    })
+      await request(app).get("/").set("Accept", "text/html").expect("no");
+    });
+  });
 
-    it('should return false when no match is made', function(done){
+  it("should accept an argument list of type names", async function () {
+    var app = express();
+
+    app.use(function (req, res, next) {
+      res.end(req.accepts("json", "html"));
+    });
+
+    await request(app)
+      .get("/")
+      .set("Accept", "application/json")
+      .expect("json");
+  });
+
+  describe(".accepts(types)", function () {
+    it("should return the first when Accept is not present", async function () {
       var app = express();
 
-      app.use(function(req, res, next){
-        res.end(req.accepts(['text/html', 'application/json']) ? 'yup' : 'nope');
+      app.use(function (req, res, next) {
+        res.end(req.accepts(["json", "html"]));
       });
 
-      request(app)
-      .get('/')
-      .set('Accept', 'foo/bar, bar/baz')
-      .expect('nope', done);
-    })
+      await request(app).get("/").expect("json");
+    });
 
-    it('should take quality into account', function(done){
+    it("should return the first acceptable type", async function () {
       var app = express();
 
-      app.use(function(req, res, next){
-        res.end(req.accepts(['text/html', 'application/json']));
+      app.use(function (req, res, next) {
+        res.end(req.accepts(["json", "html"]));
       });
 
-      request(app)
-      .get('/')
-      .set('Accept', '*/html; q=.5, application/json')
-      .expect('application/json', done);
-    })
+      await request(app).get("/").set("Accept", "text/html").expect("html");
+    });
 
-    it('should return the first acceptable type with canonical mime types', function(done){
+    it("should return false when no match is made", async function () {
       var app = express();
 
-      app.use(function(req, res, next){
-        res.end(req.accepts(['application/json', 'text/html']));
+      app.use(function (req, res, next) {
+        res.end(
+          req.accepts(["text/html", "application/json"]) ? "yup" : "nope",
+        );
       });
 
-      request(app)
-      .get('/')
-      .set('Accept', '*/html')
-      .expect('text/html', done);
-    })
-  })
-})
+      await request(app)
+        .get("/")
+        .set("Accept", "foo/bar, bar/baz")
+        .expect("nope");
+    });
+
+    it("should take quality into account", async function () {
+      var app = express();
+
+      app.use(function (req, res, next) {
+        res.end(req.accepts(["text/html", "application/json"]));
+      });
+
+      await request(app)
+        .get("/")
+        .set("Accept", "*/html; q=.5, application/json")
+        .expect("application/json");
+    });
+
+    it("should return the first acceptable type with canonical mime types", async function () {
+      var app = express();
+
+      app.use(function (req, res, next) {
+        res.end(req.accepts(["application/json", "text/html"]));
+      });
+
+      await request(app).get("/").set("Accept", "*/html").expect("text/html");
+    });
+  });
+});

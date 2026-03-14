@@ -72,9 +72,7 @@
     "hbs": "^4.2.0",
     "marked": "^17.0.4",
     "method-override": "^3.0.0",
-    "mocha": "^11.7.5",
     "morgan": "^1.10.1",
-    "nyc": "^18.0.0",
     "pbkdf2-password": "^1.2.1",
     "supertest": "^7.2.2",
     "vhost": "^3.0.2"
@@ -91,9 +89,9 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "mocha --require test/support/env --reporter spec --check-leaks test/ test/acceptance/",
-    "test-ci": "nyc --exclude examples --exclude test --exclude benchmarks --reporter=lcovonly --reporter=text npm test",
-    "test-cov": "nyc --exclude examples --exclude test --exclude benchmarks --reporter=html --reporter=text npm test",
-    "test-tap": "mocha --require test/support/env --reporter tap --check-leaks test/ test/acceptance/"
+    "test": "node --require ./test/support/env --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
+    "test-ci": "node --experimental-test-coverage --test-coverage-exclude=examples/** --test-coverage-exclude=test/** --test-coverage-exclude=benchmarks/** --require ./test/support/env --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
+    "test-cov": "node --experimental-test-coverage --test-coverage-exclude=examples/** --test-coverage-exclude=test/** --test-coverage-exclude=benchmarks/** --require ./test/support/env --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
+    "test-tap": "node --require ./test/support/env --test --test-reporter=tap --test-concurrency=1 ./test/*.js ./test/acceptance/*.js"
   }
 }

@@ -1,24 +1,23 @@
-
 /**
  * Module dependencies.
  * @private
  */
 
-var assert = require('node:assert');
-var http = require('node:http');
-const { Buffer } = require('node:buffer');
+var assert = require("node:assert");
+var http = require("node:http");
+const { Buffer } = require("node:buffer");
 
 /**
  * Module exports.
  * @public
  */
 
-exports.shouldHaveBody = shouldHaveBody
-exports.shouldHaveHeader = shouldHaveHeader
-exports.shouldNotHaveBody = shouldNotHaveBody
+exports.shouldHaveBody = shouldHaveBody;
+exports.shouldHaveHeader = shouldHaveHeader;
+exports.shouldNotHaveBody = shouldNotHaveBody;
 exports.shouldNotHaveHeader = shouldNotHaveHeader;
-exports.rawRequest = rawRequest
-exports.shouldSkipQuery = shouldSkipQuery
+exports.rawRequest = rawRequest;
+exports.shouldSkipQuery = shouldSkipQuery;
 
 /**
  * Assert that a supertest response has a specific body.
@@ -27,14 +26,12 @@ exports.shouldSkipQuery = shouldSkipQuery
  * @returns {function}
  */
 
-function shouldHaveBody (buf) {
+function shouldHaveBody(buf) {
   return function (res) {
-    var body = !Buffer.isBuffer(res.body)
-      ? Buffer.from(res.text)
-      : res.body
-    assert.ok(body, 'response has body')
-    assert.strictEqual(body.toString('hex'), buf.toString('hex'))
-  }
+    var body = !Buffer.isBuffer(res.body) ? Buffer.from(res.text) : res.body;
+    assert.ok(body, "response has body");
+    assert.strictEqual(body.toString("hex"), buf.toString("hex"));
+  };
 }
 
 /**
@@ -44,10 +41,13 @@ function shouldHaveBody (buf) {
  * @returns {function}
  */
 
-function shouldHaveHeader (header) {
+function shouldHaveHeader(header) {
   return function (res) {
-    assert.ok((header.toLowerCase() in res.headers), 'should have header ' + header)
-  }
+    assert.ok(
+      header.toLowerCase() in res.headers,
+      "should have header " + header,
+    );
+  };
 }
 
 /**
@@ -56,10 +56,10 @@ function shouldHaveHeader (header) {
  * @returns {function}
  */
 
-function shouldNotHaveBody () {
+function shouldNotHaveBody() {
   return function (res) {
-    assert.ok(res.text === '' || res.text === undefined)
-  }
+    assert.ok(res.text === "" || res.text === undefined);
+  };
 }
 
 /**
@@ -70,49 +70,50 @@ function shouldNotHaveBody () {
  */
 function shouldNotHaveHeader(header) {
   return function (res) {
-    assert.ok(!(header.toLowerCase() in res.headers), 'should not have header ' + header);
+    assert.ok(
+      !(header.toLowerCase() in res.headers),
+      "should not have header " + header,
+    );
   };
 }
 
 function rawRequest(app, options, callback) {
-  if (typeof options === 'string') {
+  if (typeof options === "string") {
     options = { path: options };
   }
 
   var requestOptions = {
-    method: 'GET',
-    host: '127.0.0.1',
-    ...options
+    method: "GET",
+    host: "127.0.0.1",
+    ...options,
   };
-  var server = typeof app === 'function'
-    ? http.createServer(app)
-    : app;
+  var server = typeof app === "function" ? http.createServer(app) : app;
   var settled = false;
 
-  server.listen(0, '127.0.0.1', function () {
+  server.listen(0, "127.0.0.1", function () {
     requestOptions.port = server.address().port;
 
     var req = http.request(requestOptions, function (res) {
       var chunks = [];
 
-      res.on('data', function (chunk) {
+      res.on("data", function (chunk) {
         chunks.push(chunk);
       });
 
-      res.on('end', function () {
+      res.on("end", function () {
         finish(null, {
           headers: res.headers,
           statusCode: res.statusCode,
-          text: Buffer.concat(chunks).toString('utf8')
+          text: Buffer.concat(chunks).toString("utf8"),
         });
       });
     });
 
-    req.on('error', finish);
+    req.on("error", finish);
     req.end();
   });
 
-  server.on('error', finish);
+  server.on("error", finish);
 
   function finish(err, res) {
     if (settled) {
@@ -127,7 +128,7 @@ function rawRequest(app, options, callback) {
 }
 
 function getMajorVersion(versionString) {
-  return versionString.split('.')[0];
+  return versionString.split(".")[0];
 }
 
 function shouldSkipQuery(versionString) {
@@ -135,5 +136,5 @@ function shouldSkipQuery(versionString) {
   // we could update this implementation to run on supported versions of 21 once they exist
   // upstream tracking https://github.com/nodejs/node/issues/51562
   // express tracking issue: https://github.com/expressjs/express/issues/5615
-  return Number(getMajorVersion(versionString)) < 22
+  return Number(getMajorVersion(versionString)) < 22;
 }

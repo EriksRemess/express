@@ -1,42 +1,41 @@
-'use strict'
+"use strict";
+var { describe, it, before } = require("node:test");
+var __testApp;
+var express = require("../"),
+  request = require("supertest");
 
-var express = require('../')
-  , request = require('supertest');
-
-describe('req', function(){
-  describe('.xhr', function(){
+describe("req", function () {
+  describe(".xhr", function () {
     before(function () {
-      this.app = express()
-      this.app.get('/', function (req, res) {
-        res.send(req.xhr)
-      })
-    })
+      __testApp = express();
+      __testApp.get("/", function (req, res) {
+        res.send(req.xhr);
+      });
+    });
 
-    it('should return true when X-Requested-With is xmlhttprequest', function(done){
-      request(this.app)
-        .get('/')
-        .set('X-Requested-With', 'xmlhttprequest')
-        .expect(200, 'true', done)
-    })
+    it("should return true when X-Requested-With is xmlhttprequest", async function () {
+      await request(__testApp)
+        .get("/")
+        .set("X-Requested-With", "xmlhttprequest")
+        .expect(200, "true");
+    });
 
-    it('should case-insensitive', function(done){
-      request(this.app)
-        .get('/')
-        .set('X-Requested-With', 'XMLHttpRequest')
-        .expect(200, 'true', done)
-    })
+    it("should case-insensitive", async function () {
+      await request(__testApp)
+        .get("/")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .expect(200, "true");
+    });
 
-    it('should return false otherwise', function(done){
-      request(this.app)
-        .get('/')
-        .set('X-Requested-With', 'blahblah')
-        .expect(200, 'false', done)
-    })
+    it("should return false otherwise", async function () {
+      await request(__testApp)
+        .get("/")
+        .set("X-Requested-With", "blahblah")
+        .expect(200, "false");
+    });
 
-    it('should return false when not present', function(done){
-      request(this.app)
-        .get('/')
-        .expect(200, 'false', done)
-    })
-  })
-})
+    it("should return false when not present", async function () {
+      await request(__testApp).get("/").expect(200, "false");
+    });
+  });
+});

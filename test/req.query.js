@@ -1,101 +1,99 @@
-'use strict'
+"use strict";
+var { describe, it } = require("node:test");
+var assert = require("node:assert");
+var express = require("../"),
+  request = require("supertest");
 
-var assert = require('node:assert')
-var express = require('../')
-  , request = require('supertest');
-
-describe('req', function(){
-  describe('.query', function(){
-    it('should default to {}', function(done){
+describe("req", function () {
+  describe(".query", function () {
+    it("should default to {}", async function () {
       var app = createApp();
 
-      request(app)
-      .get('/')
-      .expect(200, '{}', done);
+      await request(app).get("/").expect(200, "{}");
     });
 
-    it('should default to parse simple keys', function (done) {
+    it("should default to parse simple keys", async function () {
       var app = createApp();
 
-      request(app)
-      .get('/?user[name]=tj')
-      .expect(200, '{"user[name]":"tj"}', done);
+      await request(app)
+        .get("/?user[name]=tj")
+        .expect(200, '{"user[name]":"tj"}');
     });
 
     describe('when "query parser" is extended', function () {
-      it('should parse complex keys', function (done) {
-        var app = createApp('extended');
+      it("should parse complex keys", async function () {
+        var app = createApp("extended");
 
-        request(app)
-        .get('/?foo[0][bar]=baz&foo[0][fizz]=buzz&foo[]=done!')
-        .expect(200, '{"foo":[{"bar":"baz","fizz":"buzz"},"done!"]}', done);
+        await request(app)
+          .get("/?foo[0][bar]=baz&foo[0][fizz]=buzz&foo[]=done!")
+          .expect(200, '{"foo":[{"bar":"baz","fizz":"buzz"},"done!"]}');
       });
 
-      it('should parse parameters with dots', function (done) {
-        var app = createApp('extended');
+      it("should parse parameters with dots", async function () {
+        var app = createApp("extended");
 
-        request(app)
-        .get('/?user.name=tj')
-        .expect(200, '{"user.name":"tj"}', done);
+        await request(app)
+          .get("/?user.name=tj")
+          .expect(200, '{"user.name":"tj"}');
       });
     });
 
     describe('when "query parser" is simple', function () {
-      it('should not parse complex keys', function (done) {
-        var app = createApp('simple');
+      it("should not parse complex keys", async function () {
+        var app = createApp("simple");
 
-        request(app)
-        .get('/?user%5Bname%5D=tj')
-        .expect(200, '{"user[name]":"tj"}', done);
+        await request(app)
+          .get("/?user%5Bname%5D=tj")
+          .expect(200, '{"user[name]":"tj"}');
       });
     });
 
     describe('when "query parser" is a function', function () {
-      it('should parse using function', function (done) {
+      it("should parse using function", async function () {
         var app = createApp(function (str) {
-          return {'length': (str || '').length};
+          return { length: (str || "").length };
         });
 
-        request(app)
-        .get('/?user%5Bname%5D=tj')
-        .expect(200, '{"length":17}', done);
+        await request(app)
+          .get("/?user%5Bname%5D=tj")
+          .expect(200, '{"length":17}');
       });
     });
 
     describe('when "query parser" disabled', function () {
-      it('should not parse query', function (done) {
+      it("should not parse query", async function () {
         var app = createApp(false);
 
-        request(app)
-        .get('/?user%5Bname%5D=tj')
-        .expect(200, '{}', done);
+        await request(app).get("/?user%5Bname%5D=tj").expect(200, "{}");
       });
     });
 
     describe('when "query parser" enabled', function () {
-      it('should not parse complex keys', function (done) {
+      it("should not parse complex keys", async function () {
         var app = createApp(true);
 
-        request(app)
-        .get('/?user%5Bname%5D=tj')
-        .expect(200, '{"user[name]":"tj"}', done);
+        await request(app)
+          .get("/?user%5Bname%5D=tj")
+          .expect(200, '{"user[name]":"tj"}');
       });
     });
 
     describe('when "query parser" an unknown value', function () {
-      it('should throw', function () {
-        assert.throws(createApp.bind(null, 'bogus'),
-          /unknown value.*query parser/)
+      it("should throw", function () {
+        assert.throws(
+          createApp.bind(null, "bogus"),
+          /unknown value.*query parser/,
+        );
       });
     });
-  })
-})
+  });
+});
 
 function createApp(setting) {
   var app = express();
 
   if (setting !== undefined) {
-    app.set('query parser', setting);
+    app.set("query parser", setting);
   }
 
   app.use(function (req, res) {
