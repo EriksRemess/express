@@ -10,9 +10,8 @@ import { pbkdf2 as pbkdf2Callback, randomBytes, timingSafeEqual } from 'node:cry
 import path from 'node:path';
 import session from 'express-session';
 import { promisify } from 'node:util';
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 const app = express();
@@ -26,7 +25,7 @@ export default app;
 // config
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 
 // middleware
 

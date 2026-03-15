@@ -4,9 +4,7 @@ import assert from "node:assert";
 import express from "#express";
 import path from "node:path";
 import tmpl from "#test/support/tmpl";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 describe("app", () => {
   describe(".render(name, fn)", () => {
@@ -17,7 +15,7 @@ describe("app", () => {
         app.locals.user = { name: "tobi" };
 
         app.render(
-          path.join(__dirname, "fixtures", "user.tmpl"),
+          path.join(import.meta.dirname, "fixtures", "user.tmpl"),
           (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
@@ -35,7 +33,7 @@ describe("app", () => {
         app.locals.user = { name: "tobi" };
 
         app.render(
-          path.join(__dirname, "fixtures", "user"),
+          path.join(import.meta.dirname, "fixtures", "user"),
           (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
@@ -49,7 +47,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
 
         app.render("user.tmpl", (err, str) => {
@@ -64,7 +62,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.set("view engine", "tmpl");
 
         app.render("blog/post", (err, str) => {
@@ -103,13 +101,13 @@ describe("app", () => {
         await new Promise((resolve, reject) => {
           const app = createApp();
 
-          app.set("views", path.join(__dirname, "fixtures"));
+          app.set("views", path.join(import.meta.dirname, "fixtures"));
           app.render("rawr.tmpl", err => {
             assert.ok(err);
             assert.equal(
               err.message,
               'Failed to lookup view "rawr.tmpl" in views directory "' +
-                path.join(__dirname, "fixtures") +
+                path.join(import.meta.dirname, "fixtures") +
                 '"',
             );
             resolve();
@@ -123,7 +121,7 @@ describe("app", () => {
         await new Promise((resolve, reject) => {
           const app = createApp();
 
-          app.set("views", path.join(__dirname, "fixtures"));
+          app.set("views", path.join(import.meta.dirname, "fixtures"));
 
           app.render("user.tmpl", err => {
             assert.ok(err);
@@ -139,7 +137,7 @@ describe("app", () => {
         await new Promise((resolve, reject) => {
           const app = createApp();
 
-          app.set("views", path.join(__dirname, "fixtures"));
+          app.set("views", path.join(import.meta.dirname, "fixtures"));
 
           app.render("email.tmpl", (err, str) => {
             if (err) return reject(err);
@@ -156,7 +154,7 @@ describe("app", () => {
           const app = createApp();
 
           app.set("view engine", "tmpl");
-          app.set("views", path.join(__dirname, "fixtures"));
+          app.set("views", path.join(import.meta.dirname, "fixtures"));
 
           app.render("email", (err, str) => {
             if (err) return reject(err);
@@ -172,7 +170,7 @@ describe("app", () => {
         await new Promise((resolve, reject) => {
           const app = createApp();
 
-          app.set("views", path.join(__dirname, "fixtures", "default_layout"));
+          app.set("views", path.join(import.meta.dirname, "fixtures", "default_layout"));
           app.locals.user = { name: "tobi" };
 
           app.render("user.tmpl", (err, str) => {
@@ -188,8 +186,8 @@ describe("app", () => {
           await new Promise((resolve, reject) => {
             const app = createApp();
             const views = [
-              path.join(__dirname, "fixtures", "local_layout"),
-              path.join(__dirname, "fixtures", "default_layout"),
+              path.join(import.meta.dirname, "fixtures", "local_layout"),
+              path.join(import.meta.dirname, "fixtures", "default_layout"),
             ];
 
             app.set("views", views);
@@ -207,8 +205,8 @@ describe("app", () => {
           await new Promise((resolve, reject) => {
             const app = createApp();
             const views = [
-              path.join(__dirname, "fixtures", "local_layout"),
-              path.join(__dirname, "fixtures", "default_layout"),
+              path.join(import.meta.dirname, "fixtures", "local_layout"),
+              path.join(import.meta.dirname, "fixtures", "default_layout"),
             ];
 
             app.set("views", views);
@@ -226,8 +224,8 @@ describe("app", () => {
           await new Promise((resolve, reject) => {
             const app = createApp();
             const views = [
-              path.join(__dirname, "fixtures", "local_layout"),
-              path.join(__dirname, "fixtures", "default_layout"),
+              path.join(import.meta.dirname, "fixtures", "local_layout"),
+              path.join(import.meta.dirname, "fixtures", "default_layout"),
             ];
 
             app.set("views", views);
@@ -350,7 +348,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
 
         const user = { name: "tobi" };
 
@@ -366,7 +364,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
 
         app.render("user.tmpl", {}, (err, str) => {
@@ -381,7 +379,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
         const jane = { name: "jane" };
 
@@ -397,7 +395,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
 
         app.render("user.tmpl", null, (err, str) => {

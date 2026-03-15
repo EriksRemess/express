@@ -3,7 +3,7 @@ import {describe, it} from "node:test";
 import after from "#test/support/after";
 import express from "#express";
 const Router = express.Router;
-import {methods} from "#lib/utils";
+import { httpMethods } from "#lib/utils/methods";
 import assert from "node:assert";
 
 describe("Router", () => {
@@ -577,11 +577,11 @@ describe("Router", () => {
 
         const url = "/foo?bar=baz";
 
-        methods.forEach(function testMethod(method) {
+        httpMethods.forEach(function testMethod(method) {
           router.handle({ url: url, method: method }, {}, () => {});
         });
 
-        assert.equal(count, methods.length);
+        assert.equal(count, httpMethods.length);
         resolve();
       });
     });

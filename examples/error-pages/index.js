@@ -11,14 +11,13 @@ const app = express();
 
 export default app;
 import logger from 'morgan';
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 const silent = process.env.NODE_ENV === 'test';
 
 // general config
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // our custom "verbose errors" setting

@@ -4,7 +4,7 @@ import {describe, it} from "node:test";
 import assert from "node:assert";
 import {Buffer} from "node:buffer";
 import express from "#express";
-import {methods} from "#lib/utils";
+import { httpMethods } from "#lib/utils/methods";
 import request from "supertest";
 import utils from "#test/support/utils";
 import {shouldSkipQuery} from "#test/support/utils";
@@ -283,7 +283,7 @@ describe("res", () => {
           .expect("ETag", 'W/"c-IgR/L5SF7CJQff4wxKGF/vfPuZ0"')
           .expect(200);
       });
-      methods.forEach(method => {
+      httpMethods.forEach(method => {
         if (method === "connect") return;
         it(
           "should send ETag in response to " +

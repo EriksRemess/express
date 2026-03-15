@@ -4,9 +4,7 @@ import express from "#express";
 import path from "node:path";
 import request from "supertest";
 import tmpl from "#test/support/tmpl";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 describe("res", () => {
   describe(".render(name)", () => {
@@ -16,7 +14,7 @@ describe("res", () => {
       app.locals.user = { name: "tobi" };
 
       app.use((req, res) => {
-        res.render(path.join(__dirname, "fixtures", "user.tmpl"));
+        res.render(path.join(import.meta.dirname, "fixtures", "user.tmpl"));
       });
 
       await request(app).get("/").expect("<p>tobi</p>");
@@ -29,7 +27,7 @@ describe("res", () => {
       app.set("view engine", "tmpl");
 
       app.use((req, res) => {
-        res.render(path.join(__dirname, "fixtures", "user"));
+        res.render(path.join(import.meta.dirname, "fixtures", "user"));
       });
 
       await request(app).get("/").expect("<p>tobi</p>");
@@ -41,7 +39,7 @@ describe("res", () => {
       app.locals.user = { name: "tobi" };
 
       app.use((req, res) => {
-        res.render(path.join(__dirname, "fixtures", "broken.send"));
+        res.render(path.join(import.meta.dirname, "fixtures", "broken.send"));
       });
 
       await request(app)
@@ -55,7 +53,7 @@ describe("res", () => {
       app.locals.user = { name: "tobi" };
 
       app.use((req, res) => {
-        res.render(path.join(__dirname, "fixtures", "user"));
+        res.render(path.join(import.meta.dirname, "fixtures", "user"));
       });
 
       await request(app)
@@ -66,7 +64,7 @@ describe("res", () => {
     it("should expose app.locals", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       app.locals.user = { name: "tobi" };
 
       app.use((req, res) => {
@@ -79,7 +77,7 @@ describe("res", () => {
     it("should expose app.locals with `name` property", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       app.locals.name = "tobi";
 
       app.use((req, res) => {
@@ -92,7 +90,7 @@ describe("res", () => {
     it("should support index.<engine>", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       app.set("view engine", "tmpl");
 
       app.use((req, res) => {
@@ -106,7 +104,7 @@ describe("res", () => {
       it("should next(err)", async () => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
 
         app.use((req, res) => {
           res.render("user.tmpl");
@@ -125,7 +123,7 @@ describe("res", () => {
         const app = createApp();
 
         app.set("view engine", "tmpl");
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
 
         app.use((req, res) => {
           res.render("email");
@@ -139,7 +137,7 @@ describe("res", () => {
       it("should lookup the file in the path", async () => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures", "default_layout"));
+        app.set("views", path.join(import.meta.dirname, "fixtures", "default_layout"));
 
         app.use((req, res) => {
           res.render("user.tmpl", { user: { name: "tobi" } });
@@ -152,8 +150,8 @@ describe("res", () => {
         it("should lookup the file in the path", async () => {
           const app = createApp();
           const views = [
-            path.join(__dirname, "fixtures", "local_layout"),
-            path.join(__dirname, "fixtures", "default_layout"),
+            path.join(import.meta.dirname, "fixtures", "local_layout"),
+            path.join(import.meta.dirname, "fixtures", "default_layout"),
           ];
 
           app.set("views", views);
@@ -168,8 +166,8 @@ describe("res", () => {
         it("should lookup in later paths until found", async () => {
           const app = createApp();
           const views = [
-            path.join(__dirname, "fixtures", "local_layout"),
-            path.join(__dirname, "fixtures", "default_layout"),
+            path.join(import.meta.dirname, "fixtures", "local_layout"),
+            path.join(import.meta.dirname, "fixtures", "default_layout"),
           ];
 
           app.set("views", views);
@@ -188,7 +186,7 @@ describe("res", () => {
     it("should render the template", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
 
       const user = { name: "tobi" };
 
@@ -202,7 +200,7 @@ describe("res", () => {
     it("should expose app.locals", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       app.locals.user = { name: "tobi" };
 
       app.use((req, res) => {
@@ -215,7 +213,7 @@ describe("res", () => {
     it("should expose res.locals", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
 
       app.use((req, res) => {
         res.locals.user = { name: "tobi" };
@@ -228,7 +226,7 @@ describe("res", () => {
     it("should give precedence to res.locals over app.locals", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       app.locals.user = { name: "tobi" };
 
       app.use((req, res) => {
@@ -242,7 +240,7 @@ describe("res", () => {
     it("should give precedence to res.render() locals over res.locals", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       const jane = { name: "jane" };
 
       app.use((req, res) => {
@@ -256,7 +254,7 @@ describe("res", () => {
     it("should give precedence to res.render() locals over app.locals", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
       app.locals.user = { name: "tobi" };
       const jane = { name: "jane" };
 
@@ -272,7 +270,7 @@ describe("res", () => {
     it("should pass the resulting string", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
 
       app.use((req, res) => {
         const tobi = { name: "tobi" };
@@ -290,7 +288,7 @@ describe("res", () => {
     it("should pass the resulting string", async () => {
       const app = createApp();
 
-      app.set("views", path.join(__dirname, "fixtures"));
+      app.set("views", path.join(import.meta.dirname, "fixtures"));
 
       app.use((req, res) => {
         res.locals.user = { name: "tobi" };
@@ -307,7 +305,7 @@ describe("res", () => {
       it("should pass it to the callback", async () => {
         const app = createApp();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
 
         app.use((req, res) => {
           res.render("user.tmpl", err => {

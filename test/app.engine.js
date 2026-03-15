@@ -4,9 +4,7 @@ import assert from "node:assert";
 import express from "#express";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 function render(path, options, fn) {
   fs.readFile(path, "utf8", (err, str) => {
@@ -22,7 +20,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = express();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.engine(".html", render);
         app.locals.user = { name: "tobi" };
 
@@ -45,7 +43,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = express();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.engine("html", render);
         app.locals.user = { name: "tobi" };
 
@@ -61,7 +59,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = express();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.engine("html", render);
         app.set("view engine", "html");
         app.locals.user = { name: "tobi" };
@@ -78,7 +76,7 @@ describe("app", () => {
       await new Promise((resolve, reject) => {
         const app = express();
 
-        app.set("views", path.join(__dirname, "fixtures"));
+        app.set("views", path.join(import.meta.dirname, "fixtures"));
         app.engine(".html", render);
         app.set("view engine", ".html");
         app.locals.user = { name: "tobi" };

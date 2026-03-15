@@ -7,9 +7,8 @@
 import express from "#express";
 
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 const app = express();
@@ -17,7 +16,7 @@ const app = express();
 export default app;
 
 // path to where the files are stored on disk
-const FILES_DIR = path.join(__dirname, 'files');
+const FILES_DIR = path.join(import.meta.dirname, 'files');
 
 app.get('/', (req, res) => {
   res.send('<ul>' +

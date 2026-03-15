@@ -44,14 +44,8 @@
     "api"
   ],
   "dependencies": {
-    "body-parser": "^2.2.2",
-    "cookie": "^1.1.1",
-    "debug": "^4.4.3",
-    "finalhandler": "^2.1.1",
     "mime-types": "^3.0.2",
-    "router": "^2.2.0",
-    "send": "^1.2.1",
-    "serve-static": "^2.2.1"
+    "path-to-regexp": "^8.3.0"
   },
   "devDependencies": {
     "connect-redis": "^9.0.0",

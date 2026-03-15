@@ -8,13 +8,12 @@ import express from "#express";
 
 import path from 'node:path';
 import User from "#examples/view-locals/user";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 const app = express();
 
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // filter ferrets only

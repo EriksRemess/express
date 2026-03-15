@@ -11,9 +11,8 @@ import path from 'node:path';
 import session from 'express-session';
 import methodOverride from '#lib/utils/method-override';
 import boot from "#examples/mvc/lib/boot";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 const app = express();
@@ -25,7 +24,7 @@ export default app;
 app.set('view engine', 'ejs');
 
 // set views for error and 404 pages
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 
 // define a custom res.message() method
 // which stores messages in the session
@@ -42,7 +41,7 @@ app.response.message = function(msg){
 if (isMain) app.use(logger('dev'));
 
 // serve static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(import.meta.dirname, 'public')));
 
 // session support
 app.use(session({

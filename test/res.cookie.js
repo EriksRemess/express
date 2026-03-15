@@ -225,6 +225,62 @@ describe("res", () => {
           .expect(500, /option priority is invalid/);
       });
     });
+    describe("sameSite", () => {
+      it("should set strict from boolean true", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.cookie("name", "tobi", {
+            sameSite: true,
+          });
+          res.end();
+        });
+        await request(app)
+          .get("/")
+          .expect("Set-Cookie", /SameSite=Strict/)
+          .expect(200);
+      });
+
+      it("should set lax", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.cookie("name", "tobi", {
+            sameSite: "lax",
+          });
+          res.end();
+        });
+        await request(app)
+          .get("/")
+          .expect("Set-Cookie", /SameSite=Lax/)
+          .expect(200);
+      });
+
+      it("should set none", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.cookie("name", "tobi", {
+            sameSite: "none",
+          });
+          res.end();
+        });
+        await request(app)
+          .get("/")
+          .expect("Set-Cookie", /SameSite=None/)
+          .expect(200);
+      });
+
+      it("should throw with invalid sameSite", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.cookie("name", "tobi", {
+            sameSite: "bogus",
+          });
+          res.end();
+        });
+        await request(app)
+          .get("/")
+          .expect(500, /option sameSite is invalid/);
+      });
+    });
     describe("signed", () => {
       it("should generate a signed JSON cookie", async () => {
         const app = express();

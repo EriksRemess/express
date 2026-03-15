@@ -15,15 +15,14 @@ import express from "#express";
 
 import path from 'node:path';
 import redis from 'redis';
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 const db = redis.createClient();
 const app = express();
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(import.meta.dirname, 'public')));
 
 // npm install redis
 
@@ -66,13 +65,13 @@ app.get('/search/{:query}', (req, res, next) => {
 
 /**
  * GET client javascript. Here we use sendFile()
- * because serving __dirname with the static() middleware
+ * because serving import.meta.dirname with the static() middleware
  * would also mean serving our server "index.js" and the "search.jade"
  * template.
  */
 
 app.get('/client.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client.js'));
+  res.sendFile(path.join(import.meta.dirname, 'client.js'));
 });
 
 /**

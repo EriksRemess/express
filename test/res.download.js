@@ -9,10 +9,8 @@ import express from "#express";
 import path from "node:path";
 import request from "supertest";
 import utils from "#test/support/utils";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const FIXTURES_PATH = path.join(__dirname, "fixtures");
+const FIXTURES_PATH = path.join(import.meta.dirname, "fixtures");
 describe("res", () => {
   describe(".download(path)", () => {
     it("should transfer as an attachment", async () => {

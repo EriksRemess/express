@@ -8,9 +8,8 @@ import express from "#express";
 import ejs from 'ejs';
 
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 const app = express();
@@ -32,11 +31,11 @@ app.engine('.html', ejs.__express);
 
 // Optional since express defaults to CWD/views
 
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 
 // Path to our public directory
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(import.meta.dirname, 'public')));
 
 // Without this you would need to
 // supply the extension to res.render()

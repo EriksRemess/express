@@ -6,14 +6,13 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import express from "#express";
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const RESERVED_EXPORTS = new Set(['name', 'prefix', 'engine', 'before']);
 
 export default async (parent, options) => {
-  const dir = path.join(__dirname, '..', 'controllers');
+  const dir = path.join(import.meta.dirname, '..', 'controllers');
   const verbose = options.verbose;
 
   for (const entryName of fs.readdirSync(dir)) {
@@ -32,7 +31,7 @@ export default async (parent, options) => {
 
     // allow specifying the view engine
     if (obj.engine) app.set('view engine', obj.engine);
-    app.set('views', path.join(__dirname, '..', 'controllers', controllerName, 'views'));
+    app.set('views', path.join(import.meta.dirname, '..', 'controllers', controllerName, 'views'));
 
     // generate routes based on the exported methods
     for (const key of Object.keys(obj)) {

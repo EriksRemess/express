@@ -4,7 +4,7 @@ import after from "#test/support/after";
 import express from "#express";
 import request from "supertest";
 import assert from "node:assert";
-import {methods} from "#lib/utils";
+import { httpMethods } from "#lib/utils/methods";
 import {shouldSkipQuery} from "#test/support/utils";
 
 describe("app.router", () => {
@@ -36,7 +36,7 @@ describe("app.router", () => {
   });
 
   describe("methods", () => {
-    methods.forEach(method => {
+    httpMethods.forEach(method => {
       if (method === "connect") return;
 
       it(

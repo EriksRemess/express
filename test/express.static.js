@@ -8,10 +8,8 @@ import path from "node:path";
 import {Buffer} from "node:buffer";
 import request from "supertest";
 import utils from "#test/support/utils";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const fixtures = path.join(__dirname, "/fixtures");
+const fixtures = path.join(import.meta.dirname, "/fixtures");
 const relative = path.relative(process.cwd(), fixtures);
 const skipRelative =
   ~relative.indexOf("..") || path.resolve(relative) === relative;

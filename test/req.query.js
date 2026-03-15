@@ -46,6 +46,22 @@ describe("req", () => {
           .get("/?user%5Bname%5D=tj")
           .expect(200, '{"user[name]":"tj"}');
       });
+
+      it("should preserve repeated keys as arrays", async () => {
+        const app = createApp("simple");
+
+        await request(app)
+          .get("/?color=black&color=yellow")
+          .expect(200, '{"color":["black","yellow"]}');
+      });
+
+      it('should decode "+" as a space', async () => {
+        const app = createApp("simple");
+
+        await request(app)
+          .get("/?full+name=tj+holowaychuk")
+          .expect(200, '{"full name":"tj holowaychuk"}');
+      });
     });
 
     describe('when "query parser" is a function', () => {

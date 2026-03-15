@@ -10,10 +10,8 @@ import request from "supertest";
 import onFinished from "#lib/utils/on-finished";
 import path from "node:path";
 import utils from "#test/support/utils";
-import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const fixtures = path.join(__dirname, "fixtures");
+const fixtures = path.join(import.meta.dirname, "fixtures");
 describe("res", () => {
   describe(".sendFile(path)", () => {
     it("should error missing path", async () => {
@@ -91,14 +89,14 @@ describe("res", () => {
       await request(app).get("/").expect(404);
     });
     it("should send cache-control by default", async () => {
-      const app = createApp(path.resolve(__dirname, "fixtures/name.txt"));
+      const app = createApp(path.resolve(import.meta.dirname, "fixtures/name.txt"));
       await request(app)
         .get("/")
         .expect("Cache-Control", "public, max-age=0")
         .expect(200);
     });
     it("should not serve dotfiles by default", async () => {
-      const app = createApp(path.resolve(__dirname, "fixtures/.name"));
+      const app = createApp(path.resolve(import.meta.dirname, "fixtures/.name"));
       await request(app).get("/").expect(404);
     });
     it("should not override manual content-types", async () => {

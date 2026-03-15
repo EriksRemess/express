@@ -4,7 +4,7 @@ import after from "#test/support/after";
 import assert from "node:assert";
 import express from "#express";
 const Route = express.Route;
-import {methods} from "#lib/utils";
+import { httpMethods } from "#lib/utils/methods";
 
 describe("Route", () => {
   it("should work without handlers", async () => {
@@ -76,9 +76,9 @@ describe("Route", () => {
       await new Promise((resolve, reject) => {
         let count = 0;
         const route = new Route("/foo");
-        const cb = after(methods.length, err => {
+        const cb = after(httpMethods.length, err => {
           if (err) return reject(err);
-          assert.strictEqual(count, methods.length);
+          assert.strictEqual(count, httpMethods.length);
           resolve();
         });
 
@@ -87,7 +87,7 @@ describe("Route", () => {
           next();
         });
 
-        methods.forEach(function testMethod(method) {
+        httpMethods.forEach(function testMethod(method) {
           const req = { method: method, url: "/" };
           route.dispatch(req, {}, cb);
         });

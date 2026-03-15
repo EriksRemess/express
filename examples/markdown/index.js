@@ -10,9 +10,8 @@ import express from "#express";
 import fs from 'node:fs';
 import { marked } from 'marked';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 const app = express();
@@ -31,7 +30,7 @@ app.engine('md', (path, options, fn) => {
   });
 });
 
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 
 // make it the default, so we don't need .md
 app.set('view engine', 'md');
