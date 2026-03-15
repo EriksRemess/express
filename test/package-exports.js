@@ -27,7 +27,9 @@ describe("package exports", () => {
   });
 
   it("should export cookie helpers as a package subpath", () => {
-    assert.strictEqual(typeof cookieModule, "function");
+    assert.strictEqual(typeof cookieModule, "object");
+    assert.strictEqual(typeof cookieModule.parse, "function");
+    assert.strictEqual(typeof cookieModule.serialize, "function");
     assert.strictEqual(express.cookie.parse, parse);
     assert.strictEqual(express.cookie.serialize, serialize);
   });
