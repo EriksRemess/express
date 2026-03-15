@@ -19,6 +19,12 @@ describe("exports", () => {
     assert.equal(express.raw.length, 1);
   });
 
+  it("should expose cookie utilities", () => {
+    assert.strictEqual(typeof express.cookie, "object");
+    assert.strictEqual(typeof express.cookie.parse, "function");
+    assert.strictEqual(typeof express.cookie.serialize, "function");
+  });
+
   it("should expose static middleware", () => {
     assert.equal(typeof express.static, "function");
     assert.equal(express.static.length, 2);

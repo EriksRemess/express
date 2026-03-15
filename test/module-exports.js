@@ -6,6 +6,7 @@ import express, {
   Router,
   Route,
   application,
+  cookie,
   request,
   response,
   json,
@@ -20,6 +21,7 @@ describe("module exports", () => {
     assert.strictEqual(Router, express.Router);
     assert.strictEqual(Route, express.Route);
     assert.strictEqual(application, express.application);
+    assert.strictEqual(cookie, express.cookie);
     assert.strictEqual(request, express.request);
     assert.strictEqual(response, express.response);
     assert.strictEqual(json, express.json);

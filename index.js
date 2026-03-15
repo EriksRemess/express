@@ -9,6 +9,7 @@
 import express from "#lib/express";
 
 export const application = express.application;
+export const cookie = express.cookie;
 export const request = express.request;
 export const response = express.response;
 export const Route = express.Route;

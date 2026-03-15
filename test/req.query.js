@@ -62,6 +62,14 @@ describe("req", () => {
           .get("/?full+name=tj+holowaychuk")
           .expect(200, '{"full name":"tj holowaychuk"}');
       });
+
+      it("should ignore empty pairs from dangling separators", async () => {
+        const app = createApp("simple");
+
+        await request(app)
+          .get("/?&&color=black&&")
+          .expect(200, '{"color":"black"}');
+      });
     });
 
     describe('when "query parser" is a function', () => {
