@@ -1,36 +1,36 @@
 "use strict";
-var { describe, it } = require("node:test");
-var assert = require("node:assert");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import assert from "node:assert";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".query", function () {
-    it("should default to {}", async function () {
-      var app = createApp();
+describe("req", () => {
+  describe(".query", () => {
+    it("should default to {}", async () => {
+      const app = createApp();
 
       await request(app).get("/").expect(200, "{}");
     });
 
-    it("should default to parse simple keys", async function () {
-      var app = createApp();
+    it("should default to parse simple keys", async () => {
+      const app = createApp();
 
       await request(app)
         .get("/?user[name]=tj")
         .expect(200, '{"user[name]":"tj"}');
     });
 
-    describe('when "query parser" is extended', function () {
-      it("should parse complex keys", async function () {
-        var app = createApp("extended");
+    describe('when "query parser" is extended', () => {
+      it("should parse complex keys", async () => {
+        const app = createApp("extended");
 
         await request(app)
           .get("/?foo[0][bar]=baz&foo[0][fizz]=buzz&foo[]=done!")
           .expect(200, '{"foo":[{"bar":"baz","fizz":"buzz"},"done!"]}');
       });
 
-      it("should parse parameters with dots", async function () {
-        var app = createApp("extended");
+      it("should parse parameters with dots", async () => {
+        const app = createApp("extended");
 
         await request(app)
           .get("/?user.name=tj")
@@ -38,9 +38,9 @@ describe("req", function () {
       });
     });
 
-    describe('when "query parser" is simple', function () {
-      it("should not parse complex keys", async function () {
-        var app = createApp("simple");
+    describe('when "query parser" is simple', () => {
+      it("should not parse complex keys", async () => {
+        const app = createApp("simple");
 
         await request(app)
           .get("/?user%5Bname%5D=tj")
@@ -48,9 +48,9 @@ describe("req", function () {
       });
     });
 
-    describe('when "query parser" is a function', function () {
-      it("should parse using function", async function () {
-        var app = createApp(function (str) {
+    describe('when "query parser" is a function', () => {
+      it("should parse using function", async () => {
+        const app = createApp(str => {
           return { length: (str || "").length };
         });
 
@@ -60,17 +60,17 @@ describe("req", function () {
       });
     });
 
-    describe('when "query parser" disabled', function () {
-      it("should not parse query", async function () {
-        var app = createApp(false);
+    describe('when "query parser" disabled', () => {
+      it("should not parse query", async () => {
+        const app = createApp(false);
 
         await request(app).get("/?user%5Bname%5D=tj").expect(200, "{}");
       });
     });
 
-    describe('when "query parser" enabled', function () {
-      it("should not parse complex keys", async function () {
-        var app = createApp(true);
+    describe('when "query parser" enabled', () => {
+      it("should not parse complex keys", async () => {
+        const app = createApp(true);
 
         await request(app)
           .get("/?user%5Bname%5D=tj")
@@ -78,8 +78,8 @@ describe("req", function () {
       });
     });
 
-    describe('when "query parser" an unknown value', function () {
-      it("should throw", function () {
+    describe('when "query parser" an unknown value', () => {
+      it("should throw", () => {
         assert.throws(
           createApp.bind(null, "bogus"),
           /unknown value.*query parser/,
@@ -90,13 +90,13 @@ describe("req", function () {
 });
 
 function createApp(setting) {
-  var app = express();
+  const app = express();
 
   if (setting !== undefined) {
     app.set("query parser", setting);
   }
 
-  app.use(function (req, res) {
+  app.use((req, res) => {
     res.send(req.query);
   });
 

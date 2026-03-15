@@ -4,22 +4,28 @@
  * Module dependencies.
  */
 
-var escapeHtml = require('escape-html')
-var express = require('../../lib/express');
+import escapeHtml from '#lib/utils/escape-html';
 
-var verbose = process.env.NODE_ENV !== 'test'
+import express from "#express";
+import { pathToFileURL } from "node:url";
 
-var app = module.exports = express();
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
-app.map = function(a, route){
+const verbose = process.env.NODE_ENV !== 'test';
+
+const app = express();
+
+export default app;
+
+app.map = (a, route) => {
   route = route || '';
-  for (var key in a) {
+  for (const key in a) {
     switch (typeof a[key]) {
       // { '/path': { ... }}
       case 'object':
         app.map(a[key], route + key);
         break;
-      // get: function(){ ... }
+      // get: () =>{ ... }
       case 'function':
         if (verbose) console.log('%s %s', key, route);
         app[key](route, a[key]);
@@ -28,26 +34,26 @@ app.map = function(a, route){
   }
 };
 
-var users = {
-  list: function(req, res){
+const users = {
+  list: (req, res) =>{
     res.send('user list');
   },
 
-  get: function(req, res){
+  get: (req, res) =>{
     res.send('user ' +  escapeHtml(req.params.uid))
   },
 
-  delete: function(req, res){
+  delete: (req, res) =>{
     res.send('delete users');
   }
 };
 
-var pets = {
-  list: function(req, res){
+const pets = {
+  list: (req, res) =>{
     res.send('user ' + escapeHtml(req.params.uid) + '\'s pets')
   },
 
-  delete: function(req, res){
+  delete: (req, res) =>{
     res.send('delete ' + escapeHtml(req.params.uid) + '\'s pet ' + escapeHtml(req.params.pid))
   }
 };
@@ -69,7 +75,7 @@ app.map({
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

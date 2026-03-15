@@ -1,15 +1,15 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
-var utils = require("./support/utils");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+import utils from "#test/support/utils";
 
-describe("res.vary()", function () {
-  describe("with no arguments", function () {
-    it("should throw error", async function () {
-      var app = express();
+describe("res.vary()", () => {
+  describe("with no arguments", () => {
+    it("should throw error", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.vary();
         res.end();
       });
@@ -20,11 +20,11 @@ describe("res.vary()", function () {
     });
   });
 
-  describe("with an empty array", function () {
-    it("should not set Vary", async function () {
-      var app = express();
+  describe("with an empty array", () => {
+    it("should not set Vary", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.vary([]);
         res.end();
       });
@@ -36,11 +36,11 @@ describe("res.vary()", function () {
     });
   });
 
-  describe("with an array", function () {
-    it("should set the values", async function () {
-      var app = express();
+  describe("with an array", () => {
+    it("should set the values", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.vary(["Accept", "Accept-Language", "Accept-Encoding"]);
         res.end();
       });
@@ -52,11 +52,11 @@ describe("res.vary()", function () {
     });
   });
 
-  describe("with a string", function () {
-    it("should set the value", async function () {
-      var app = express();
+  describe("with a string", () => {
+    it("should set the value", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.vary("Accept");
         res.end();
       });
@@ -65,11 +65,11 @@ describe("res.vary()", function () {
     });
   });
 
-  describe("when the value is present", function () {
-    it("should not add it again", async function () {
-      var app = express();
+  describe("when the value is present", () => {
+    it("should not add it again", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.vary("Accept");
         res.vary("Accept-Encoding");
         res.vary("Accept-Encoding");

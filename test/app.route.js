@@ -1,64 +1,64 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("app.route", function () {
-  it("should return a new route", async function () {
-    var app = express();
+describe("app.route", () => {
+  it("should return a new route", async () => {
+    const app = express();
 
     app
       .route("/foo")
-      .get(function (req, res) {
+      .get((req, res) => {
         res.send("get");
       })
-      .post(function (req, res) {
+      .post((req, res) => {
         res.send("post");
       });
 
     await request(app).post("/foo").expect("post");
   });
 
-  it("should all .VERB after .all", async function () {
-    var app = express();
+  it("should all .VERB after .all", async () => {
+    const app = express();
 
     app
       .route("/foo")
-      .all(function (req, res, next) {
+      .all((req, res, next) => {
         next();
       })
-      .get(function (req, res) {
+      .get((req, res) => {
         res.send("get");
       })
-      .post(function (req, res) {
+      .post((req, res) => {
         res.send("post");
       });
 
     await request(app).post("/foo").expect("post");
   });
 
-  it("should support dynamic routes", async function () {
-    var app = express();
+  it("should support dynamic routes", async () => {
+    const app = express();
 
-    app.route("/:foo").get(function (req, res) {
+    app.route("/:foo").get((req, res) => {
       res.send(req.params.foo);
     });
 
     await request(app).get("/test").expect("test");
   });
 
-  it("should not error on empty routes", async function () {
-    var app = express();
+  it("should not error on empty routes", async () => {
+    const app = express();
 
     app.route("/:foo");
 
     await request(app).get("/test").expect(404);
   });
 
-  describe("promise support", function () {
-    it("should pass rejected promise value", async function () {
-      var app = express();
-      var route = app.route("/foo");
+  describe("promise support", () => {
+    it("should pass rejected promise value", async () => {
+      const app = express();
+      const route = app.route("/foo");
 
       route.all(function createError(req, res, next) {
         return Promise.reject(new Error("boom!"));
@@ -76,9 +76,9 @@ describe("app.route", function () {
       await request(app).get("/foo").expect(500, "caught: boom!");
     });
 
-    it("should pass rejected promise without value", async function () {
-      var app = express();
-      var route = app.route("/foo");
+    it("should pass rejected promise without value", async () => {
+      const app = express();
+      const route = app.route("/foo");
 
       route.all(function createError(req, res, next) {
         return Promise.reject();
@@ -96,17 +96,17 @@ describe("app.route", function () {
       await request(app).get("/foo").expect(500, "caught: Rejected promise");
     });
 
-    it("should ignore resolved promise", async function () {
+    it("should ignore resolved promise", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var route = app.route("/foo");
+        const app = express();
+        const route = app.route("/foo");
 
         route.all(function createError(req, res, next) {
           res.send("saw GET /foo");
           return Promise.resolve("foo");
         });
 
-        route.all(function () {
+        route.all(() => {
           reject(new Error("Unexpected route invoke"));
         });
 
@@ -122,10 +122,10 @@ describe("app.route", function () {
       });
     });
 
-    describe("error handling", function () {
-      it("should pass rejected promise value", async function () {
-        var app = express();
-        var route = app.route("/foo");
+    describe("error handling", () => {
+      it("should pass rejected promise value", async () => {
+        const app = express();
+        const route = app.route("/foo");
 
         route.all(function createError(req, res, next) {
           return Promise.reject(new Error("boom!"));
@@ -145,9 +145,9 @@ describe("app.route", function () {
           .expect(500, "caught again: caught: boom!");
       });
 
-      it("should pass rejected promise without value", async function () {
-        var app = express();
-        var route = app.route("/foo");
+      it("should pass rejected promise without value", async () => {
+        const app = express();
+        const route = app.route("/foo");
 
         route.all(function createError(req, res, next) {
           return Promise.reject(new Error("boom!"));
@@ -167,10 +167,10 @@ describe("app.route", function () {
           .expect(500, "caught again: Rejected promise");
       });
 
-      it("should ignore resolved promise", async function () {
+      it("should ignore resolved promise", async () => {
         await new Promise((resolve, reject) => {
-          var app = express();
-          var route = app.route("/foo");
+          const app = express();
+          const route = app.route("/foo");
 
           route.all(function createError(req, res, next) {
             return Promise.reject(new Error("boom!"));
@@ -182,7 +182,7 @@ describe("app.route", function () {
             return Promise.resolve("foo");
           });
 
-          route.all(function () {
+          route.all(() => {
             reject(new Error("Unexpected route invoke"));
           });
 

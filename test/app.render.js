@@ -1,21 +1,24 @@
 "use strict";
-var { describe, it } = require("node:test");
-var assert = require("node:assert");
-var express = require("..");
-var path = require("node:path");
-var tmpl = require("./support/tmpl");
+import {describe, it} from "node:test";
+import assert from "node:assert";
+import express from "#express";
+import path from "node:path";
+import tmpl from "#test/support/tmpl";
+import { fileURLToPath } from "node:url";
 
-describe("app", function () {
-  describe(".render(name, fn)", function () {
-    it("should support absolute paths", async function () {
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+
+describe("app", () => {
+  describe(".render(name, fn)", () => {
+    it("should support absolute paths", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.locals.user = { name: "tobi" };
 
         app.render(
           path.join(__dirname, "fixtures", "user.tmpl"),
-          function (err, str) {
+          (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
             resolve();
@@ -24,16 +27,16 @@ describe("app", function () {
       });
     });
 
-    it('should support absolute paths with "view engine"', async function () {
+    it('should support absolute paths with "view engine"', async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("view engine", "tmpl");
         app.locals.user = { name: "tobi" };
 
         app.render(
           path.join(__dirname, "fixtures", "user"),
-          function (err, str) {
+          (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
             resolve();
@@ -42,14 +45,14 @@ describe("app", function () {
       });
     });
 
-    it("should expose app.locals", async function () {
+    it("should expose app.locals", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
 
-        app.render("user.tmpl", function (err, str) {
+        app.render("user.tmpl", (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();
@@ -57,14 +60,14 @@ describe("app", function () {
       });
     });
 
-    it("should support index.<engine>", async function () {
+    it("should support index.<engine>", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.set("view engine", "tmpl");
 
-        app.render("blog/post", function (err, str) {
+        app.render("blog/post", (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<h1>blog post</h1>");
           resolve();
@@ -72,22 +75,22 @@ describe("app", function () {
       });
     });
 
-    it("should handle render error throws", async function () {
+    it("should handle render error throws", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
+        const app = express();
 
         function View(name, options) {
           this.name = name;
           this.path = "fale";
         }
 
-        View.prototype.render = function (options, fn) {
+        View.prototype.render = (options, fn) => {
           throw new Error("err!");
         };
 
         app.set("view", View);
 
-        app.render("something", function (err, str) {
+        app.render("something", (err, str) => {
           assert.ok(err);
           assert.strictEqual(err.message, "err!");
           resolve();
@@ -95,13 +98,13 @@ describe("app", function () {
       });
     });
 
-    describe("when the file does not exist", function () {
-      it("should provide a helpful error", async function () {
+    describe("when the file does not exist", () => {
+      it("should provide a helpful error", async () => {
         await new Promise((resolve, reject) => {
-          var app = createApp();
+          const app = createApp();
 
           app.set("views", path.join(__dirname, "fixtures"));
-          app.render("rawr.tmpl", function (err) {
+          app.render("rawr.tmpl", err => {
             assert.ok(err);
             assert.equal(
               err.message,
@@ -115,14 +118,14 @@ describe("app", function () {
       });
     });
 
-    describe("when an error occurs", function () {
-      it("should invoke the callback", async function () {
+    describe("when an error occurs", () => {
+      it("should invoke the callback", async () => {
         await new Promise((resolve, reject) => {
-          var app = createApp();
+          const app = createApp();
 
           app.set("views", path.join(__dirname, "fixtures"));
 
-          app.render("user.tmpl", function (err) {
+          app.render("user.tmpl", err => {
             assert.ok(err);
             assert.equal(err.name, "RenderError");
             resolve();
@@ -131,14 +134,14 @@ describe("app", function () {
       });
     });
 
-    describe("when an extension is given", function () {
-      it("should render the template", async function () {
+    describe("when an extension is given", () => {
+      it("should render the template", async () => {
         await new Promise((resolve, reject) => {
-          var app = createApp();
+          const app = createApp();
 
           app.set("views", path.join(__dirname, "fixtures"));
 
-          app.render("email.tmpl", function (err, str) {
+          app.render("email.tmpl", (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>This is an email</p>");
             resolve();
@@ -147,15 +150,15 @@ describe("app", function () {
       });
     });
 
-    describe('when "view engine" is given', function () {
-      it("should render the template", async function () {
+    describe('when "view engine" is given', () => {
+      it("should render the template", async () => {
         await new Promise((resolve, reject) => {
-          var app = createApp();
+          const app = createApp();
 
           app.set("view engine", "tmpl");
           app.set("views", path.join(__dirname, "fixtures"));
 
-          app.render("email", function (err, str) {
+          app.render("email", (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>This is an email</p>");
             resolve();
@@ -164,15 +167,15 @@ describe("app", function () {
       });
     });
 
-    describe('when "views" is given', function () {
-      it("should lookup the file in the path", async function () {
+    describe('when "views" is given', () => {
+      it("should lookup the file in the path", async () => {
         await new Promise((resolve, reject) => {
-          var app = createApp();
+          const app = createApp();
 
           app.set("views", path.join(__dirname, "fixtures", "default_layout"));
           app.locals.user = { name: "tobi" };
 
-          app.render("user.tmpl", function (err, str) {
+          app.render("user.tmpl", (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
             resolve();
@@ -180,11 +183,11 @@ describe("app", function () {
         });
       });
 
-      describe("when array of paths", function () {
-        it("should lookup the file in the path", async function () {
+      describe("when array of paths", () => {
+        it("should lookup the file in the path", async () => {
           await new Promise((resolve, reject) => {
-            var app = createApp();
-            var views = [
+            const app = createApp();
+            const views = [
               path.join(__dirname, "fixtures", "local_layout"),
               path.join(__dirname, "fixtures", "default_layout"),
             ];
@@ -192,7 +195,7 @@ describe("app", function () {
             app.set("views", views);
             app.locals.user = { name: "tobi" };
 
-            app.render("user.tmpl", function (err, str) {
+            app.render("user.tmpl", (err, str) => {
               if (err) return reject(err);
               assert.strictEqual(str, "<span>tobi</span>");
               resolve();
@@ -200,10 +203,10 @@ describe("app", function () {
           });
         });
 
-        it("should lookup in later paths until found", async function () {
+        it("should lookup in later paths until found", async () => {
           await new Promise((resolve, reject) => {
-            var app = createApp();
-            var views = [
+            const app = createApp();
+            const views = [
               path.join(__dirname, "fixtures", "local_layout"),
               path.join(__dirname, "fixtures", "default_layout"),
             ];
@@ -211,7 +214,7 @@ describe("app", function () {
             app.set("views", views);
             app.locals.name = "tobi";
 
-            app.render("name.tmpl", function (err, str) {
+            app.render("name.tmpl", (err, str) => {
               if (err) return reject(err);
               assert.strictEqual(str, "<p>tobi</p>");
               resolve();
@@ -219,10 +222,10 @@ describe("app", function () {
           });
         });
 
-        it("should error if file does not exist", async function () {
+        it("should error if file does not exist", async () => {
           await new Promise((resolve, reject) => {
-            var app = createApp();
-            var views = [
+            const app = createApp();
+            const views = [
               path.join(__dirname, "fixtures", "local_layout"),
               path.join(__dirname, "fixtures", "default_layout"),
             ];
@@ -230,7 +233,7 @@ describe("app", function () {
             app.set("views", views);
             app.locals.name = "tobi";
 
-            app.render("pet.tmpl", function (err, str) {
+            app.render("pet.tmpl", (err, str) => {
               assert.ok(err);
               assert.equal(
                 err.message,
@@ -247,10 +250,10 @@ describe("app", function () {
       });
     });
 
-    describe('when a "view" constructor is given', function () {
-      it("should create an instance of it", async function () {
+    describe('when a "view" constructor is given', () => {
+      it("should create an instance of it", async () => {
         await new Promise((resolve, reject) => {
-          var app = express();
+          const app = express();
 
           function View(name, options) {
             this.name = name;
@@ -258,13 +261,13 @@ describe("app", function () {
               "path is required by application.js as a signal of success even though it is not used there.";
           }
 
-          View.prototype.render = function (options, fn) {
+          View.prototype.render = (options, fn) => {
             fn(null, "abstract engine");
           };
 
           app.set("view", View);
 
-          app.render("something", function (err, str) {
+          app.render("something", (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "abstract engine");
             resolve();
@@ -273,11 +276,11 @@ describe("app", function () {
       });
     });
 
-    describe("caching", function () {
-      it("should always lookup view without cache", async function () {
+    describe("caching", () => {
+      it("should always lookup view without cache", async () => {
         await new Promise((resolve, reject) => {
-          var app = express();
-          var count = 0;
+          const app = express();
+          let count = 0;
 
           function View(name, options) {
             this.name = name;
@@ -285,18 +288,18 @@ describe("app", function () {
             count++;
           }
 
-          View.prototype.render = function (options, fn) {
+          View.prototype.render = (options, fn) => {
             fn(null, "abstract engine");
           };
 
           app.set("view cache", false);
           app.set("view", View);
 
-          app.render("something", function (err, str) {
+          app.render("something", (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(count, 1);
             assert.strictEqual(str, "abstract engine");
-            app.render("something", function (err, str) {
+            app.render("something", (err, str) => {
               if (err) return reject(err);
               assert.strictEqual(count, 2);
               assert.strictEqual(str, "abstract engine");
@@ -306,29 +309,31 @@ describe("app", function () {
         });
       });
 
-      it('should cache with "view cache" setting', async function () {
+      it('should cache with "view cache" setting', async () => {
         await new Promise((resolve, reject) => {
-          var app = express();
-          var count = 0;
+          const app = express();
+          let count = 0;
 
-          function View(name, options) {
-            this.name = name;
-            this.path = "fake";
-            count++;
+          class View {
+            constructor(name, options) {
+              this.name = name;
+              this.path = "fake";
+              count++;
+            }
+
+            render(options, fn) {
+              fn(null, "abstract engine");
+            }
           }
-
-          View.prototype.render = function (options, fn) {
-            fn(null, "abstract engine");
-          };
 
           app.set("view cache", true);
           app.set("view", View);
 
-          app.render("something", function (err, str) {
+          app.render("something", (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(count, 1);
             assert.strictEqual(str, "abstract engine");
-            app.render("something", function (err, str) {
+            app.render("something", (err, str) => {
               if (err) return reject(err);
               assert.strictEqual(count, 1);
               assert.strictEqual(str, "abstract engine");
@@ -340,16 +345,16 @@ describe("app", function () {
     });
   });
 
-  describe(".render(name, options, fn)", function () {
-    it("should render the template", async function () {
+  describe(".render(name, options, fn)", () => {
+    it("should render the template", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("views", path.join(__dirname, "fixtures"));
 
-        var user = { name: "tobi" };
+        const user = { name: "tobi" };
 
-        app.render("user.tmpl", { user: user }, function (err, str) {
+        app.render("user.tmpl", { user: user }, (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();
@@ -357,14 +362,14 @@ describe("app", function () {
       });
     });
 
-    it("should expose app.locals", async function () {
+    it("should expose app.locals", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
 
-        app.render("user.tmpl", {}, function (err, str) {
+        app.render("user.tmpl", {}, (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();
@@ -372,15 +377,15 @@ describe("app", function () {
       });
     });
 
-    it("should give precedence to app.render() locals", async function () {
+    it("should give precedence to app.render() locals", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
-        var jane = { name: "jane" };
+        const jane = { name: "jane" };
 
-        app.render("user.tmpl", { user: jane }, function (err, str) {
+        app.render("user.tmpl", { user: jane }, (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>jane</p>");
           resolve();
@@ -388,18 +393,18 @@ describe("app", function () {
       });
     });
 
-    it("should accept null or undefined options", async function () {
+    it("should accept null or undefined options", async () => {
       await new Promise((resolve, reject) => {
-        var app = createApp();
+        const app = createApp();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.locals.user = { name: "tobi" };
 
-        app.render("user.tmpl", null, function (err, str) {
+        app.render("user.tmpl", null, (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
 
-          app.render("user.tmpl", undefined, function (err2, str2) {
+          app.render("user.tmpl", undefined, (err2, str2) => {
             if (err2) return reject(err2);
             assert.strictEqual(str2, "<p>tobi</p>");
             resolve();
@@ -408,30 +413,32 @@ describe("app", function () {
       });
     });
 
-    describe("caching", function () {
-      it("should cache with cache option", async function () {
+    describe("caching", () => {
+      it("should cache with cache option", async () => {
         await new Promise((resolve, reject) => {
-          var app = express();
-          var count = 0;
+          const app = express();
+          let count = 0;
 
-          function View(name, options) {
-            this.name = name;
-            this.path = "fake";
-            count++;
+          class View {
+            constructor(name, options) {
+              this.name = name;
+              this.path = "fake";
+              count++;
+            }
+
+            render(options, fn) {
+              fn(null, "abstract engine");
+            }
           }
-
-          View.prototype.render = function (options, fn) {
-            fn(null, "abstract engine");
-          };
 
           app.set("view cache", false);
           app.set("view", View);
 
-          app.render("something", { cache: true }, function (err, str) {
+          app.render("something", { cache: true }, (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(count, 1);
             assert.strictEqual(str, "abstract engine");
-            app.render("something", { cache: true }, function (err, str) {
+            app.render("something", { cache: true }, (err, str) => {
               if (err) return reject(err);
               assert.strictEqual(count, 1);
               assert.strictEqual(str, "abstract engine");
@@ -445,7 +452,7 @@ describe("app", function () {
 });
 
 function createApp() {
-  var app = express();
+  const app = express();
 
   app.engine(".tmpl", tmpl);
 

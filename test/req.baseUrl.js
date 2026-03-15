@@ -1,25 +1,25 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".baseUrl", function () {
-    it("should be empty for top-level route", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".baseUrl", () => {
+    it("should be empty for top-level route", async () => {
+      const app = express();
 
-      app.get("/:a", function (req, res) {
+      app.get("/:a", (req, res) => {
         res.end(req.baseUrl);
       });
 
       await request(app).get("/foo").expect(200, "");
     });
 
-    it("should contain lower path", async function () {
-      var app = express();
-      var sub = express.Router();
+    it("should contain lower path", async () => {
+      const app = express();
+      const sub = express.Router();
 
-      sub.get("/:b", function (req, res) {
+      sub.get("/:b", (req, res) => {
         res.end(req.baseUrl);
       });
       app.use("/:a", sub);
@@ -27,13 +27,13 @@ describe("req", function () {
       await request(app).get("/foo/bar").expect(200, "/foo");
     });
 
-    it("should contain full lower path", async function () {
-      var app = express();
-      var sub1 = express.Router();
-      var sub2 = express.Router();
-      var sub3 = express.Router();
+    it("should contain full lower path", async () => {
+      const app = express();
+      const sub1 = express.Router();
+      const sub2 = express.Router();
+      const sub3 = express.Router();
 
-      sub3.get("/:d", function (req, res) {
+      sub3.get("/:d", (req, res) => {
         res.end(req.baseUrl);
       });
       sub2.use("/:c", sub3);
@@ -43,33 +43,33 @@ describe("req", function () {
       await request(app).get("/foo/bar/baz/zed").expect(200, "/foo/bar/baz");
     });
 
-    it("should travel through routers correctly", async function () {
-      var urls = [];
-      var app = express();
-      var sub1 = express.Router();
-      var sub2 = express.Router();
-      var sub3 = express.Router();
+    it("should travel through routers correctly", async () => {
+      const urls = [];
+      const app = express();
+      const sub1 = express.Router();
+      const sub2 = express.Router();
+      const sub3 = express.Router();
 
-      sub3.get("/:d", function (req, res, next) {
+      sub3.get("/:d", (req, res, next) => {
         urls.push("0@" + req.baseUrl);
         next();
       });
       sub2.use("/:c", sub3);
-      sub1.use("/", function (req, res, next) {
+      sub1.use("/", (req, res, next) => {
         urls.push("1@" + req.baseUrl);
         next();
       });
       sub1.use("/bar", sub2);
-      sub1.use("/bar", function (req, res, next) {
+      sub1.use("/bar", (req, res, next) => {
         urls.push("2@" + req.baseUrl);
         next();
       });
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         urls.push("3@" + req.baseUrl);
         next();
       });
       app.use("/:a", sub1);
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         urls.push("4@" + req.baseUrl);
         res.end(urls.join(","));
       });

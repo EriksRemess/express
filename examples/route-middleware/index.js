@@ -4,9 +4,12 @@
  * Module dependencies.
  */
 
-var express = require('../../lib/express');
+import express from "#express";
+import { pathToFileURL } from "node:url";
 
-var app = express();
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+const app = express();
 
 // Example requests:
 //     curl http://localhost:3000/user/0
@@ -16,7 +19,7 @@ var app = express();
 //     curl -X DELETE http://localhost:3000/user/0 (unauthorized since you are not an admin)
 
 // Placeholder users
-var users = [
+const users = [
   { id: 0, name: 'tj', email: 'tj@vision-media.ca', role: 'member' }
   , { id: 1, name: 'ciaran', email: 'ciaranj@gmail.com', role: 'member' }
   , { id: 2, name: 'aaron', email: 'aaron.heckmann+github@gmail.com', role: 'admin' }
@@ -24,7 +27,7 @@ var users = [
 
 function loadUser(req, res, next) {
   // You would fetch your user from the db
-  var user = users[req.params.id];
+  const user = users[req.params.id];
   if (user) {
     req.user = user;
     next();
@@ -48,13 +51,13 @@ function andRestrictToSelf(req, res, next) {
 }
 
 function andRestrictTo(role) {
-  return function(req, res, next) {
+  return (req, res, next) => {
     if (req.authenticatedUser.role === role) {
       next();
     } else {
       next(new Error('Unauthorized'));
     }
-  }
+  };
 }
 
 // Middleware for faux authentication
@@ -62,29 +65,29 @@ function andRestrictTo(role) {
 // but this illustrates how an authenticated user
 // may interact with middleware
 
-app.use(function(req, res, next){
+app.use((req, res, next) => {
   req.authenticatedUser = users[0];
   next();
 });
 
-app.get('/', function(req, res){
+app.get('/', (req, res) => {
   res.redirect('/user/0');
 });
 
-app.get('/user/:id', loadUser, function(req, res){
+app.get('/user/:id', loadUser, (req, res) => {
   res.send('Viewing user ' + req.user.name);
 });
 
-app.get('/user/:id/edit', loadUser, andRestrictToSelf, function(req, res){
+app.get('/user/:id/edit', loadUser, andRestrictToSelf, (req, res) => {
   res.send('Editing user ' + req.user.name);
 });
 
-app.delete('/user/:id', loadUser, andRestrictTo('admin'), function(req, res){
+app.delete('/user/:id', loadUser, andRestrictTo('admin'), (req, res) => {
   res.send('Deleted user ' + req.user.name);
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

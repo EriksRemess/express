@@ -4,10 +4,14 @@
  * Module dependencies.
  */
 
-var express = require('../..');
-var logger = require('morgan');
-var path = require('node:path');
-var app = express();
+import express from "#express";
+
+import logger from 'morgan';
+import path from 'node:path';
+import { fileURLToPath } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const app = express();
 
 // log requests
 app.use(logger('dev'));

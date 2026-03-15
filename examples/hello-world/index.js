@@ -1,15 +1,20 @@
 'use strict'
 
-var express = require('../../');
+import express from "#express";
+import { pathToFileURL } from "node:url";
 
-var app = module.exports = express()
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
-app.get('/', function(req, res){
+const app = express();
+
+export default app;
+
+app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

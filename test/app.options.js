@@ -1,29 +1,15 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("OPTIONS", function () {
-  it("should default to the routes defined", async function () {
-    var app = express();
+describe("OPTIONS", () => {
+  it("should default to the routes defined", async () => {
+    const app = express();
 
-    app.post("/", function () {});
-    app.get("/users", function (req, res) {});
-    app.put("/users", function (req, res) {});
-
-    await request(app)
-      .options("/users")
-      .expect("Allow", "GET, HEAD, PUT")
-      .expect(200, "GET, HEAD, PUT");
-  });
-
-  it("should only include each method once", async function () {
-    var app = express();
-
-    app.delete("/", function () {});
-    app.get("/users", function (req, res) {});
-    app.put("/users", function (req, res) {});
-    app.get("/users", function (req, res) {});
+    app.post("/", () => {});
+    app.get("/users", (req, res) => {});
+    app.put("/users", (req, res) => {});
 
     await request(app)
       .options("/users")
@@ -31,13 +17,27 @@ describe("OPTIONS", function () {
       .expect(200, "GET, HEAD, PUT");
   });
 
-  it("should not be affected by app.all", async function () {
-    var app = express();
+  it("should only include each method once", async () => {
+    const app = express();
 
-    app.get("/", function () {});
-    app.get("/users", function (req, res) {});
-    app.put("/users", function (req, res) {});
-    app.all("/users", function (req, res, next) {
+    app.delete("/", () => {});
+    app.get("/users", (req, res) => {});
+    app.put("/users", (req, res) => {});
+    app.get("/users", (req, res) => {});
+
+    await request(app)
+      .options("/users")
+      .expect("Allow", "GET, HEAD, PUT")
+      .expect(200, "GET, HEAD, PUT");
+  });
+
+  it("should not be affected by app.all", async () => {
+    const app = express();
+
+    app.get("/", () => {});
+    app.get("/users", (req, res) => {});
+    app.put("/users", (req, res) => {});
+    app.all("/users", (req, res, next) => {
       res.setHeader("x-hit", "1");
       next();
     });
@@ -49,21 +49,21 @@ describe("OPTIONS", function () {
       .expect(200, "GET, HEAD, PUT");
   });
 
-  it("should not respond if the path is not defined", async function () {
-    var app = express();
+  it("should not respond if the path is not defined", async () => {
+    const app = express();
 
-    app.get("/users", function (req, res) {});
+    app.get("/users", (req, res) => {});
 
     await request(app).options("/other").expect(404);
   });
 
-  it("should forward requests down the middleware chain", async function () {
-    var app = express();
-    var router = new express.Router();
+  it("should forward requests down the middleware chain", async () => {
+    const app = express();
+    const router = new express.Router();
 
-    router.get("/users", function (req, res) {});
+    router.get("/users", (req, res) => {});
     app.use(router);
-    app.get("/other", function (req, res) {});
+    app.get("/other", (req, res) => {});
 
     await request(app)
       .options("/other")
@@ -71,19 +71,19 @@ describe("OPTIONS", function () {
       .expect(200, "GET, HEAD");
   });
 
-  describe("when error occurs in response handler", function () {
-    it("should pass error to callback", async function () {
-      var app = express();
-      var router = express.Router();
+  describe("when error occurs in response handler", () => {
+    it("should pass error to callback", async () => {
+      const app = express();
+      const router = express.Router();
 
-      router.get("/users", function (req, res) {});
+      router.get("/users", (req, res) => {});
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.writeHead(200);
         next();
       });
       app.use(router);
-      app.use(function (err, req, res, next) {
+      app.use((err, req, res, next) => {
         res.end("true");
       });
 
@@ -92,17 +92,17 @@ describe("OPTIONS", function () {
   });
 });
 
-describe("app.options()", function () {
-  it("should override the default behavior", async function () {
-    var app = express();
+describe("app.options()", () => {
+  it("should override the default behavior", async () => {
+    const app = express();
 
-    app.options("/users", function (req, res) {
+    app.options("/users", (req, res) => {
       res.set("Allow", "GET");
       res.send("GET");
     });
 
-    app.get("/users", function (req, res) {});
-    app.put("/users", function (req, res) {});
+    app.get("/users", (req, res) => {});
+    app.put("/users", (req, res) => {});
 
     await request(app).options("/users").expect("GET").expect("Allow", "GET");
   });

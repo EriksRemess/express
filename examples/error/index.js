@@ -4,10 +4,16 @@
  * Module dependencies.
  */
 
-var express = require('../../');
-var logger = require('morgan');
-var app = module.exports = express();
-var test = app.get('env') === 'test'
+import express from "#express";
+
+import logger from 'morgan';
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const app = express();
+
+export default app;
+const test = app.get('env') === 'test';
 
 if (!test) app.use(logger('dev'));
 
@@ -26,17 +32,17 @@ function error(err, req, res, next) {
   res.send('Internal Server Error');
 }
 
-app.get('/', function () {
+app.get('/', () => {
   // Caught and passed down to the errorHandler middleware
   throw new Error('something broke!');
 });
 
-app.get('/next', function(req, res, next){
+app.get('/next', (req, res, next) => {
   // We can also pass exceptions to next()
   // The reason for process.nextTick() is to show that
   // next() can be called inside an async operation,
   // in real life it can be a DB read or HTTP request.
-  process.nextTick(function(){
+  process.nextTick(() => {
     next(new Error('oh no!'));
   });
 });
@@ -47,7 +53,7 @@ app.get('/next', function(req, res, next){
 app.use(error);
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

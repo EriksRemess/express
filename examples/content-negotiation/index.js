@@ -1,28 +1,28 @@
 'use strict'
 
-var express = require('../../');
-var app = module.exports = express();
-var users = require('./db');
+import express from "#express";
+import users from "#examples/content-negotiation/db";
+import { html, text, json } from "#examples/content-negotiation/users";
+import { pathToFileURL } from 'node:url';
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const app = express();
+
+export default app;
 
 // so either you can deal with different types of formatting
 // for expected response in index.js
-app.get('/', function(req, res){
+app.get('/', (req, res) => {
   res.format({
-    html: function(){
-      res.send('<ul>' + users.map(function(user){
-        return '<li>' + user.name + '</li>';
-      }).join('') + '</ul>');
+    html: () => {
+      res.send(`<ul>${users.map(user => `<li>${user.name}</li>`).join('')}</ul>`);
     },
-
-    text: function(){
-      res.send(users.map(function(user){
-        return ' - ' + user.name + '\n';
-      }).join(''));
+    text: () => {
+      res.send(users.map(user => ` - ${user.name}\n`).join(''));
     },
-
-    json: function(){
+    json: () => {
       res.json(users);
-    }
+    },
   });
 });
 
@@ -30,17 +30,12 @@ app.get('/', function(req, res){
 // this to add a layer of abstraction
 // and make things a bit more declarative:
 
-function format(path) {
-  var obj = require(path);
-  return function(req, res){
-    res.format(obj);
-  };
-}
-
-app.get('/users', format('./users'));
+app.get('/users', (req, res) => {
+  res.format({ html, text, json });
+});
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

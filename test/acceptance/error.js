@@ -1,22 +1,22 @@
-var { describe, it } = require("node:test");
-var app = require("../../examples/error"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import app from "#examples/error/index";
+import request from "supertest";
 
-describe("error", function () {
-  describe("GET /", function () {
-    it("should respond with 500", async function () {
+describe("error", () => {
+  describe("GET /", () => {
+    it("should respond with 500", async () => {
       await request(app).get("/").expect(500);
     });
   });
 
-  describe("GET /next", function () {
-    it("should respond with 500", async function () {
+  describe("GET /next", () => {
+    it("should respond with 500", async () => {
       await request(app).get("/next").expect(500);
     });
   });
 
-  describe("GET /missing", function () {
-    it("should respond with 404", async function () {
+  describe("GET /missing", () => {
+    it("should respond with 404", async () => {
       await request(app).get("/missing").expect(404);
     });
   });

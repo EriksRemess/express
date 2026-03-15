@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".acceptsLanguages", function () {
-    it("should return language if accepted", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".acceptsLanguages", () => {
+    it("should return language if accepted", async () => {
+      const app = express();
 
-      app.get("/", function (req, res) {
+      app.get("/", (req, res) => {
         res.send({
           "en-us": req.acceptsLanguages("en-us"),
           en: req.acceptsLanguages("en"),
@@ -21,10 +21,10 @@ describe("req", function () {
         .expect(200, { "en-us": "en-us", en: "en" });
     });
 
-    it("should be false if language not accepted", async function () {
-      var app = express();
+    it("should be false if language not accepted", async () => {
+      const app = express();
 
-      app.get("/", function (req, res) {
+      app.get("/", (req, res) => {
         res.send({
           es: req.acceptsLanguages("es"),
         });
@@ -36,11 +36,11 @@ describe("req", function () {
         .expect(200, { es: false });
     });
 
-    describe("when Accept-Language is not present", function () {
-      it("should always return language", async function () {
-        var app = express();
+    describe("when Accept-Language is not present", () => {
+      it("should always return language", async () => {
+        const app = express();
 
-        app.get("/", function (req, res) {
+        app.get("/", (req, res) => {
           res.send({
             en: req.acceptsLanguages("en"),
             es: req.acceptsLanguages("es"),

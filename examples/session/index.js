@@ -7,10 +7,14 @@
 // $ npm install redis
 // $ redis-server
 
-var express = require('../..');
-var session = require('express-session');
+import express from "#express";
 
-var app = express();
+import session from 'express-session';
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+const app = express();
 
 // Populates req.session
 app.use(session({
@@ -19,8 +23,8 @@ app.use(session({
   secret: 'keyboard cat'
 }));
 
-app.get('/', function(req, res){
-  var body = '';
+app.get('/', (req, res) => {
+  let body = '';
   if (req.session.views) {
     ++req.session.views;
   } else {
@@ -31,7 +35,7 @@ app.get('/', function(req, res){
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

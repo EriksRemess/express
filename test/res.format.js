@@ -1,20 +1,20 @@
 "use strict";
 
-var { describe, it } = require("node:test");
-var after = require("after");
-var express = require("../"),
-  request = require("supertest"),
-  assert = require("node:assert");
-var app1 = express();
-app1.use(function (req, res, next) {
+import {describe, it} from "node:test";
+import after from "#test/support/after";
+import express from "#express";
+import request from "supertest";
+import assert from "node:assert";
+const app1 = express();
+app1.use((req, res, next) => {
   res.format({
-    "text/plain": function () {
+    "text/plain": () => {
       res.send("hey");
     },
-    "text/html": function () {
+    "text/html": () => {
       res.send("<p>hey</p>");
     },
-    "application/json": function (a, b, c) {
+    "application/json": (a, b, c) => {
       assert(req === a);
       assert(res === b);
       assert(next === c);
@@ -24,38 +24,38 @@ app1.use(function (req, res, next) {
     },
   });
 });
-app1.use(function (err, req, res, next) {
+app1.use((err, req, res, next) => {
   if (!err.types) throw err;
   res.status(err.status);
   res.send("Supports: " + err.types.join(", "));
 });
-var app2 = express();
-app2.use(function (req, res, next) {
+const app2 = express();
+app2.use((req, res, next) => {
   res.format({
-    text: function () {
+    text: () => {
       res.send("hey");
     },
-    html: function () {
+    html: () => {
       res.send("<p>hey</p>");
     },
-    json: function () {
+    json: () => {
       res.send({
         message: "hey",
       });
     },
   });
 });
-app2.use(function (err, req, res, next) {
+app2.use((err, req, res, next) => {
   res.status(err.status);
   res.send("Supports: " + err.types.join(", "));
 });
-var app3 = express();
-app3.use(function (req, res, next) {
+const app3 = express();
+app3.use((req, res, next) => {
   res.format({
-    text: function () {
+    text: () => {
       res.send("hey");
     },
-    default: function (a, b, c) {
+    default: (a, b, c) => {
       assert(req === a);
       assert(res === b);
       assert(next === c);
@@ -63,80 +63,80 @@ app3.use(function (req, res, next) {
     },
   });
 });
-var app4 = express();
-app4.get("/", function (req, res) {
+const app4 = express();
+app4.get("/", (req, res) => {
   res.format({
-    text: function () {
+    text: () => {
       res.send("hey");
     },
-    html: function () {
+    html: () => {
       res.send("<p>hey</p>");
     },
-    json: function () {
+    json: () => {
       res.send({
         message: "hey",
       });
     },
   });
 });
-app4.use(function (err, req, res, next) {
+app4.use((err, req, res, next) => {
   res.status(err.status);
   res.send("Supports: " + err.types.join(", "));
 });
-var app5 = express();
-app5.use(function (req, res, next) {
+const app5 = express();
+app5.use((req, res, next) => {
   res.format({
-    default: function () {
+    default: () => {
       res.send("hey");
     },
   });
 });
-describe("res", function () {
-  describe(".format(obj)", function () {
-    describe("with canonicalized mime types", function () {
+describe("res", () => {
+  describe(".format(obj)", () => {
+    describe("with canonicalized mime types", () => {
       test(app1);
     });
-    describe("with extnames", function () {
+    describe("with extnames", () => {
       test(app2);
     });
-    describe("with parameters", function () {
-      var app = express();
-      app.use(function (req, res, next) {
+    describe("with parameters", () => {
+      const app = express();
+      app.use((req, res, next) => {
         res.format({
-          "text/plain; charset=utf-8": function () {
+          "text/plain; charset=utf-8": () => {
             res.send("hey");
           },
-          "text/html; foo=bar; bar=baz": function () {
+          "text/html; foo=bar; bar=baz": () => {
             res.send("<p>hey</p>");
           },
-          "application/json; q=0.5": function () {
+          "application/json; q=0.5": () => {
             res.send({
               message: "hey",
             });
           },
         });
       });
-      app.use(function (err, req, res, next) {
+      app.use((err, req, res, next) => {
         res.status(err.status);
         res.send("Supports: " + err.types.join(", "));
       });
       test(app);
     });
-    describe("given .default", function () {
-      it("should be invoked instead of auto-responding", async function () {
+    describe("given .default", () => {
+      it("should be invoked instead of auto-responding", async () => {
         await request(app3)
           .get("/")
           .set("Accept", "text/html")
           .expect("default");
       });
-      it("should work when only .default is provided", async function () {
+      it("should work when only .default is provided", async () => {
         await request(app5).get("/").set("Accept", "*/*").expect("hey");
       });
-      it("should be able to invoke other formatter", async function () {
-        var app = express();
-        app.use(function (req, res, next) {
+      it("should be able to invoke other formatter", async () => {
+        const app = express();
+        app.use((req, res, next) => {
           res.format({
-            json: function () {
+            json: () => {
               res.send("json");
             },
             default: function () {
@@ -153,28 +153,28 @@ describe("res", function () {
           .expect("json");
       });
     });
-    describe("in router", function () {
+    describe("in router", () => {
       test(app4);
     });
-    describe("in router", function () {
-      var app = express();
-      var router = express.Router();
-      router.get("/", function (req, res) {
+    describe("in router", () => {
+      const app = express();
+      const router = express.Router();
+      router.get("/", (req, res) => {
         res.format({
-          text: function () {
+          text: () => {
             res.send("hey");
           },
-          html: function () {
+          html: () => {
             res.send("<p>hey</p>");
           },
-          json: function () {
+          json: () => {
             res.send({
               message: "hey",
             });
           },
         });
       });
-      router.use(function (err, req, res, next) {
+      router.use((err, req, res, next) => {
         res.status(err.status);
         res.send("Supports: " + err.types.join(", "));
       });
@@ -184,7 +184,7 @@ describe("res", function () {
   });
 });
 function test(app) {
-  it("should utilize qvalues in negotiation", async function () {
+  it("should utilize qvalues in negotiation", async () => {
     await request(app)
       .get("/")
       .set("Accept", "text/html; q=.5, application/json, */*; q=.1")
@@ -192,7 +192,7 @@ function test(app) {
         message: "hey",
       });
   });
-  it("should allow wildcard type/subtypes", async function () {
+  it("should allow wildcard type/subtypes", async () => {
     await request(app)
       .get("/")
       .set("Accept", "text/html; q=.5, application/*, */*; q=.1")
@@ -200,16 +200,16 @@ function test(app) {
         message: "hey",
       });
   });
-  it("should default the Content-Type", async function () {
+  it("should default the Content-Type", async () => {
     await request(app)
       .get("/")
       .set("Accept", "text/html; q=.5, text/plain")
       .expect("Content-Type", "text/plain; charset=utf-8")
       .expect("hey");
   });
-  it("should set the correct charset for the Content-Type", async function () {
+  it("should set the correct charset for the Content-Type", async () => {
     await new Promise((resolve, reject) => {
-      var cb = after(3, function (err) {
+      const cb = after(3, err => {
         if (err) {
           return reject(err);
         }
@@ -229,19 +229,19 @@ function test(app) {
         .expect("Content-Type", "application/json; charset=utf-8", cb);
     });
   });
-  it("should Vary: Accept", async function () {
+  it("should Vary: Accept", async () => {
     await request(app)
       .get("/")
       .set("Accept", "text/html; q=.5, text/plain")
       .expect("Vary", "Accept");
   });
-  describe("when Accept is not present", function () {
-    it("should invoke the first callback", async function () {
+  describe("when Accept is not present", () => {
+    it("should invoke the first callback", async () => {
       await request(app).get("/").expect("hey");
     });
   });
-  describe("when no match is made", function () {
-    it("should respond with 406 not acceptable", async function () {
+  describe("when no match is made", () => {
+    it("should respond with 406 not acceptable", async () => {
       await request(app)
         .get("/")
         .set("Accept", "foo/bar")

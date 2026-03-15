@@ -1,11 +1,11 @@
-var { describe, it } = require("node:test");
-var app = require("../../examples/vhost");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import app from "#examples/vhost/index";
+import request from "supertest";
 
-describe("vhost", function () {
-  describe("example.com", function () {
-    describe("GET /", function () {
-      it("should say hello", async function () {
+describe("vhost", () => {
+  describe("example.com", () => {
+    describe("GET /", () => {
+      it("should say hello", async () => {
         await request(app)
           .get("/")
           .set("Host", "example.com")
@@ -13,8 +13,8 @@ describe("vhost", function () {
       });
     });
 
-    describe("GET /foo", function () {
-      it("should say foo", async function () {
+    describe("GET /foo", () => {
+      it("should say foo", async () => {
         await request(app)
           .get("/foo")
           .set("Host", "example.com")
@@ -23,9 +23,9 @@ describe("vhost", function () {
     });
   });
 
-  describe("foo.example.com", function () {
-    describe("GET /", function () {
-      it("should redirect to /foo", async function () {
+  describe("foo.example.com", () => {
+    describe("GET /", () => {
+      it("should redirect to /foo", async () => {
         await request(app)
           .get("/")
           .set("Host", "foo.example.com")
@@ -34,9 +34,9 @@ describe("vhost", function () {
     });
   });
 
-  describe("bar.example.com", function () {
-    describe("GET /", function () {
-      it("should redirect to /bar", async function () {
+  describe("bar.example.com", () => {
+    describe("GET /", () => {
+      it("should redirect to /bar", async () => {
         await request(app)
           .get("/")
           .set("Host", "bar.example.com")

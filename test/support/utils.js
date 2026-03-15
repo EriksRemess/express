@@ -3,21 +3,23 @@
  * @private
  */
 
-var assert = require("node:assert");
-var http = require("node:http");
-const { Buffer } = require("node:buffer");
+import assert from "node:assert";
+
+import http from "node:http";
+import {Buffer} from "node:buffer";
 
 /**
  * Module exports.
  * @public
  */
 
-exports.shouldHaveBody = shouldHaveBody;
-exports.shouldHaveHeader = shouldHaveHeader;
-exports.shouldNotHaveBody = shouldNotHaveBody;
-exports.shouldNotHaveHeader = shouldNotHaveHeader;
-exports.rawRequest = rawRequest;
-exports.shouldSkipQuery = shouldSkipQuery;
+export {shouldHaveBody};
+
+export {shouldHaveHeader};
+export {shouldNotHaveBody};
+export {shouldNotHaveHeader};
+export {rawRequest};
+export {shouldSkipQuery};
 
 /**
  * Assert that a supertest response has a specific body.
@@ -27,8 +29,8 @@ exports.shouldSkipQuery = shouldSkipQuery;
  */
 
 function shouldHaveBody(buf) {
-  return function (res) {
-    var body = !Buffer.isBuffer(res.body) ? Buffer.from(res.text) : res.body;
+  return res => {
+    const body = !Buffer.isBuffer(res.body) ? Buffer.from(res.text) : res.body;
     assert.ok(body, "response has body");
     assert.strictEqual(body.toString("hex"), buf.toString("hex"));
   };
@@ -42,7 +44,7 @@ function shouldHaveBody(buf) {
  */
 
 function shouldHaveHeader(header) {
-  return function (res) {
+  return res => {
     assert.ok(
       header.toLowerCase() in res.headers,
       "should have header " + header,
@@ -57,7 +59,7 @@ function shouldHaveHeader(header) {
  */
 
 function shouldNotHaveBody() {
-  return function (res) {
+  return res => {
     assert.ok(res.text === "" || res.text === undefined);
   };
 }
@@ -69,7 +71,7 @@ function shouldNotHaveBody() {
  * @returns {function}
  */
 function shouldNotHaveHeader(header) {
-  return function (res) {
+  return res => {
     assert.ok(
       !(header.toLowerCase() in res.headers),
       "should not have header " + header,
@@ -82,25 +84,25 @@ function rawRequest(app, options, callback) {
     options = { path: options };
   }
 
-  var requestOptions = {
+  const requestOptions = {
     method: "GET",
     host: "127.0.0.1",
     ...options,
   };
-  var server = typeof app === "function" ? http.createServer(app) : app;
-  var settled = false;
+  const server = typeof app === "function" ? http.createServer(app) : app;
+  let settled = false;
 
-  server.listen(0, "127.0.0.1", function () {
+  server.listen(0, "127.0.0.1", () => {
     requestOptions.port = server.address().port;
 
-    var req = http.request(requestOptions, function (res) {
-      var chunks = [];
+    const req = http.request(requestOptions, res => {
+      const chunks = [];
 
-      res.on("data", function (chunk) {
+      res.on("data", chunk => {
         chunks.push(chunk);
       });
 
-      res.on("end", function () {
+      res.on("end", () => {
         finish(null, {
           headers: res.headers,
           statusCode: res.statusCode,
@@ -121,7 +123,7 @@ function rawRequest(app, options, callback) {
     }
 
     settled = true;
-    server.close(function (closeErr) {
+    server.close(closeErr => {
       callback(err || closeErr, res);
     });
   }
@@ -138,3 +140,12 @@ function shouldSkipQuery(versionString) {
   // express tracking issue: https://github.com/expressjs/express/issues/5615
   return Number(getMajorVersion(versionString)) < 22;
 }
+
+export default {
+  rawRequest,
+  shouldHaveBody,
+  shouldHaveHeader,
+  shouldNotHaveBody,
+  shouldNotHaveHeader,
+  shouldSkipQuery
+};

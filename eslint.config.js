@@ -1,6 +1,4 @@
-'use strict';
-
-module.exports = [
+export default [
   {
     ignores: ['coverage/**', 'node_modules/**']
   },
@@ -8,7 +6,7 @@ module.exports = [
     files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'commonjs',
+      sourceType: 'module',
       globals: {
         Buffer: 'readonly'
       }

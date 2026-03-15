@@ -1,13 +1,13 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("throw after .end()", function () {
-  it("should fail gracefully", async function () {
-    var app = express();
+describe("throw after .end()", () => {
+  it("should fail gracefully", async () => {
+    const app = express();
 
-    app.get("/", function (req, res) {
+    app.get("/", (req, res) => {
       res.end("yay");
       throw new Error("boom");
     });

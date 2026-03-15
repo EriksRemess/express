@@ -4,13 +4,19 @@
  * Module dependencies.
  */
 
-var createError = require('http-errors')
-var express = require('../../');
-var app = module.exports = express();
+import createError from '#lib/utils/http-errors';
+
+import express from "#express";
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const app = express();
+
+export default app;
 
 // Faux database
 
-var users = [
+const users = [
   { name: 'tj' }
   , { name: 'tobi' }
   , { name: 'loki' }
@@ -20,7 +26,7 @@ var users = [
 
 // Convert :to and :from to integers
 
-app.param(['to', 'from'], function(req, res, next, num, name){
+app.param(['to', 'from'], (req, res, next, num, name) => {
   req.params[name] = parseInt(num, 10);
   if( isNaN(req.params[name]) ){
     next(createError(400, 'failed to parseInt '+num));
@@ -31,7 +37,7 @@ app.param(['to', 'from'], function(req, res, next, num, name){
 
 // Load user by id
 
-app.param('user', function(req, res, next, id){
+app.param('user', (req, res, next, id) => {
   req.user = users[id]
   if (req.user) {
     next();
@@ -44,7 +50,7 @@ app.param('user', function(req, res, next, id){
  * GET index.
  */
 
-app.get('/', function(req, res){
+app.get('/', (req, res) => {
   res.send('Visit /user/0 or /users/0-2');
 });
 
@@ -52,7 +58,7 @@ app.get('/', function(req, res){
  * GET :user.
  */
 
-app.get('/user/:user', function (req, res) {
+app.get('/user/:user', (req, res) => {
   res.send('user ' + req.user.name);
 });
 
@@ -60,15 +66,15 @@ app.get('/user/:user', function (req, res) {
  * GET users :from - :to.
  */
 
-app.get('/users/:from-:to', function (req, res) {
-  var from = req.params.from;
-  var to = req.params.to;
-  var names = users.map(function(user){ return user.name; });
+app.get('/users/:from-:to', (req, res) => {
+  const from = req.params.from;
+  const to = req.params.to;
+  const names = users.map(user => { return user.name; });
   res.send('users ' + names.slice(from, to + 1).join(', '));
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

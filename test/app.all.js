@@ -1,21 +1,21 @@
 "use strict";
-var { describe, it } = require("node:test");
-var after = require("after");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import after from "#test/support/after";
+import express from "#express";
+import request from "supertest";
 
-describe("app.all()", function () {
-  it("should add a router per method", async function () {
+describe("app.all()", () => {
+  it("should add a router per method", async () => {
     await new Promise((resolve, reject) => {
-      var app = express();
-      var cb = after(2, function (err) {
+      const app = express();
+      const cb = after(2, err => {
         if (err) {
           return reject(err);
         }
         resolve();
       });
 
-      app.all("/tobi", function (req, res) {
+      app.all("/tobi", (req, res) => {
         res.end(req.method);
       });
 
@@ -25,12 +25,12 @@ describe("app.all()", function () {
     });
   });
 
-  it("should run the callback for a method just once", async function () {
+  it("should run the callback for a method just once", async () => {
     await new Promise((resolve, reject) => {
-      var app = express(),
-        n = 0;
+      const app = express();
+      let n = 0;
 
-      app.all("/*splat", function (req, res, next) {
+      app.all("/*splat", (req, res, next) => {
         if (n++) return reject(new Error("DELETE called several times"));
         next();
       });

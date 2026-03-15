@@ -1,35 +1,35 @@
 "use strict";
 
-var { describe, it, before } = require("node:test");
-var __testApp;
-var assert = require("node:assert");
-var AsyncLocalStorage = require("node:async_hooks").AsyncLocalStorage;
-const { Buffer } = require("node:buffer");
-var express = require("..");
-var request = require("supertest");
-describe("express.json()", function () {
-  it("should parse JSON", async function () {
+import {describe, it, before} from "node:test";
+let __testApp;
+import assert from "node:assert";
+import {AsyncLocalStorage} from "node:async_hooks";
+import {Buffer} from "node:buffer";
+import express from "#express";
+import request from "supertest";
+describe("express.json()", () => {
+  it("should parse JSON", async () => {
     await request(createApp())
       .post("/")
       .set("Content-Type", "application/json")
       .send('{"user":"tobi"}')
       .expect(200, '{"user":"tobi"}');
   });
-  it("should handle Content-Length: 0", async function () {
+  it("should handle Content-Length: 0", async () => {
     await request(createApp())
       .post("/")
       .set("Content-Type", "application/json")
       .set("Content-Length", "0")
       .expect(200, "{}");
   });
-  it("should handle empty message-body", async function () {
+  it("should handle empty message-body", async () => {
     await request(createApp())
       .post("/")
       .set("Content-Type", "application/json")
       .set("Transfer-Encoding", "chunked")
       .expect(200, "{}");
   });
-  it("should handle no message-body", async function () {
+  it("should handle no message-body", async () => {
     await request(createApp())
       .post("/")
       .set("Content-Type", "application/json")
@@ -38,21 +38,21 @@ describe("express.json()", function () {
   });
 
   // The old node error message modification in body parser is catching this
-  it("should 400 when only whitespace", async function () {
+  it("should 400 when only whitespace", async () => {
     await request(createApp())
       .post("/")
       .set("Content-Type", "application/json")
       .send("  \n")
       .expect(400, "[entity.parse.failed] " + parseError(" \n"));
   });
-  it("should 400 when invalid content-length", async function () {
-    var app = express();
-    app.use(function (req, res, next) {
+  it("should 400 when invalid content-length", async () => {
+    const app = express();
+    app.use((req, res, next) => {
       req.headers["content-length"] = "20"; // bad length
       next();
     });
     app.use(express.json());
-    app.post("/", function (req, res) {
+    app.post("/", (req, res) => {
       res.json(req.body);
     });
     await request(app)
@@ -61,11 +61,11 @@ describe("express.json()", function () {
       .send('{"str":')
       .expect(400, /content length/);
   });
-  it("should handle duplicated middleware", async function () {
-    var app = express();
+  it("should handle duplicated middleware", async () => {
+    const app = express();
     app.use(express.json());
     app.use(express.json());
-    app.post("/", function (req, res) {
+    app.post("/", (req, res) => {
       res.json(req.body);
     });
     await request(app)
@@ -74,25 +74,25 @@ describe("express.json()", function () {
       .send('{"user":"tobi"}')
       .expect(200, '{"user":"tobi"}');
   });
-  describe("when JSON is invalid", function () {
-    before(function () {
+  describe("when JSON is invalid", () => {
+    before(() => {
       __testApp = createApp();
     });
-    it("should 400 for bad token", async function () {
+    it("should 400 for bad token", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/json")
         .send("{:")
         .expect(400, "[entity.parse.failed] " + parseError("{:"));
     });
-    it("should 400 for incomplete", async function () {
+    it("should 400 for incomplete", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/json")
         .send('{"user"')
         .expect(400, "[entity.parse.failed] " + parseError('{"user"'));
     });
-    it("should include original body on error object", async function () {
+    it("should include original body on error object", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/json")
@@ -101,9 +101,9 @@ describe("express.json()", function () {
         .expect(400, ' {"user"');
     });
   });
-  describe("with limit option", function () {
-    it("should 413 when over limit with Content-Length", async function () {
-      var buf = Buffer.alloc(1024, ".");
+  describe("with limit option", () => {
+    it("should 413 when over limit with Content-Length", async () => {
+      const buf = Buffer.alloc(1024, ".");
       await request(
         createApp({
           limit: "1kb",
@@ -119,23 +119,23 @@ describe("express.json()", function () {
         )
         .expect(413, "[entity.too.large] request entity too large");
     });
-    it("should 413 when over limit with chunked encoding", async function () {
-      var app = createApp({
+    it("should 413 when over limit with chunked encoding", async () => {
+      const app = createApp({
         limit: "1kb",
       });
-      var buf = Buffer.alloc(1024, ".");
-      var test = request(app).post("/");
+      const buf = Buffer.alloc(1024, ".");
+      const test = request(app).post("/");
       await test.set("Content-Type", "application/json");
       await test.set("Transfer-Encoding", "chunked");
       await test.write('{"str":');
       await test.write('"' + buf.toString() + '"}');
       await test.expect(413);
     });
-    it("should 413 when inflated body over limit", async function () {
-      var app = createApp({
+    it("should 413 when inflated body over limit", async () => {
+      const app = createApp({
         limit: "1kb",
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -146,8 +146,8 @@ describe("express.json()", function () {
       );
       await test.expect(413);
     });
-    it("should accept number of bytes", async function () {
-      var buf = Buffer.alloc(1024, ".");
+    it("should accept number of bytes", async () => {
+      const buf = Buffer.alloc(1024, ".");
       await request(
         createApp({
           limit: 1024,
@@ -162,12 +162,12 @@ describe("express.json()", function () {
         )
         .expect(413);
     });
-    it("should not change when options altered", async function () {
-      var buf = Buffer.alloc(1024, ".");
-      var options = {
+    it("should not change when options altered", async () => {
+      const buf = Buffer.alloc(1024, ".");
+      const options = {
         limit: "1kb",
       };
-      var app = createApp(options);
+      const app = createApp(options);
       options.limit = "100kb";
       await request(app)
         .post("/")
@@ -179,23 +179,23 @@ describe("express.json()", function () {
         )
         .expect(413);
     });
-    it("should not hang response", async function () {
-      var buf = Buffer.alloc(10240, ".");
-      var app = createApp({
+    it("should not hang response", async () => {
+      const buf = Buffer.alloc(10240, ".");
+      const app = createApp({
         limit: "8kb",
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Type", "application/json");
       await test.write(buf);
       await test.write(buf);
       await test.write(buf);
       await test.expect(413);
     });
-    it("should not error when inflating", async function () {
-      var app = createApp({
+    it("should not error when inflating", async () => {
+      const app = createApp({
         limit: "1kb",
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -207,15 +207,15 @@ describe("express.json()", function () {
       await test.expect(413);
     });
   });
-  describe("with inflate option", function () {
-    describe("when false", function () {
-      before(function () {
+  describe("with inflate option", () => {
+    describe("when false", () => {
+      before(() => {
         __testApp = createApp({
           inflate: false,
         });
       });
-      it("should not accept content-encoding", async function () {
-        var test = request(__testApp).post("/");
+      it("should not accept content-encoding", async () => {
+        const test = request(__testApp).post("/");
         await test.set("Content-Encoding", "gzip");
         await test.set("Content-Type", "application/json");
         await test.write(
@@ -230,14 +230,14 @@ describe("express.json()", function () {
         );
       });
     });
-    describe("when true", function () {
-      before(function () {
+    describe("when true", () => {
+      before(() => {
         __testApp = createApp({
           inflate: true,
         });
       });
-      it("should accept content-encoding", async function () {
-        var test = request(__testApp).post("/");
+      it("should accept content-encoding", async () => {
+        const test = request(__testApp).post("/");
         await test.set("Content-Encoding", "gzip");
         await test.set("Content-Type", "application/json");
         await test.write(
@@ -250,12 +250,12 @@ describe("express.json()", function () {
       });
     });
   });
-  describe("with strict option", function () {
-    describe("when undefined", function () {
-      before(function () {
+  describe("with strict option", () => {
+    describe("when undefined", () => {
+      before(() => {
         __testApp = createApp();
       });
-      it("should 400 on primitives", async function () {
+      it("should 400 on primitives", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
@@ -266,13 +266,13 @@ describe("express.json()", function () {
           );
       });
     });
-    describe("when false", function () {
-      before(function () {
+    describe("when false", () => {
+      before(() => {
         __testApp = createApp({
           strict: false,
         });
       });
-      it("should parse primitives", async function () {
+      it("should parse primitives", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
@@ -280,13 +280,13 @@ describe("express.json()", function () {
           .expect(200, "true");
       });
     });
-    describe("when true", function () {
-      before(function () {
+    describe("when true", () => {
+      before(() => {
         __testApp = createApp({
           strict: true,
         });
       });
-      it("should not parse primitives", async function () {
+      it("should not parse primitives", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
@@ -296,7 +296,7 @@ describe("express.json()", function () {
             "[entity.parse.failed] " + parseError("#rue").replace(/#/g, "t"),
           );
       });
-      it("should not parse primitives with leading whitespaces", async function () {
+      it("should not parse primitives with leading whitespaces", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
@@ -307,14 +307,14 @@ describe("express.json()", function () {
               parseError("    #rue").replace(/#/g, "t"),
           );
       });
-      it("should allow leading whitespaces in JSON", async function () {
+      it("should allow leading whitespaces in JSON", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
           .send('   { "user": "tobi" }')
           .expect(200, '{"user":"tobi"}');
       });
-      it("should include correct message in stack trace", async function () {
+      it("should include correct message in stack trace", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
@@ -325,21 +325,21 @@ describe("express.json()", function () {
       });
     });
   });
-  describe("with type option", function () {
-    describe('when "application/vnd.api+json"', function () {
-      before(function () {
+  describe("with type option", () => {
+    describe('when "application/vnd.api+json"', () => {
+      before(() => {
         __testApp = createApp({
           type: "application/vnd.api+json",
         });
       });
-      it("should parse JSON for custom type", async function () {
+      it("should parse JSON for custom type", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/vnd.api+json")
           .send('{"user":"tobi"}')
           .expect(200, '{"user":"tobi"}');
       });
-      it("should ignore standard type", async function () {
+      it("should ignore standard type", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
@@ -347,27 +347,27 @@ describe("express.json()", function () {
           .expect(200, "");
       });
     });
-    describe('when ["application/json", "application/vnd.api+json"]', function () {
-      before(function () {
+    describe('when ["application/json", "application/vnd.api+json"]', () => {
+      before(() => {
         __testApp = createApp({
           type: ["application/json", "application/vnd.api+json"],
         });
       });
-      it('should parse JSON for "application/json"', async function () {
+      it('should parse JSON for "application/json"', async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/json")
           .send('{"user":"tobi"}')
           .expect(200, '{"user":"tobi"}');
       });
-      it('should parse JSON for "application/vnd.api+json"', async function () {
+      it('should parse JSON for "application/vnd.api+json"', async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/vnd.api+json")
           .send('{"user":"tobi"}')
           .expect(200, '{"user":"tobi"}');
       });
-      it('should ignore "application/x-json"', async function () {
+      it('should ignore "application/x-json"', async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-json")
@@ -375,9 +375,9 @@ describe("express.json()", function () {
           .expect(200, "");
       });
     });
-    describe("when a function", function () {
-      it("should parse when truthy value returned", async function () {
-        var app = createApp({
+    describe("when a function", () => {
+      it("should parse when truthy value returned", async () => {
+        const app = createApp({
           type: accept,
         });
         function accept(req) {
@@ -389,19 +389,19 @@ describe("express.json()", function () {
           .send('{"user":"tobi"}')
           .expect(200, '{"user":"tobi"}');
       });
-      it("should work without content-type", async function () {
-        var app = createApp({
+      it("should work without content-type", async () => {
+        const app = createApp({
           type: accept,
         });
         function accept(req) {
           return true;
         }
-        var test = request(app).post("/");
+        const test = request(app).post("/");
         await test.write('{"user":"tobi"}');
         await test.expect(200, '{"user":"tobi"}');
       });
-      it("should not invoke without a body", async function () {
-        var app = createApp({
+      it("should not invoke without a body", async () => {
+        const app = createApp({
           type: accept,
         });
         function accept(req) {
@@ -411,8 +411,8 @@ describe("express.json()", function () {
       });
     });
   });
-  describe("with verify option", function () {
-    it("should assert value if function", function () {
+  describe("with verify option", () => {
+    it("should assert value if function", () => {
       assert.throws(
         createApp.bind(null, {
           verify: "lol",
@@ -420,9 +420,9 @@ describe("express.json()", function () {
         /TypeError: option verify must be function/,
       );
     });
-    it("should error from verify", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should error from verify", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] === 0x5b) throw new Error("no arrays");
         },
       });
@@ -432,11 +432,11 @@ describe("express.json()", function () {
         .send('["tobi"]')
         .expect(403, "[entity.verify.failed] no arrays");
     });
-    it("should allow custom codes", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should allow custom codes", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] !== 0x5b) return;
-          var err = new Error("no arrays");
+          const err = new Error("no arrays");
           err.status = 400;
           throw err;
         },
@@ -447,11 +447,11 @@ describe("express.json()", function () {
         .send('["tobi"]')
         .expect(400, "[entity.verify.failed] no arrays");
     });
-    it("should allow custom type", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should allow custom type", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] !== 0x5b) return;
-          var err = new Error("no arrays");
+          const err = new Error("no arrays");
           err.type = "foo.bar";
           throw err;
         },
@@ -462,9 +462,9 @@ describe("express.json()", function () {
         .send('["tobi"]')
         .expect(403, "[foo.bar] no arrays");
     });
-    it("should include original body on error object", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should include original body on error object", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] === 0x5b) throw new Error("no arrays");
         },
       });
@@ -475,9 +475,9 @@ describe("express.json()", function () {
         .send('["tobi"]')
         .expect(403, '["tobi"]');
     });
-    it("should allow pass-through", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should allow pass-through", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] === 0x5b) throw new Error("no arrays");
         },
       });
@@ -487,13 +487,13 @@ describe("express.json()", function () {
         .send('{"user":"tobi"}')
         .expect(200, '{"user":"tobi"}');
     });
-    it("should work with different charsets", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should work with different charsets", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] === 0x5b) throw new Error("no arrays");
         },
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Type", "application/json; charset=utf-16");
       await test.write(
         Buffer.from(
@@ -503,13 +503,13 @@ describe("express.json()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should 415 on unknown charset prior to verify", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should 415 on unknown charset prior to verify", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           throw new Error("unexpected verify call");
         },
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Type", "application/json; charset=x-bogus");
       await test.write(Buffer.from("00000000", "hex"));
       await test.expect(
@@ -518,38 +518,38 @@ describe("express.json()", function () {
       );
     });
   });
-  describe("async local storage", function () {
-    before(function () {
-      var app = express();
-      var store = {
+  describe("async local storage", () => {
+    before(() => {
+      const app = express();
+      const store = {
         foo: "bar",
       };
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         req.asyncLocalStorage = new AsyncLocalStorage();
         req.asyncLocalStorage.run(store, next);
       });
       app.use(express.json());
-      app.use(function (req, res, next) {
-        var local = req.asyncLocalStorage.getStore();
+      app.use((req, res, next) => {
+        const local = req.asyncLocalStorage.getStore();
         if (local) {
           res.setHeader("x-store-foo", String(local.foo));
         }
         next();
       });
-      app.use(function (err, req, res, next) {
-        var local = req.asyncLocalStorage.getStore();
+      app.use((err, req, res, next) => {
+        const local = req.asyncLocalStorage.getStore();
         if (local) {
           res.setHeader("x-store-foo", String(local.foo));
         }
         res.status(err.status || 500);
         res.send("[" + err.type + "] " + err.message);
       });
-      app.post("/", function (req, res) {
+      app.post("/", (req, res) => {
         res.json(req.body);
       });
       __testApp = app;
     });
-    it("should persist store", async function () {
+    it("should persist store", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/json")
@@ -558,7 +558,7 @@ describe("express.json()", function () {
         .expect("x-store-foo", "bar")
         .expect('{"user":"tobi"}');
     });
-    it("should persist store when unmatched content-type", async function () {
+    it("should persist store when unmatched content-type", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/fizzbuzz")
@@ -567,8 +567,8 @@ describe("express.json()", function () {
         .expect("x-store-foo", "bar")
         .expect("");
     });
-    it("should persist store when inflated", async function () {
-      var test = request(__testApp).post("/");
+    it("should persist store when inflated", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -582,8 +582,8 @@ describe("express.json()", function () {
       await test.expect('{"name":"论"}');
       await test;
     });
-    it("should persist store when inflate error", async function () {
-      var test = request(__testApp).post("/");
+    it("should persist store when inflate error", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -596,7 +596,7 @@ describe("express.json()", function () {
       await test.expect("x-store-foo", "bar");
       await test;
     });
-    it("should persist store when parse error", async function () {
+    it("should persist store when parse error", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/json")
@@ -604,7 +604,7 @@ describe("express.json()", function () {
         .expect(400)
         .expect("x-store-foo", "bar");
     });
-    it("should persist store when limit exceeded", async function () {
+    it("should persist store when limit exceeded", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/json")
@@ -613,18 +613,18 @@ describe("express.json()", function () {
         .expect("x-store-foo", "bar");
     });
   });
-  describe("charset", function () {
-    before(function () {
+  describe("charset", () => {
+    before(() => {
       __testApp = createApp();
     });
-    it("should parse utf-8", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse utf-8", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/json; charset=utf-8");
       await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should parse utf-16", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse utf-16", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/json; charset=utf-16");
       await test.write(
         Buffer.from(
@@ -634,21 +634,21 @@ describe("express.json()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should parse when content-length != char length", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse when content-length != char length", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/json; charset=utf-8");
       await test.set("Content-Length", "13");
       await test.write(Buffer.from("7b2274657374223a22c3a5227d", "hex"));
       await test.expect(200, '{"test":"å"}');
     });
-    it("should default to utf-8", async function () {
-      var test = request(__testApp).post("/");
+    it("should default to utf-8", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/json");
       await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should fail on unknown charset", async function () {
-      var test = request(__testApp).post("/");
+    it("should fail on unknown charset", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/json; charset=koi8-r");
       await test.write(Buffer.from("7b226e616d65223a22cec5d4227d", "hex"));
       await test.expect(
@@ -657,27 +657,27 @@ describe("express.json()", function () {
       );
     });
   });
-  describe("encoding", function () {
-    before(function () {
+  describe("encoding", () => {
+    before(() => {
       __testApp = createApp({
         limit: "1kb",
       });
     });
-    it("should parse without encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse without encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/json");
       await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support identity encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should support identity encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "identity");
       await test.set("Content-Type", "application/json");
       await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support gzip encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should support gzip encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -688,8 +688,8 @@ describe("express.json()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support deflate encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should support deflate encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "deflate");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -697,8 +697,8 @@ describe("express.json()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should be case-insensitive", async function () {
-      var test = request(__testApp).post("/");
+    it("should be case-insensitive", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "GZIP");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -709,8 +709,8 @@ describe("express.json()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should 415 on unknown encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should 415 on unknown encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "nulls");
       await test.set("Content-Type", "application/json");
       await test.write(Buffer.from("000000000000", "hex"));
@@ -719,8 +719,8 @@ describe("express.json()", function () {
         '[encoding.unsupported] unsupported content encoding "nulls"',
       );
     });
-    it("should 400 on malformed encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should 400 on malformed encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -731,9 +731,9 @@ describe("express.json()", function () {
       );
       await test.expect(400);
     });
-    it("should 413 when inflated value exceeds limit", async function () {
+    it("should 413 when inflated value exceeds limit", async () => {
       // gzip'd data exceeds 1kb, but deflated below 1kb
-      var test = request(__testApp).post("/");
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/json");
       await test.write(
@@ -756,9 +756,9 @@ describe("express.json()", function () {
   });
 });
 function createApp(options) {
-  var app = express();
+  const app = express();
   app.use(express.json(options));
-  app.use(function (err, req, res, next) {
+  app.use((err, req, res, next) => {
     // console.log(err)
     res.status(err.status || 500);
     res.send(
@@ -769,7 +769,7 @@ function createApp(options) {
       ),
     );
   });
-  app.post("/", function (req, res) {
+  app.post("/", (req, res) => {
     res.json(req.body);
   });
   return app;
@@ -783,7 +783,7 @@ function parseError(str) {
   }
 }
 function shouldContainInBody(str) {
-  return function (res) {
+  return res => {
     assert.ok(
       res.text.indexOf(str) !== -1,
       "expected '" + res.text + "' to contain '" + str + "'",

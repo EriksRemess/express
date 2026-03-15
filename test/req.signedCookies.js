@@ -1,18 +1,18 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest"),
-  cookieParser = require("cookie-parser");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+import cookieParser from "#lib/utils/cookies";
 
-describe("req", function () {
-  describe(".signedCookies", function () {
-    it("should return a signed JSON cookie", async function () {
+describe("req", () => {
+  describe(".signedCookies", () => {
+    it("should return a signed JSON cookie", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
+        const app = express();
 
         app.use(cookieParser("secret"));
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           if (req.path === "/set") {
             res.cookie("obj", { foo: "bar" }, { signed: true });
             res.end();
@@ -23,9 +23,9 @@ describe("req", function () {
 
         request(app)
           .get("/set")
-          .end(function (err, res) {
+          .end((err, res) => {
             if (err) return reject(err);
-            var cookie = res.header["set-cookie"];
+            const cookie = res.header["set-cookie"];
 
             request(app)
               .get("/")

@@ -1,18 +1,18 @@
-var { describe, it } = require("node:test");
-var app = require("../../examples/markdown");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import app from "#examples/markdown/index";
+import request from "supertest";
 
-describe("markdown", function () {
-  describe("GET /", function () {
-    it("should respond with html", async function () {
+describe("markdown", () => {
+  describe("GET /", () => {
+    it("should respond with html", async () => {
       await request(app)
         .get("/")
         .expect(/<h1[^>]*>Markdown Example<\/h1>/);
     });
   });
 
-  describe("GET /fail", function () {
-    it("should respond with an error", async function () {
+  describe("GET /fail", () => {
+    it("should respond with an error", async () => {
       await request(app).get("/fail").expect(500);
     });
   });

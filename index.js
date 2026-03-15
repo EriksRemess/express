@@ -6,6 +6,6 @@
  * MIT Licensed
  */
 
-'use strict';
+import express from "#lib/express";
 
-module.exports = require('./lib/express');
+export default express;

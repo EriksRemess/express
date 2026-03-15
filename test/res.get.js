@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("res", function () {
-  describe(".get(field)", function () {
-    it("should get the response header field", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".get(field)", () => {
+    it("should get the response header field", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.setHeader("Content-Type", "text/x-foo");
         res.send(res.get("Content-Type"));
       });

@@ -1,5 +1,12 @@
 {
   "name": "express",
+  "type": "module",
+  "imports": {
+    "#express": "./index.js",
+    "#lib/*": "./lib/*.js",
+    "#examples/*": "./examples/*.js",
+    "#test/*": "./test/*.js"
+  },
   "description": "Fast, unopinionated, minimalist web framework",
   "version": "5.2.1",
   "author": "TJ Holowaychuk <tj@vision-media.ca>",
@@ -32,53 +39,28 @@
     "api"
   ],
   "dependencies": {
-    "accepts": "^2.0.0",
     "body-parser": "^2.2.2",
-    "content-disposition": "^1.0.1",
-    "content-type": "^1.0.5",
     "cookie": "^1.1.1",
-    "cookie-signature": "^1.2.2",
     "debug": "^4.4.3",
-    "depd": "^2.0.0",
-    "encodeurl": "^2.0.0",
-    "escape-html": "^1.0.3",
-    "etag": "^1.8.1",
     "finalhandler": "^2.1.1",
-    "fresh": "^2.0.0",
-    "http-errors": "^2.0.1",
-    "merge-descriptors": "^2.0.0",
     "mime-types": "^3.0.2",
-    "on-finished": "^2.4.1",
-    "once": "^1.4.0",
-    "parseurl": "^1.3.3",
-    "proxy-addr": "^2.0.7",
-    "qs": "^6.15.0",
-    "range-parser": "^1.2.1",
     "router": "^2.2.0",
     "send": "^1.2.1",
-    "serve-static": "^2.2.1",
-    "statuses": "^2.0.2",
-    "type-is": "^2.0.1",
-    "vary": "^1.1.2"
+    "serve-static": "^2.2.1"
   },
   "devDependencies": {
-    "after": "^0.8.2",
     "connect-redis": "^9.0.0",
-    "cookie-parser": "^1.4.7",
     "cookie-session": "^2.1.1",
     "ejs": "^5.0.1",
     "eslint": "^10.0.3",
     "express-session": "^1.19.0",
     "hbs": "^4.2.0",
     "marked": "^17.0.4",
-    "method-override": "^3.0.0",
     "morgan": "^1.10.1",
-    "pbkdf2-password": "^1.2.1",
-    "supertest": "^7.2.2",
-    "vhost": "^3.0.2"
+    "supertest": "^7.2.2"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 24"
   },
   "files": [
     "LICENSE",
@@ -89,9 +71,9 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --require ./test/support/env --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
-    "test-ci": "node --experimental-test-coverage --test-coverage-exclude=examples/** --test-coverage-exclude=test/** --test-coverage-exclude=benchmarks/** --require ./test/support/env --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
-    "test-cov": "node --experimental-test-coverage --test-coverage-exclude=examples/** --test-coverage-exclude=test/** --test-coverage-exclude=benchmarks/** --require ./test/support/env --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
-    "test-tap": "node --require ./test/support/env --test --test-reporter=tap --test-concurrency=1 ./test/*.js ./test/acceptance/*.js"
+    "test": "node --import ./test/support/env.js --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
+    "test-ci": "node --experimental-test-coverage --test-coverage-exclude=examples/** --test-coverage-exclude=test/** --test-coverage-exclude=benchmarks/** --import ./test/support/env.js --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
+    "test-cov": "node --experimental-test-coverage --test-coverage-exclude=examples/** --test-coverage-exclude=test/** --test-coverage-exclude=benchmarks/** --import ./test/support/env.js --test --test-concurrency=1 ./test/*.js ./test/acceptance/*.js",
+    "test-tap": "node --import ./test/support/env.js --test --test-reporter=tap --test-concurrency=1 ./test/*.js ./test/acceptance/*.js"
   }
 }

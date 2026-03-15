@@ -4,9 +4,13 @@
  * Module dependencies.
  */
 
-var express = require('../..');
-var logger = require('morgan');
-var vhost = require('vhost');
+import express from "#express";
+
+import logger from 'morgan';
+import vhost from '#lib/utils/vhost';
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 /*
 edit /etc/hosts:
@@ -18,36 +22,38 @@ edit /etc/hosts:
 
 // Main server app
 
-var main = express();
+const main = express();
 
-if (!module.parent) main.use(logger('dev'));
+if (isMain) main.use(logger('dev'));
 
-main.get('/', function(req, res){
+main.get('/', (req, res) => {
   res.send('Hello from main app!');
 });
 
-main.get('/:sub', function(req, res){
+main.get('/:sub', (req, res) => {
   res.send('requested ' + req.params.sub);
 });
 
 // Redirect app
 
-var redirect = express();
+const redirect = express();
 
-redirect.use(function(req, res){
-  if (!module.parent) console.log(req.vhost);
+redirect.use((req, res) => {
+  if (isMain) console.log(req.vhost);
   res.redirect('http://example.com:3000/' + req.vhost[0]);
 });
 
 // Vhost app
 
-var app = module.exports = express();
+const app = express();
+
+export default app;
 
 app.use(vhost('*.example.com', redirect)); // Serves all subdomains via Redirect app
 app.use(vhost('example.com', main)); // Serves top level domain via Main server app
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

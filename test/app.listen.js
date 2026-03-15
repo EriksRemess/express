@@ -1,24 +1,24 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../");
-var assert = require("node:assert");
+import {describe, it} from "node:test";
+import express from "#express";
+import assert from "node:assert";
 
-describe("app.listen()", function () {
-  it("should wrap with an HTTP server", async function () {
-    var app = express();
+describe("app.listen()", () => {
+  it("should wrap with an HTTP server", async () => {
+    const app = express();
 
-    var server = app.listen(0, function () {
+    const server = app.listen(0, () => {
       server.close();
     });
   });
-  it("should callback on HTTP server errors", async function () {
+  it("should callback on HTTP server errors", async () => {
     await new Promise((resolve, reject) => {
-      var app1 = express();
-      var app2 = express();
+      const app1 = express();
+      const app2 = express();
 
-      var server1 = app1.listen(0, function (err) {
+      const server1 = app1.listen(0, err => {
         assert(!err);
-        app2.listen(server1.address().port, function (err) {
+        app2.listen(server1.address().port, err => {
           assert(err.code === "EADDRINUSE");
           server1.close();
           resolve();
@@ -26,9 +26,9 @@ describe("app.listen()", function () {
       });
     });
   });
-  it("accepts port + hostname + backlog + callback", async function () {
+  it("accepts port + hostname + backlog + callback", async () => {
     const app = express();
-    const server = app.listen(0, "127.0.0.1", 5, function () {
+    const server = app.listen(0, "127.0.0.1", 5, () => {
       const { address, port } = server.address();
       assert.strictEqual(address, "127.0.0.1");
       assert(Number.isInteger(port) && port > 0);
@@ -37,14 +37,14 @@ describe("app.listen()", function () {
       server.close();
     });
   });
-  it("accepts just a callback (no args)", async function () {
+  it("accepts just a callback (no args)", async () => {
     const app = express();
     // same as app.listen(0, done)
     // same as app.listen(0, done)
     const server = app.listen();
     await server.close();
   });
-  it("server.address() gives a { address, port, family } object", async function () {
+  it("server.address() gives a { address, port, family } object", async () => {
     const app = express();
     const server = app.listen(0, () => {
       const addr = server.address();

@@ -1,19 +1,19 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".route", function () {
-    it("should be the executed Route", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".route", () => {
+    it("should be the executed Route", async () => {
+      const app = express();
 
-      app.get("/user/:id{/:op}", function (req, res, next) {
+      app.get("/user/:id{/:op}", (req, res, next) => {
         res.header("path-1", req.route.path);
         next();
       });
 
-      app.get("/user/:id/edit", function (req, res) {
+      app.get("/user/:id/edit", (req, res) => {
         res.header("path-2", req.route.path);
         res.end();
       });

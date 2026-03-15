@@ -4,11 +4,18 @@
  * Module dependencies.
  */
 
-var express = require('../../');
-var path = require('node:path');
-var app = module.exports = express();
-var logger = require('morgan');
-var silent = process.env.NODE_ENV === 'test'
+import express from "#express";
+
+import path from 'node:path';
+const app = express();
+
+export default app;
+import logger from 'morgan';
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const silent = process.env.NODE_ENV === 'test';
 
 // general config
 app.set('views', path.join(__dirname, 'views'));
@@ -27,25 +34,25 @@ silent || app.use(logger('dev'));
 
 // Routes
 
-app.get('/', function(req, res){
+app.get('/', (req, res) => {
   res.render('index.ejs');
 });
 
-app.get('/404', function(req, res, next){
+app.get('/404', (req, res, next) => {
   // trigger a 404 since no other middleware
   // will match /404 after this one, and we're not
   // responding here
   next();
 });
 
-app.get('/403', function(req, res, next){
+app.get('/403', (req, res, next) => {
   // trigger a 403 error
-  var err = new Error('not allowed!');
+  const err = new Error('not allowed!');
   err.status = 403;
   next(err);
 });
 
-app.get('/500', function(req, res, next){
+app.get('/500', (req, res, next) => {
   // trigger a generic (500) error
   next(new Error('keyboard cat!'));
 });
@@ -60,17 +67,17 @@ app.get('/500', function(req, res, next){
 // $ curl http://localhost:3000/notfound -H "Accept: application/json"
 // $ curl http://localhost:3000/notfound -H "Accept: text/plain"
 
-app.use(function(req, res, next){
+app.use((req, res, next) => {
   res.status(404);
 
   res.format({
-    html: function () {
+    html: () => {
       res.render('404', { url: req.url })
     },
-    json: function () {
+    json: () => {
       res.json({ error: 'Not found' })
     },
-    default: function () {
+    default: () => {
       res.type('txt').send('Not found')
     }
   })
@@ -88,7 +95,7 @@ app.use(function(req, res, next){
 // would remain being executed, however here
 // we simply respond with an error page.
 
-app.use(function(err, req, res, next){
+app.use((err, req, res, next) => {
   // we may use properties of the error object
   // here and next(err) appropriately, or if
   // we possibly recovered from the error, simply next().
@@ -97,7 +104,7 @@ app.use(function(err, req, res, next){
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

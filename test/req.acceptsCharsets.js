@@ -1,15 +1,15 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".acceptsCharsets(type)", function () {
-    describe("when Accept-Charset is not present", function () {
-      it("should return true", async function () {
-        var app = express();
+describe("req", () => {
+  describe(".acceptsCharsets(type)", () => {
+    describe("when Accept-Charset is not present", () => {
+      it("should return true", async () => {
+        const app = express();
 
-        app.use(function (req, res, next) {
+        app.use((req, res, next) => {
           res.end(req.acceptsCharsets("utf-8") ? "yes" : "no");
         });
 
@@ -17,11 +17,11 @@ describe("req", function () {
       });
     });
 
-    describe("when Accept-Charset is present", function () {
-      it("should return true", async function () {
-        var app = express();
+    describe("when Accept-Charset is present", () => {
+      it("should return true", async () => {
+        const app = express();
 
-        app.use(function (req, res, next) {
+        app.use((req, res, next) => {
           res.end(req.acceptsCharsets("utf-8") ? "yes" : "no");
         });
 
@@ -31,10 +31,10 @@ describe("req", function () {
           .expect("yes");
       });
 
-      it("should return false otherwise", async function () {
-        var app = express();
+      it("should return false otherwise", async () => {
+        const app = express();
 
-        app.use(function (req, res, next) {
+        app.use((req, res, next) => {
           res.end(req.acceptsCharsets("utf-8") ? "yes" : "no");
         });
 
@@ -44,10 +44,10 @@ describe("req", function () {
           .expect("no");
       });
 
-      it("should return the best matching charset from multiple inputs", async function () {
-        var app = express();
+      it("should return the best matching charset from multiple inputs", async () => {
+        const app = express();
 
-        app.use(function (req, res, next) {
+        app.use((req, res, next) => {
           res.end(req.acceptsCharsets("utf-8", "iso-8859-1"));
         });
 

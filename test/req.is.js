@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req.is()", function () {
-  describe("when given a mime type", function () {
-    it("should return the type when matching", async function () {
-      var app = express();
+describe("req.is()", () => {
+  describe("when given a mime type", () => {
+    it("should return the type when matching", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("application/json"));
       });
 
@@ -19,10 +19,10 @@ describe("req.is()", function () {
         .expect(200, '"application/json"');
     });
 
-    it("should return false when not matching", async function () {
-      var app = express();
+    it("should return false when not matching", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("image/jpeg"));
       });
 
@@ -33,10 +33,10 @@ describe("req.is()", function () {
         .expect(200, "false");
     });
 
-    it("should ignore charset", async function () {
-      var app = express();
+    it("should ignore charset", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("application/json"));
       });
 
@@ -48,11 +48,11 @@ describe("req.is()", function () {
     });
   });
 
-  describe("when content-type is not present", function () {
-    it("should return false", async function () {
-      var app = express();
+  describe("when content-type is not present", () => {
+    it("should return false", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("application/json"));
       });
 
@@ -60,11 +60,11 @@ describe("req.is()", function () {
     });
   });
 
-  describe("when given an extension", function () {
-    it("should lookup the mime type", async function () {
-      var app = express();
+  describe("when given an extension", () => {
+    it("should lookup the mime type", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("json"));
       });
 
@@ -76,11 +76,11 @@ describe("req.is()", function () {
     });
   });
 
-  describe("when given */subtype", function () {
-    it("should return the full type when matching", async function () {
-      var app = express();
+  describe("when given */subtype", () => {
+    it("should return the full type when matching", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("*/json"));
       });
 
@@ -91,10 +91,10 @@ describe("req.is()", function () {
         .expect(200, '"application/json"');
     });
 
-    it("should return false when not matching", async function () {
-      var app = express();
+    it("should return false when not matching", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("*/html"));
       });
 
@@ -105,10 +105,10 @@ describe("req.is()", function () {
         .expect(200, "false");
     });
 
-    it("should ignore charset", async function () {
-      var app = express();
+    it("should ignore charset", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("*/json"));
       });
 
@@ -120,11 +120,11 @@ describe("req.is()", function () {
     });
   });
 
-  describe("when given type/*", function () {
-    it("should return the full type when matching", async function () {
-      var app = express();
+  describe("when given type/*", () => {
+    it("should return the full type when matching", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("application/*"));
       });
 
@@ -135,10 +135,10 @@ describe("req.is()", function () {
         .expect(200, '"application/json"');
     });
 
-    it("should return false when not matching", async function () {
-      var app = express();
+    it("should return false when not matching", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("text/*"));
       });
 
@@ -149,10 +149,10 @@ describe("req.is()", function () {
         .expect(200, "false");
     });
 
-    it("should ignore charset", async function () {
-      var app = express();
+    it("should ignore charset", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(req.is("application/*"));
       });
 

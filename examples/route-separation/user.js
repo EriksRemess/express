@@ -2,45 +2,45 @@
 
 // Fake user database
 
-var users = [
+const users = [
   { name: 'TJ', email: 'tj@vision-media.ca' },
   { name: 'Tobi', email: 'tobi@vision-media.ca' }
 ];
 
-exports.list = function(req, res){
+export const listUsers = (req, res) => {
   res.render('users', { title: 'Users', users: users });
 };
 
-exports.load = function(req, res, next){
-  var id = req.params.id;
+export const load = (req, res, next) => {
+  const id = req.params.id;
   req.user = users[id];
   if (req.user) {
     next();
   } else {
-    var err = new Error('cannot find user ' + id);
+    const err = new Error('cannot find user ' + id);
     err.status = 404;
     next(err);
   }
 };
 
-exports.view = function(req, res){
+export const view = (req, res) => {
   res.render('users/view', {
     title: 'Viewing user ' + req.user.name,
     user: req.user
   });
 };
 
-exports.edit = function(req, res){
+export const edit = (req, res) => {
   res.render('users/edit', {
     title: 'Editing user ' + req.user.name,
     user: req.user
   });
 };
 
-exports.update = function(req, res){
+export const update = (req, res) => {
   // Normally you would handle all kinds of
   // validation and save back to the db
-  var user = req.body.user;
+  const user = req.body.user;
   req.user.name = user.name;
   req.user.email = user.email;
   res.redirect(req.get('Referrer') || '/');

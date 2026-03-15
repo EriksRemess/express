@@ -11,12 +11,17 @@
  * Module dependencies.
  */
 
-var express = require('../..');
-var path = require('node:path');
-var redis = require('redis');
+import express from "#express";
 
-var db = redis.createClient();
-var app = express();
+import path from 'node:path';
+import redis from 'redis';
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+const db = redis.createClient();
+const app = express();
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -49,8 +54,8 @@ async function initializeRedis() {
  * GET search for :query.
  */
 
-app.get('/search/{:query}', function (req, res, next) {
-  var query = req.params.query || '';
+app.get('/search/{:query}', (req, res, next) => {
+  const query = req.params.query || '';
   db.sMembers(query)
     .then((vals) => res.send(vals))
     .catch((err) => {
@@ -66,7 +71,7 @@ app.get('/search/{:query}', function (req, res, next) {
  * template.
  */
 
-app.get('/client.js', function(req, res){
+app.get('/client.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'client.js'));
 });
 
@@ -76,7 +81,7 @@ app.get('/client.js', function(req, res){
 
 (async () => {
   await initializeRedis();
-  if (!module.parent) {
+  if (isMain) {
     app.listen(3000);
     console.log('Express started on port 3000');
   }

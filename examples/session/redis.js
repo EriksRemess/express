@@ -4,15 +4,19 @@
  * Module dependencies.
  */
 
-var express = require('../..');
-var logger = require('morgan');
-var session = require('express-session');
+import express from "#express";
+
+import logger from 'morgan';
+import session from 'express-session';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 // pass the express to the connect redis module
 // allowing it to inherit from session.Store
-var RedisStore = require('connect-redis')(session);
+const RedisStore = require('connect-redis')(session);
 
-var app = express();
+const app = express();
 
 app.use(logger('dev'));
 
@@ -24,8 +28,8 @@ app.use(session({
   store: new RedisStore
 }));
 
-app.get('/', function(req, res){
-  var body = '';
+app.get('/', (req, res) => {
+  let body = '';
   if (req.session.views) {
     ++req.session.views;
   } else {

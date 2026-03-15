@@ -1,15 +1,15 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest"),
-  assert = require("node:assert");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+import assert from "node:assert";
 
-describe("req", function () {
-  describe(".get(field)", function () {
-    it("should return the header field value", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".get(field)", () => {
+    it("should return the header field value", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         assert(req.get("Something-Else") === undefined);
         res.end(req.get("Content-Type"));
       });
@@ -20,10 +20,10 @@ describe("req", function () {
         .expect("application/json");
     });
 
-    it("should special-case Referer", async function () {
-      var app = express();
+    it("should special-case Referer", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.get("Referer"));
       });
 
@@ -33,10 +33,10 @@ describe("req", function () {
         .expect("http://foobar.com");
     });
 
-    it("should throw missing header name", async function () {
-      var app = express();
+    it("should throw missing header name", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.get());
       });
 
@@ -45,10 +45,10 @@ describe("req", function () {
         .expect(500, /TypeError: name argument is required to req.get/);
     });
 
-    it("should throw for non-string header name", async function () {
-      var app = express();
+    it("should throw for non-string header name", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.get(42));
       });
 

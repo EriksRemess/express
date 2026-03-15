@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("res", function () {
-  describe(".links(obj)", function () {
-    it("should set Link header field", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".links(obj)", () => {
+    it("should set Link header field", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.links({
           next: "http://api.example.com/users?page=2",
           last: "http://api.example.com/users?page=5",
@@ -25,10 +25,10 @@ describe("res", function () {
         .expect(200);
     });
 
-    it("should set Link header field for multiple calls", async function () {
-      var app = express();
+    it("should set Link header field for multiple calls", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.links({
           next: "http://api.example.com/users?page=2",
           last: "http://api.example.com/users?page=5",
@@ -50,10 +50,10 @@ describe("res", function () {
         .expect(200);
     });
 
-    it("should set multiple links for single rel", async function () {
-      var app = express();
+    it("should set multiple links for single rel", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.links({
           next: "http://api.example.com/users?page=2",
           last: [

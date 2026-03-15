@@ -1,29 +1,32 @@
 "use strict";
-var { describe, it } = require("node:test");
-var assert = require("node:assert");
-var express = require("../"),
-  fs = require("node:fs");
-var path = require("node:path");
+import {describe, it} from "node:test";
+import assert from "node:assert";
+import express from "#express";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 function render(path, options, fn) {
-  fs.readFile(path, "utf8", function (err, str) {
+  fs.readFile(path, "utf8", (err, str) => {
     if (err) return fn(err);
     str = str.replace("{{user.name}}", options.user.name);
     fn(null, str);
   });
 }
 
-describe("app", function () {
-  describe(".engine(ext, fn)", function () {
-    it("should map a template engine", async function () {
+describe("app", () => {
+  describe(".engine(ext, fn)", () => {
+    it("should map a template engine", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
+        const app = express();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.engine(".html", render);
         app.locals.user = { name: "tobi" };
 
-        app.render("user.html", function (err, str) {
+        app.render("user.html", (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();
@@ -31,22 +34,22 @@ describe("app", function () {
       });
     });
 
-    it("should throw when the callback is missing", function () {
-      var app = express();
-      assert.throws(function () {
+    it("should throw when the callback is missing", () => {
+      const app = express();
+      assert.throws(() => {
         app.engine(".html", null);
       }, /callback function required/);
     });
 
-    it('should work without leading "."', async function () {
+    it('should work without leading "."', async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
+        const app = express();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.engine("html", render);
         app.locals.user = { name: "tobi" };
 
-        app.render("user.html", function (err, str) {
+        app.render("user.html", (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();
@@ -54,16 +57,16 @@ describe("app", function () {
       });
     });
 
-    it('should work "view engine" setting', async function () {
+    it('should work "view engine" setting', async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
+        const app = express();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.engine("html", render);
         app.set("view engine", "html");
         app.locals.user = { name: "tobi" };
 
-        app.render("user", function (err, str) {
+        app.render("user", (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();
@@ -71,16 +74,16 @@ describe("app", function () {
       });
     });
 
-    it('should work "view engine" with leading "."', async function () {
+    it('should work "view engine" with leading "."', async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
+        const app = express();
 
         app.set("views", path.join(__dirname, "fixtures"));
         app.engine(".html", render);
         app.set("view engine", ".html");
         app.locals.user = { name: "tobi" };
 
-        app.render("user", function (err, str) {
+        app.render("user", (err, str) => {
           if (err) return reject(err);
           assert.strictEqual(str, "<p>tobi</p>");
           resolve();

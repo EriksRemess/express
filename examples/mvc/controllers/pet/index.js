@@ -4,28 +4,28 @@
  * Module dependencies.
  */
 
-var db = require('../../db');
+import db from "#examples/mvc/db";
 
-exports.engine = 'ejs';
+export const engine = 'ejs';
 
-exports.before = function(req, res, next){
-  var pet = db.pets[req.params.pet_id];
+export function before(req, res, next) {
+  const pet = db.pets[req.params.pet_id];
   if (!pet) return next('route');
   req.pet = pet;
   next();
-};
+}
 
-exports.show = function(req, res, next){
+export function show(req, res, next) {
   res.render('show', { pet: req.pet });
-};
+}
 
-exports.edit = function(req, res, next){
+export function edit(req, res, next) {
   res.render('edit', { pet: req.pet });
-};
+}
 
-exports.update = function(req, res, next){
-  var body = req.body;
+export function update(req, res, next) {
+  const body = req.body;
   req.pet.name = body.pet.name;
   res.message('Information updated!');
   res.redirect('/pet/' + req.pet.id);
-};
+}

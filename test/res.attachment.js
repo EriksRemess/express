@@ -1,15 +1,15 @@
 "use strict";
-var { describe, it } = require("node:test");
-const { Buffer } = require("node:buffer");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import {Buffer} from "node:buffer";
+import express from "#express";
+import request from "supertest";
 
-describe("res", function () {
-  describe(".attachment()", function () {
-    it("should Content-Disposition to attachment", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".attachment()", () => {
+    it("should Content-Disposition to attachment", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.attachment().send("foo");
       });
 
@@ -17,11 +17,11 @@ describe("res", function () {
     });
   });
 
-  describe(".attachment(filename)", function () {
-    it("should add the filename param", async function () {
-      var app = express();
+  describe(".attachment(filename)", () => {
+    it("should add the filename param", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.attachment("/path/to/image.png");
         res.send("foo");
       });
@@ -31,10 +31,10 @@ describe("res", function () {
         .expect("Content-Disposition", 'attachment; filename="image.png"');
     });
 
-    it("should set the Content-Type", async function () {
-      var app = express();
+    it("should set the Content-Type", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.attachment("/path/to/image.png");
         res.send(Buffer.alloc(4, "."));
       });
@@ -43,11 +43,11 @@ describe("res", function () {
     });
   });
 
-  describe(".attachment(utf8filename)", function () {
-    it("should add the filename and filename* params", async function () {
-      var app = express();
+  describe(".attachment(utf8filename)", () => {
+    it("should add the filename and filename* params", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.attachment("/locales/日本語.txt");
         res.send("japanese");
       });
@@ -61,10 +61,10 @@ describe("res", function () {
         .expect(200);
     });
 
-    it("should set the Content-Type", async function () {
-      var app = express();
+    it("should set the Content-Type", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.attachment("/locales/日本語.txt");
         res.send("japanese");
       });

@@ -4,10 +4,16 @@
  * Module dependencies.
  */
 
-var express = require('../../');
-var app = module.exports = express();
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
+import express from "#express";
+
+const app = express();
+
+export default app;
+import logger from 'morgan';
+import cookieParser from '#lib/utils/cookies';
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 
 // custom log format
 if (process.env.NODE_ENV !== 'test') app.use(logger(':method :url'))
@@ -21,7 +27,7 @@ app.use(cookieParser('my secret here'));
 // parses x-www-form-urlencoded
 app.use(express.urlencoded())
 
-app.get('/', function(req, res){
+app.get('/', (req, res) => {
   if (req.cookies.remember) {
     res.send('Remembered :). Click to <a href="/forget">forget</a>!.');
   } else {
@@ -31,13 +37,13 @@ app.get('/', function(req, res){
   }
 });
 
-app.get('/forget', function(req, res){
+app.get('/forget', (req, res) => {
   res.clearCookie('remember');
   res.redirect(req.get('Referrer') || '/');
 });
 
-app.post('/', function(req, res){
-  var minute = 60000;
+app.post('/', (req, res) => {
+  const minute = 60000;
 
   if (req.body && req.body.remember) {
     res.cookie('remember', 1, { maxAge: minute })
@@ -47,7 +53,7 @@ app.post('/', function(req, res){
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

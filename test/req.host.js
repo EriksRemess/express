@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".host", function () {
-    it("should return the Host when present", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".host", () => {
+    it("should return the Host when present", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.host);
       });
 
@@ -18,10 +18,10 @@ describe("req", function () {
         .expect("example.com");
     });
 
-    it("should strip port number", async function () {
-      var app = express();
+    it("should strip port number", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.host);
       });
 
@@ -31,10 +31,10 @@ describe("req", function () {
         .expect(200, "example.com:3000");
     });
 
-    it("should return undefined otherwise", async function () {
-      var app = express();
+    it("should return undefined otherwise", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         req.headers.host = null;
         res.end(String(req.host));
       });
@@ -42,20 +42,20 @@ describe("req", function () {
       await request(app).post("/").expect("undefined");
     });
 
-    it("should work with IPv6 Host", async function () {
-      var app = express();
+    it("should work with IPv6 Host", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.host);
       });
 
       await request(app).post("/").set("Host", "[::1]").expect("[::1]");
     });
 
-    it("should work with IPv6 Host and port", async function () {
-      var app = express();
+    it("should work with IPv6 Host and port", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.host);
       });
 
@@ -65,13 +65,13 @@ describe("req", function () {
         .expect(200, "[::1]:3000");
     });
 
-    describe('when "trust proxy" is enabled', function () {
-      it("should respect X-Forwarded-Host", async function () {
-        var app = express();
+    describe('when "trust proxy" is enabled', () => {
+      it("should respect X-Forwarded-Host", async () => {
+        const app = express();
 
         app.enable("trust proxy");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.host);
         });
 
@@ -82,12 +82,12 @@ describe("req", function () {
           .expect("example.com");
       });
 
-      it("should ignore X-Forwarded-Host if socket addr not trusted", async function () {
-        var app = express();
+      it("should ignore X-Forwarded-Host if socket addr not trusted", async () => {
+        const app = express();
 
         app.set("trust proxy", "10.0.0.1");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.host);
         });
 
@@ -98,12 +98,12 @@ describe("req", function () {
           .expect("localhost");
       });
 
-      it("should default to Host", async function () {
-        var app = express();
+      it("should default to Host", async () => {
+        const app = express();
 
         app.enable("trust proxy");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.host);
         });
 
@@ -113,13 +113,13 @@ describe("req", function () {
           .expect("example.com");
       });
 
-      describe("when trusting hop count", function () {
-        it("should respect X-Forwarded-Host", async function () {
-          var app = express();
+      describe("when trusting hop count", () => {
+        it("should respect X-Forwarded-Host", async () => {
+          const app = express();
 
           app.set("trust proxy", 1);
 
-          app.use(function (req, res) {
+          app.use((req, res) => {
             res.end(req.host);
           });
 
@@ -132,11 +132,11 @@ describe("req", function () {
       });
     });
 
-    describe('when "trust proxy" is disabled', function () {
-      it("should ignore X-Forwarded-Host", async function () {
-        var app = express();
+    describe('when "trust proxy" is disabled', () => {
+      it("should ignore X-Forwarded-Host", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.host);
         });
 

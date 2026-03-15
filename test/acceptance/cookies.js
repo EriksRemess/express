@@ -1,28 +1,28 @@
-var { describe, it } = require("node:test");
-var app = require("../../examples/cookies"),
-  request = require("supertest");
-var utils = require("../support/utils");
+import {describe, it} from "node:test";
+import app from "#examples/cookies/index";
+import request from "supertest";
+import utils from "#test/support/utils";
 
-describe("cookies", function () {
-  describe("GET /", function () {
-    it("should have a form", async function () {
+describe("cookies", () => {
+  describe("GET /", () => {
+    it("should have a form", async () => {
       await request(app).get("/").expect(/<form/);
     });
 
-    it("should respond with no cookies", async function () {
+    it("should respond with no cookies", async () => {
       await request(app)
         .get("/")
         .expect(utils.shouldNotHaveHeader("Set-Cookie"))
         .expect(200);
     });
 
-    it("should respond to cookie", async function () {
+    it("should respond to cookie", async () => {
       await new Promise((resolve, reject) => {
         request(app)
           .post("/")
           .type("urlencoded")
           .send({ remember: 1 })
-          .expect(302, function (err, res) {
+          .expect(302, (err, res) => {
             if (err) return reject(err);
             request(app)
               .get("/")
@@ -39,14 +39,14 @@ describe("cookies", function () {
     });
   });
 
-  describe("GET /forget", function () {
-    it("should clear cookie", async function () {
+  describe("GET /forget", () => {
+    it("should clear cookie", async () => {
       await new Promise((resolve, reject) => {
         request(app)
           .post("/")
           .type("urlencoded")
           .send({ remember: 1 })
-          .expect(302, function (err, res) {
+          .expect(302, (err, res) => {
             if (err) return reject(err);
             request(app)
               .get("/forget")
@@ -64,8 +64,8 @@ describe("cookies", function () {
     });
   });
 
-  describe("POST /", function () {
-    it("should set a cookie", async function () {
+  describe("POST /", () => {
+    it("should set a cookie", async () => {
       await request(app)
         .post("/")
         .type("urlencoded")
@@ -74,7 +74,7 @@ describe("cookies", function () {
         .expect(302);
     });
 
-    it("should no set cookie w/o reminder", async function () {
+    it("should no set cookie w/o reminder", async () => {
       await request(app)
         .post("/")
         .send({})

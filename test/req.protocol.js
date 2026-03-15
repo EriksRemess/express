@@ -1,27 +1,27 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".protocol", function () {
-    it("should return the protocol string", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".protocol", () => {
+    it("should return the protocol string", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.protocol);
       });
 
       await request(app).get("/").expect("http");
     });
 
-    describe('when "trust proxy" is enabled', function () {
-      it("should respect X-Forwarded-Proto", async function () {
-        var app = express();
+    describe('when "trust proxy" is enabled', () => {
+      it("should respect X-Forwarded-Proto", async () => {
+        const app = express();
 
         app.enable("trust proxy");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.protocol);
         });
 
@@ -31,12 +31,12 @@ describe("req", function () {
           .expect("https");
       });
 
-      it("should default to the socket addr if X-Forwarded-Proto not present", async function () {
-        var app = express();
+      it("should default to the socket addr if X-Forwarded-Proto not present", async () => {
+        const app = express();
 
         app.enable("trust proxy");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           req.socket.encrypted = true;
           res.end(req.protocol);
         });
@@ -44,12 +44,12 @@ describe("req", function () {
         await request(app).get("/").expect("https");
       });
 
-      it("should ignore X-Forwarded-Proto if socket addr not trusted", async function () {
-        var app = express();
+      it("should ignore X-Forwarded-Proto if socket addr not trusted", async () => {
+        const app = express();
 
         app.set("trust proxy", "10.0.0.1");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.protocol);
         });
 
@@ -59,25 +59,25 @@ describe("req", function () {
           .expect("http");
       });
 
-      it("should default to http", async function () {
-        var app = express();
+      it("should default to http", async () => {
+        const app = express();
 
         app.enable("trust proxy");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.protocol);
         });
 
         await request(app).get("/").expect("http");
       });
 
-      describe("when trusting hop count", function () {
-        it("should respect X-Forwarded-Proto", async function () {
-          var app = express();
+      describe("when trusting hop count", () => {
+        it("should respect X-Forwarded-Proto", async () => {
+          const app = express();
 
           app.set("trust proxy", 1);
 
-          app.use(function (req, res) {
+          app.use((req, res) => {
             res.end(req.protocol);
           });
 
@@ -89,11 +89,11 @@ describe("req", function () {
       });
     });
 
-    describe('when "trust proxy" is disabled', function () {
-      it("should ignore X-Forwarded-Proto", async function () {
-        var app = express();
+    describe('when "trust proxy" is disabled', () => {
+      it("should ignore X-Forwarded-Proto", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.end(req.protocol);
         });
 

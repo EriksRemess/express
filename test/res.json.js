@@ -1,25 +1,25 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest"),
-  assert = require("node:assert");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+import assert from "node:assert";
 
-describe("res", function () {
-  describe(".json(object)", function () {
-    it("should not support jsonp callbacks", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".json(object)", () => {
+    it("should not support jsonp callbacks", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json({ foo: "bar" });
       });
 
       await request(app).get("/?callback=foo").expect('{"foo":"bar"}');
     });
 
-    it("should not override previous Content-Types", async function () {
-      var app = express();
+    it("should not override previous Content-Types", async () => {
+      const app = express();
 
-      app.get("/", function (req, res) {
+      app.get("/", (req, res) => {
         res.type("application/vnd.example+json");
         res.json({ hello: "world" });
       });
@@ -30,11 +30,11 @@ describe("res", function () {
         .expect(200, '{"hello":"world"}');
     });
 
-    describe("when given primitives", function () {
-      it("should respond with json for null", async function () {
-        var app = express();
+    describe("when given primitives", () => {
+      it("should respond with json for null", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json(null);
         });
 
@@ -44,10 +44,10 @@ describe("res", function () {
           .expect(200, "null");
       });
 
-      it("should respond with json for Number", async function () {
-        var app = express();
+      it("should respond with json for Number", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json(300);
         });
 
@@ -57,10 +57,10 @@ describe("res", function () {
           .expect(200, "300");
       });
 
-      it("should respond with json for String", async function () {
-        var app = express();
+      it("should respond with json for String", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json("str");
         });
 
@@ -71,11 +71,11 @@ describe("res", function () {
       });
     });
 
-    describe("when given an array", function () {
-      it("should respond with json", async function () {
-        var app = express();
+    describe("when given an array", () => {
+      it("should respond with json", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json(["foo", "bar", "baz"]);
         });
 
@@ -86,11 +86,11 @@ describe("res", function () {
       });
     });
 
-    describe("when given an object", function () {
-      it("should respond with json", async function () {
-        var app = express();
+    describe("when given an object", () => {
+      it("should respond with json", async () => {
+        const app = express();
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json({ name: "tobi" });
         });
 
@@ -101,18 +101,18 @@ describe("res", function () {
       });
     });
 
-    describe('"json escape" setting', function () {
-      it("should be undefined by default", function () {
-        var app = express();
+    describe('"json escape" setting', () => {
+      it("should be undefined by default", () => {
+        const app = express();
         assert.strictEqual(app.get("json escape"), undefined);
       });
 
-      it("should unicode escape HTML-sniffing characters", async function () {
-        var app = express();
+      it("should unicode escape HTML-sniffing characters", async () => {
+        const app = express();
 
         app.enable("json escape");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json({ "&": "<script>" });
         });
 
@@ -122,12 +122,12 @@ describe("res", function () {
           .expect(200, '{"\\u0026":"\\u003cscript\\u003e"}');
       });
 
-      it("should not break undefined escape", async function () {
-        var app = express();
+      it("should not break undefined escape", async () => {
+        const app = express();
 
         app.enable("json escape");
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json(undefined);
         });
 
@@ -138,15 +138,15 @@ describe("res", function () {
       });
     });
 
-    describe('"json replacer" setting', function () {
-      it("should be passed to JSON.stringify()", async function () {
-        var app = express();
+    describe('"json replacer" setting', () => {
+      it("should be passed to JSON.stringify()", async () => {
+        const app = express();
 
-        app.set("json replacer", function (key, val) {
+        app.set("json replacer", (key, val) => {
           return key[0] === "_" ? undefined : val;
         });
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json({ name: "tobi", _id: 12345 });
         });
 
@@ -157,18 +157,18 @@ describe("res", function () {
       });
     });
 
-    describe('"json spaces" setting', function () {
-      it("should be undefined by default", function () {
-        var app = express();
+    describe('"json spaces" setting', () => {
+      it("should be undefined by default", () => {
+        const app = express();
         assert(undefined === app.get("json spaces"));
       });
 
-      it("should be passed to JSON.stringify()", async function () {
-        var app = express();
+      it("should be passed to JSON.stringify()", async () => {
+        const app = express();
 
         app.set("json spaces", 2);
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.json({ name: "tobi", age: 2 });
         });
 

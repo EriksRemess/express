@@ -1,22 +1,22 @@
 "use strict";
 
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
-describe("res", function () {
-  describe(".set(field, value)", function () {
-    it("should set the response header field", async function () {
-      var app = express();
-      app.use(function (req, res) {
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+describe("res", () => {
+  describe(".set(field, value)", () => {
+    it("should set the response header field", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Content-Type", "text/x-foo; charset=utf-8").end();
       });
       await request(app)
         .get("/")
         .expect("Content-Type", "text/x-foo; charset=utf-8");
     });
-    it("should coerce to a string", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should coerce to a string", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("X-Number", 123);
         res.end(typeof res.get("X-Number"));
       });
@@ -26,10 +26,10 @@ describe("res", function () {
         .expect(200, "string");
     });
   });
-  describe(".set(field, values)", function () {
-    it("should set multiple response header fields", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".set(field, values)", () => {
+    it("should set multiple response header fields", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Set-Cookie", ["type=ninja", "language=javascript"]);
         res.send(res.get("Set-Cookie"));
       });
@@ -37,9 +37,9 @@ describe("res", function () {
         .get("/")
         .expect('["type=ninja","language=javascript"]');
     });
-    it("should coerce to an array of strings", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should coerce to an array of strings", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("X-Numbers", [123, 456]);
         res.end(JSON.stringify(res.get("X-Numbers")));
       });
@@ -48,9 +48,9 @@ describe("res", function () {
         .expect("X-Numbers", "123, 456")
         .expect(200, '["123","456"]');
     });
-    it("should not set a charset of one is already set", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should not set a charset of one is already set", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Content-Type", "text/html; charset=lol");
         res.end();
       });
@@ -59,9 +59,9 @@ describe("res", function () {
         .expect("Content-Type", "text/html; charset=lol")
         .expect(200);
     });
-    it("should throw when Content-Type is an array", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should throw when Content-Type is an array", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Content-Type", ["text/html"]);
         res.end();
       });
@@ -70,10 +70,10 @@ describe("res", function () {
         .expect(500, /TypeError: Content-Type cannot be set to an Array/);
     });
   });
-  describe(".set(object)", function () {
-    it("should set multiple fields", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".set(object)", () => {
+    it("should set multiple fields", async () => {
+      const app = express();
+      app.use((req, res) => {
         res
           .set({
             "X-Foo": "bar",
@@ -83,9 +83,9 @@ describe("res", function () {
       });
       await request(app).get("/").expect("X-Foo", "bar").expect("X-Bar", "baz");
     });
-    it("should coerce to a string", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should coerce to a string", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set({
           "X-Number": 123,
         });

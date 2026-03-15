@@ -1,20 +1,20 @@
 "use strict";
-var { describe, it } = require("node:test");
-var assert = require("node:assert");
-var express = require("../");
+import {describe, it} from "node:test";
+import assert from "node:assert";
+import express from "#express";
 
-describe("app", function () {
-  describe(".locals", function () {
-    it("should default object with null prototype", function () {
-      var app = express();
+describe("app", () => {
+  describe(".locals", () => {
+    it("should default object with null prototype", () => {
+      const app = express();
       assert.ok(app.locals);
       assert.strictEqual(typeof app.locals, "object");
       assert.strictEqual(Object.getPrototypeOf(app.locals), null);
     });
 
-    describe(".settings", function () {
-      it("should contain app settings ", function () {
-        var app = express();
+    describe(".settings", () => {
+      it("should contain app settings ", () => {
+        const app = express();
         app.set("title", "Express");
         assert.ok(app.locals.settings);
         assert.strictEqual(typeof app.locals.settings, "object");

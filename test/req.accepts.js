@@ -1,24 +1,24 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".accepts(type)", function () {
-    it("should return true when Accept is not present", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".accepts(type)", () => {
+    it("should return true when Accept is not present", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts("json") ? "yes" : "no");
       });
 
       await request(app).get("/").expect("yes");
     });
 
-    it("should return true when present", async function () {
-      var app = express();
+    it("should return true when present", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts("json") ? "yes" : "no");
       });
 
@@ -28,10 +28,10 @@ describe("req", function () {
         .expect("yes");
     });
 
-    it("should return false otherwise", async function () {
-      var app = express();
+    it("should return false otherwise", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts("json") ? "yes" : "no");
       });
 
@@ -39,10 +39,10 @@ describe("req", function () {
     });
   });
 
-  it("should accept an argument list of type names", async function () {
-    var app = express();
+  it("should accept an argument list of type names", async () => {
+    const app = express();
 
-    app.use(function (req, res, next) {
+    app.use((req, res, next) => {
       res.end(req.accepts("json", "html"));
     });
 
@@ -52,31 +52,31 @@ describe("req", function () {
       .expect("json");
   });
 
-  describe(".accepts(types)", function () {
-    it("should return the first when Accept is not present", async function () {
-      var app = express();
+  describe(".accepts(types)", () => {
+    it("should return the first when Accept is not present", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts(["json", "html"]));
       });
 
       await request(app).get("/").expect("json");
     });
 
-    it("should return the first acceptable type", async function () {
-      var app = express();
+    it("should return the first acceptable type", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts(["json", "html"]));
       });
 
       await request(app).get("/").set("Accept", "text/html").expect("html");
     });
 
-    it("should return false when no match is made", async function () {
-      var app = express();
+    it("should return false when no match is made", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(
           req.accepts(["text/html", "application/json"]) ? "yup" : "nope",
         );
@@ -88,10 +88,10 @@ describe("req", function () {
         .expect("nope");
     });
 
-    it("should take quality into account", async function () {
-      var app = express();
+    it("should take quality into account", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts(["text/html", "application/json"]));
       });
 
@@ -101,10 +101,10 @@ describe("req", function () {
         .expect("application/json");
     });
 
-    it("should return the first acceptable type with canonical mime types", async function () {
-      var app = express();
+    it("should return the first acceptable type with canonical mime types", async () => {
+      const app = express();
 
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         res.end(req.accepts(["application/json", "text/html"]));
       });
 

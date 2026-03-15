@@ -4,10 +4,15 @@
  * Module dependencies.
  */
 
-var express = require('../..');
-var path = require('node:path');
-var User = require('./user');
-var app = express();
+import express from "#express";
+
+import path from 'node:path';
+import User from "#examples/view-locals/user";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const app = express();
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -23,10 +28,10 @@ function ferrets(user) {
 // in order to expose the "count"
 // and "users" locals
 
-app.get('/', function(req, res, next){
-  User.count(function(err, count){
+app.get('/', (req, res, next) => {
+  User.count((err, count) => {
     if (err) return next(err);
-    User.all(function(err, users){
+    User.all((err, users) => {
       if (err) return next(err);
       res.render('index', {
         title: 'Users',
@@ -46,7 +51,7 @@ app.get('/', function(req, res, next){
 // on the request object
 
 function count(req, res, next) {
-  User.count(function(err, count){
+  User.count((err, count) => {
     if (err) return next(err);
     req.count = count;
     next();
@@ -54,14 +59,14 @@ function count(req, res, next) {
 }
 
 function users(req, res, next) {
-  User.all(function(err, users){
+  User.all((err, users) => {
     if (err) return next(err);
     req.users = users;
     next();
   })
 }
 
-app.get('/middleware', count, users, function (req, res) {
+app.get('/middleware', count, users, (req, res) => {
   res.render('index', {
     title: 'Users',
     count: req.count,
@@ -84,7 +89,7 @@ app.get('/middleware', count, users, function (req, res) {
 // is more flexible with `req.users`.
 
 function count2(req, res, next) {
-  User.count(function(err, count){
+  User.count((err, count) => {
     if (err) return next(err);
     res.locals.count = count;
     next();
@@ -92,14 +97,14 @@ function count2(req, res, next) {
 }
 
 function users2(req, res, next) {
-  User.all(function(err, users){
+  User.all((err, users) => {
     if (err) return next(err);
     res.locals.users = users.filter(ferrets);
     next();
   })
 }
 
-app.get('/middleware-locals', count2, users2, function (req, res) {
+app.get('/middleware-locals', count2, users2, (req, res) => {
   // you can see now how we have much less
   // to pass to res.render(). If we have
   // several routes related to users this
@@ -149,7 +154,7 @@ app.all('/api/*', function(req, res, next){
 */
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

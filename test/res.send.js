@@ -1,45 +1,45 @@
 "use strict";
 
-var { describe, it } = require("node:test");
-var assert = require("node:assert");
-const { Buffer } = require("node:buffer");
-var express = require("..");
-var methods = require("../lib/utils").methods;
-var request = require("supertest");
-var utils = require("./support/utils");
-var shouldSkipQuery = require("./support/utils").shouldSkipQuery;
-describe("res", function () {
-  describe(".send()", function () {
-    it('should set body to ""', async function () {
-      var app = express();
-      app.use(function (req, res) {
+import {describe, it} from "node:test";
+import assert from "node:assert";
+import {Buffer} from "node:buffer";
+import express from "#express";
+import {methods} from "#lib/utils";
+import request from "supertest";
+import utils from "#test/support/utils";
+import {shouldSkipQuery} from "#test/support/utils";
+describe("res", () => {
+  describe(".send()", () => {
+    it('should set body to ""', async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send();
       });
       await request(app).get("/").expect(200, "");
     });
   });
-  describe(".send(null)", function () {
-    it('should set body to ""', async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".send(null)", () => {
+    it('should set body to ""', async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send(null);
       });
       await request(app).get("/").expect("Content-Length", "0").expect(200, "");
     });
   });
-  describe(".send(undefined)", function () {
-    it('should set body to ""', async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".send(undefined)", () => {
+    it('should set body to ""', async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send(undefined);
       });
       await request(app).get("/").expect(200, "");
     });
   });
-  describe(".send(Number)", function () {
-    it("should send as application/json", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".send(Number)", () => {
+    it("should send as application/json", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send(1000);
       });
       await request(app)
@@ -48,10 +48,10 @@ describe("res", function () {
         .expect(200, "1000");
     });
   });
-  describe(".send(String)", function () {
-    it("should send as html", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".send(String)", () => {
+    it("should send as html", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send("<p>hey</p>");
       });
       await request(app)
@@ -59,10 +59,10 @@ describe("res", function () {
         .expect("Content-Type", "text/html; charset=utf-8")
         .expect(200, "<p>hey</p>");
     });
-    it("should set ETag", async function () {
-      var app = express();
-      app.use(function (req, res) {
-        var str = Array(1000).join("-");
+    it("should set ETag", async () => {
+      const app = express();
+      app.use((req, res) => {
+        const str = Array(1000).join("-");
         res.send(str);
       });
       await request(app)
@@ -70,9 +70,9 @@ describe("res", function () {
         .expect("ETag", 'W/"3e7-qPnkJ3CVdVhFJQvUBfF10TmVA7g"')
         .expect(200);
     });
-    it("should not override Content-Type", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should not override Content-Type", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Content-Type", "text/plain").send("hey");
       });
       await request(app)
@@ -80,9 +80,9 @@ describe("res", function () {
         .expect("Content-Type", "text/plain; charset=utf-8")
         .expect(200, "hey");
     });
-    it("should override charset in Content-Type", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should override charset in Content-Type", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Content-Type", "text/plain; charset=iso-8859-1").send("hey");
       });
       await request(app)
@@ -90,9 +90,9 @@ describe("res", function () {
         .expect("Content-Type", "text/plain; charset=utf-8")
         .expect(200, "hey");
     });
-    it("should keep charset in Content-Type for Buffers", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should keep charset in Content-Type for Buffers", async () => {
+      const app = express();
+      app.use((req, res) => {
         res
           .set("Content-Type", "text/plain; charset=iso-8859-1")
           .send(Buffer.from("hi"));
@@ -103,10 +103,10 @@ describe("res", function () {
         .expect(200, "hi");
     });
   });
-  describe(".send(Buffer)", function () {
-    it("should send as octet-stream", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".send(Buffer)", () => {
+    it("should send as octet-stream", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send(Buffer.from("hello"));
       });
       await request(app)
@@ -115,9 +115,9 @@ describe("res", function () {
         .expect("Content-Type", "application/octet-stream")
         .expect(utils.shouldHaveBody(Buffer.from("hello")));
     });
-    it("should set ETag", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should set ETag", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send(Buffer.alloc(999, "-"));
       });
       await request(app)
@@ -125,9 +125,9 @@ describe("res", function () {
         .expect("ETag", 'W/"3e7-qPnkJ3CVdVhFJQvUBfF10TmVA7g"')
         .expect(200);
     });
-    it("should not override Content-Type", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should not override Content-Type", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.set("Content-Type", "text/plain").send(Buffer.from("hey"));
       });
       await request(app)
@@ -135,9 +135,9 @@ describe("res", function () {
         .expect("Content-Type", "text/plain; charset=utf-8")
         .expect(200, "hey");
     });
-    it("should accept Uint8Array", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should accept Uint8Array", async () => {
+      const app = express();
+      app.use((req, res) => {
         const encodedHey = new TextEncoder().encode("hey");
         res.set("Content-Type", "text/plain").send(encodedHey);
       });
@@ -146,18 +146,18 @@ describe("res", function () {
         .expect("Content-Type", "text/plain; charset=utf-8")
         .expect(200, "hey");
     });
-    it("should not override ETag", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should not override ETag", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.type("text/plain").set("ETag", '"foo"').send(Buffer.from("hey"));
       });
       await request(app).get("/").expect("ETag", '"foo"').expect(200, "hey");
     });
   });
-  describe(".send(Object)", function () {
-    it("should send as application/json", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".send(Object)", () => {
+    it("should send as application/json", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send({
           name: "tobi",
         });
@@ -168,10 +168,10 @@ describe("res", function () {
         .expect(200, '{"name":"tobi"}');
     });
   });
-  describe("when the request method is HEAD", function () {
-    it("should ignore the body", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when the request method is HEAD", () => {
+    it("should ignore the body", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.send("yay");
       });
       await request(app)
@@ -180,10 +180,10 @@ describe("res", function () {
         .expect(utils.shouldNotHaveBody());
     });
   });
-  describe("when .statusCode is 204", function () {
-    it("should strip Content-* fields, Transfer-Encoding field, and body", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when .statusCode is 204", () => {
+    it("should strip Content-* fields, Transfer-Encoding field, and body", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.status(204).set("Transfer-Encoding", "chunked").send("foo");
       });
       await request(app)
@@ -194,10 +194,10 @@ describe("res", function () {
         .expect(204, "");
     });
   });
-  describe("when .statusCode is 205", function () {
-    it("should strip Transfer-Encoding field and body, set Content-Length", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when .statusCode is 205", () => {
+    it("should strip Transfer-Encoding field and body, set Content-Length", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.status(205).set("Transfer-Encoding", "chunked").send("foo");
       });
       await request(app)
@@ -207,10 +207,10 @@ describe("res", function () {
         .expect(205, "");
     });
   });
-  describe("when .statusCode is 304", function () {
-    it("should strip Content-* fields, Transfer-Encoding field, and body", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when .statusCode is 304", () => {
+    it("should strip Content-* fields, Transfer-Encoding field, and body", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.status(304).set("Transfer-Encoding", "chunked").send("foo");
       });
       await request(app)
@@ -221,29 +221,29 @@ describe("res", function () {
         .expect(304, "");
     });
   });
-  it("should always check regardless of length", async function () {
-    var app = express();
-    var etag = '"asdf"';
-    app.use(function (req, res, next) {
+  it("should always check regardless of length", async () => {
+    const app = express();
+    const etag = '"asdf"';
+    app.use((req, res, next) => {
       res.set("ETag", etag);
       res.send("hey");
     });
     await request(app).get("/").set("If-None-Match", etag).expect(304);
   });
-  it("should respond with 304 Not Modified when fresh", async function () {
-    var app = express();
-    var etag = '"asdf"';
-    app.use(function (req, res) {
-      var str = Array(1000).join("-");
+  it("should respond with 304 Not Modified when fresh", async () => {
+    const app = express();
+    const etag = '"asdf"';
+    app.use((req, res) => {
+      const str = Array(1000).join("-");
       res.set("ETag", etag);
       res.send(str);
     });
     await request(app).get("/").set("If-None-Match", etag).expect(304);
   });
-  it("should not perform freshness check unless 2xx or 304", async function () {
-    var app = express();
-    var etag = '"asdf"';
-    app.use(function (req, res, next) {
+  it("should not perform freshness check unless 2xx or 304", async () => {
+    const app = express();
+    const etag = '"asdf"';
+    app.use((req, res, next) => {
       res.status(500);
       res.set("ETag", etag);
       res.send("hey");
@@ -254,27 +254,27 @@ describe("res", function () {
       .expect("hey")
       .expect(500);
   });
-  it("should not support jsonp callbacks", async function () {
-    var app = express();
-    app.use(function (req, res) {
+  it("should not support jsonp callbacks", async () => {
+    const app = express();
+    app.use((req, res) => {
       res.send({
         foo: "bar",
       });
     });
     await request(app).get("/?callback=foo").expect('{"foo":"bar"}');
   });
-  it("should be chainable", async function () {
-    var app = express();
-    app.use(function (req, res) {
+  it("should be chainable", async () => {
+    const app = express();
+    app.use((req, res) => {
       assert.equal(res.send("hey"), res);
     });
     await request(app).get("/").expect(200, "hey");
   });
-  describe('"etag" setting', function () {
-    describe("when enabled", function () {
-      it("should send ETag", async function () {
-        var app = express();
-        app.use(function (req, res) {
+  describe('"etag" setting', () => {
+    describe("when enabled", () => {
+      it("should send ETag", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.send("kajdslfkasdf");
         });
         app.enable("etag");
@@ -283,7 +283,7 @@ describe("res", function () {
           .expect("ETag", 'W/"c-IgR/L5SF7CJQff4wxKGF/vfPuZ0"')
           .expect(200);
       });
-      methods.forEach(function (method) {
+      methods.forEach(method => {
         if (method === "connect") return;
         it(
           "should send ETag in response to " +
@@ -292,9 +292,9 @@ describe("res", function () {
           {
             skip: method === "query" && shouldSkipQuery(process.versions.node),
           },
-          async function () {
-            var app = express();
-            app[method]("/", function (req, res) {
+          async () => {
+            const app = express();
+            app[method]("/", (req, res) => {
               res.send("kajdslfkasdf");
             });
             await request(app)
@@ -304,9 +304,9 @@ describe("res", function () {
           },
         );
       });
-      it("should send ETag for empty string response", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should send ETag for empty string response", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.send("");
         });
         app.enable("etag");
@@ -315,10 +315,10 @@ describe("res", function () {
           .expect("ETag", 'W/"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"')
           .expect(200);
       });
-      it("should send ETag for long response", async function () {
-        var app = express();
-        app.use(function (req, res) {
-          var str = Array(1000).join("-");
+      it("should send ETag for long response", async () => {
+        const app = express();
+        app.use((req, res) => {
+          const str = Array(1000).join("-");
           res.send(str);
         });
         app.enable("etag");
@@ -327,18 +327,18 @@ describe("res", function () {
           .expect("ETag", 'W/"3e7-qPnkJ3CVdVhFJQvUBfF10TmVA7g"')
           .expect(200);
       });
-      it("should not override ETag when manually set", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should not override ETag when manually set", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.set("etag", '"asdf"');
           res.send("hello!");
         });
         app.enable("etag");
         await request(app).get("/").expect("ETag", '"asdf"').expect(200);
       });
-      it("should not send ETag for res.send()", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should not send ETag for res.send()", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.send();
         });
         app.enable("etag");
@@ -348,11 +348,11 @@ describe("res", function () {
           .expect(200);
       });
     });
-    describe("when disabled", function () {
-      it("should send no ETag", async function () {
-        var app = express();
-        app.use(function (req, res) {
-          var str = Array(1000).join("-");
+    describe("when disabled", () => {
+      it("should send no ETag", async () => {
+        const app = express();
+        app.use((req, res) => {
+          const str = Array(1000).join("-");
           res.send(str);
         });
         app.disable("etag");
@@ -361,21 +361,21 @@ describe("res", function () {
           .expect(utils.shouldNotHaveHeader("ETag"))
           .expect(200);
       });
-      it("should send ETag when manually set", async function () {
-        var app = express();
+      it("should send ETag when manually set", async () => {
+        const app = express();
         app.disable("etag");
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.set("etag", '"asdf"');
           res.send("hello!");
         });
         await request(app).get("/").expect("ETag", '"asdf"').expect(200);
       });
     });
-    describe('when "strong"', function () {
-      it("should send strong ETag", async function () {
-        var app = express();
+    describe('when "strong"', () => {
+      it("should send strong ETag", async () => {
+        const app = express();
         app.set("etag", "strong");
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.send("hello, world!");
         });
         await request(app)
@@ -384,11 +384,11 @@ describe("res", function () {
           .expect(200);
       });
     });
-    describe('when "weak"', function () {
-      it("should send weak ETag", async function () {
-        var app = express();
+    describe('when "weak"', () => {
+      it("should send weak ETag", async () => {
+        const app = express();
         app.set("etag", "weak");
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.send("hello, world!");
         });
         await request(app)
@@ -397,27 +397,27 @@ describe("res", function () {
           .expect(200);
       });
     });
-    describe("when a function", function () {
-      it("should send custom ETag", async function () {
-        var app = express();
-        app.set("etag", function (body, encoding) {
-          var chunk = !Buffer.isBuffer(body)
+    describe("when a function", () => {
+      it("should send custom ETag", async () => {
+        const app = express();
+        app.set("etag", (body, encoding) => {
+          const chunk = !Buffer.isBuffer(body)
             ? Buffer.from(body, encoding)
             : body;
           assert.strictEqual(chunk.toString(), "hello, world!");
           return '"custom"';
         });
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.send("hello, world!");
         });
         await request(app).get("/").expect("ETag", '"custom"').expect(200);
       });
-      it("should not send falsy ETag", async function () {
-        var app = express();
-        app.set("etag", function (body, encoding) {
+      it("should not send falsy ETag", async () => {
+        const app = express();
+        app.set("etag", (body, encoding) => {
           return undefined;
         });
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.send("hello, world!");
         });
         await request(app)

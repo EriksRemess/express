@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".path", function () {
-    it("should return the parsed pathname", async function () {
-      var app = express();
+describe("req", () => {
+  describe(".path", () => {
+    it("should return the parsed pathname", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.end(req.path);
       });
 

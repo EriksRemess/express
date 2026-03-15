@@ -1,17 +1,16 @@
 "use strict";
-var { describe, it } = require("node:test");
-var after = require("after");
-var assert = require("node:assert");
-var express = require("..");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import after from "#test/support/after";
+import assert from "node:assert";
+import express from "#express";
+import request from "supertest";
 
-describe("app", function () {
-  it('should emit "mount" when mounted', async function () {
+describe("app", () => {
+  it('should emit "mount" when mounted', async () => {
     await new Promise((resolve, reject) => {
-      var blog = express(),
-        app = express();
+      const blog = express(), app = express();
 
-      blog.on("mount", function (arg) {
+      blog.on("mount", arg => {
         assert.strictEqual(arg, app);
         resolve();
       });
@@ -20,12 +19,11 @@ describe("app", function () {
     });
   });
 
-  describe(".use(app)", function () {
-    it("should mount the app", async function () {
-      var blog = express(),
-        app = express();
+  describe(".use(app)", () => {
+    it("should mount the app", async () => {
+      const blog = express(), app = express();
 
-      blog.get("/blog", function (req, res) {
+      blog.get("/blog", (req, res) => {
         res.end("blog");
       });
 
@@ -34,23 +32,21 @@ describe("app", function () {
       await request(app).get("/blog").expect("blog");
     });
 
-    it("should support mount-points", async function () {
+    it("should support mount-points", async () => {
       await new Promise((resolve, reject) => {
-        var blog = express(),
-          forum = express(),
-          app = express();
-        var cb = after(2, function (err) {
+        const blog = express(), forum = express(), app = express();
+        const cb = after(2, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
 
-        blog.get("/", function (req, res) {
+        blog.get("/", (req, res) => {
           res.end("blog");
         });
 
-        forum.get("/", function (req, res) {
+        forum.get("/", (req, res) => {
           res.end("forum");
         });
 
@@ -63,19 +59,17 @@ describe("app", function () {
       });
     });
 
-    it("should set the child's .parent", function () {
-      var blog = express(),
-        app = express();
+    it("should set the child's .parent", () => {
+      const blog = express(), app = express();
 
       app.use("/blog", blog);
       assert.strictEqual(blog.parent, app);
     });
 
-    it("should support dynamic routes", async function () {
-      var blog = express(),
-        app = express();
+    it("should support dynamic routes", async () => {
+      const blog = express(), app = express();
 
-      blog.get("/", function (req, res) {
+      blog.get("/", (req, res) => {
         res.end("success");
       });
 
@@ -84,17 +78,15 @@ describe("app", function () {
       await request(app).get("/post/once-upon-a-time").expect("success");
     });
 
-    it("should support mounted app anywhere", async function () {
+    it("should support mounted app anywhere", async () => {
       await new Promise((resolve, reject) => {
-        var cb = after(3, function (err) {
+        const cb = after(3, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
-        var blog = express(),
-          other = express(),
-          app = express();
+        const blog = express(), other = express(), app = express();
 
         function fn1(req, res, next) {
           res.setHeader("x-fn-1", "hit");
@@ -106,15 +98,15 @@ describe("app", function () {
           next();
         }
 
-        blog.get("/", function (req, res) {
+        blog.get("/", (req, res) => {
           res.end("success");
         });
 
-        blog.once("mount", function (parent) {
+        blog.once("mount", parent => {
           assert.strictEqual(parent, app);
           cb();
         });
-        other.once("mount", function (parent) {
+        other.once("mount", parent => {
           assert.strictEqual(parent, app);
           cb();
         });
@@ -130,9 +122,9 @@ describe("app", function () {
     });
   });
 
-  describe(".use(middleware)", function () {
-    it("should accept multiple arguments", async function () {
-      var app = express();
+  describe(".use(middleware)", () => {
+    it("should accept multiple arguments", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -157,17 +149,17 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should invoke middleware for all requests", async function () {
+    it("should invoke middleware for all requests", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var cb = after(3, function (err) {
+        const app = express();
+        const cb = after(3, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
 
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.send("saw " + req.method + " " + req.url);
         });
 
@@ -179,8 +171,8 @@ describe("app", function () {
       });
     });
 
-    it("should accept array of middleware", async function () {
-      var app = express();
+    it("should accept array of middleware", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -207,8 +199,8 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should accept multiple arrays of middleware", async function () {
-      var app = express();
+    it("should accept multiple arrays of middleware", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -235,8 +227,8 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should accept nested arrays of middleware", async function () {
-      var app = express();
+    it("should accept nested arrays of middleware", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -264,54 +256,54 @@ describe("app", function () {
     });
   });
 
-  describe(".use(path, middleware)", function () {
-    it("should require middleware", function () {
-      var app = express();
-      assert.throws(function () {
+  describe(".use(path, middleware)", () => {
+    it("should require middleware", () => {
+      const app = express();
+      assert.throws(() => {
         app.use("/");
       }, "TypeError: app.use() requires a middleware function");
     });
 
-    it("should reject string as middleware", function () {
-      var app = express();
-      assert.throws(function () {
+    it("should reject string as middleware", () => {
+      const app = express();
+      assert.throws(() => {
         app.use("/", "foo");
       }, /argument handler must be a function/);
     });
 
-    it("should reject number as middleware", function () {
-      var app = express();
-      assert.throws(function () {
+    it("should reject number as middleware", () => {
+      const app = express();
+      assert.throws(() => {
         app.use("/", 42);
       }, /argument handler must be a function/);
     });
 
-    it("should reject null as middleware", function () {
-      var app = express();
-      assert.throws(function () {
+    it("should reject null as middleware", () => {
+      const app = express();
+      assert.throws(() => {
         app.use("/", null);
       }, /argument handler must be a function/);
     });
 
-    it("should reject Date as middleware", function () {
-      var app = express();
-      assert.throws(function () {
+    it("should reject Date as middleware", () => {
+      const app = express();
+      assert.throws(() => {
         app.use("/", new Date());
       }, /argument handler must be a function/);
     });
 
-    it("should strip path from req.url", async function () {
-      var app = express();
+    it("should strip path from req.url", async () => {
+      const app = express();
 
-      app.use("/foo", function (req, res) {
+      app.use("/foo", (req, res) => {
         res.send("saw " + req.method + " " + req.url);
       });
 
       await request(app).get("/foo/bar").expect(200, "saw GET /bar");
     });
 
-    it("should accept multiple arguments", async function () {
-      var app = express();
+    it("should accept multiple arguments", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -336,17 +328,17 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should invoke middleware for all requests starting with path", async function () {
+    it("should invoke middleware for all requests starting with path", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var cb = after(3, function (err) {
+        const app = express();
+        const cb = after(3, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
 
-        app.use("/foo", function (req, res) {
+        app.use("/foo", (req, res) => {
           res.send("saw " + req.method + " " + req.url);
         });
 
@@ -358,17 +350,17 @@ describe("app", function () {
       });
     });
 
-    it("should work if path has trailing slash", async function () {
+    it("should work if path has trailing slash", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var cb = after(3, function (err) {
+        const app = express();
+        const cb = after(3, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
 
-        app.use("/foo/", function (req, res) {
+        app.use("/foo/", (req, res) => {
           res.send("saw " + req.method + " " + req.url);
         });
 
@@ -380,8 +372,8 @@ describe("app", function () {
       });
     });
 
-    it("should accept array of middleware", async function () {
-      var app = express();
+    it("should accept array of middleware", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -408,8 +400,8 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should accept multiple arrays of middleware", async function () {
-      var app = express();
+    it("should accept multiple arrays of middleware", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -436,8 +428,8 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should accept nested arrays of middleware", async function () {
-      var app = express();
+    it("should accept nested arrays of middleware", async () => {
+      const app = express();
 
       function fn1(req, res, next) {
         res.setHeader("x-fn-1", "hit");
@@ -464,17 +456,17 @@ describe("app", function () {
         .expect(200);
     });
 
-    it("should support array of paths", async function () {
+    it("should support array of paths", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var cb = after(3, function (err) {
+        const app = express();
+        const cb = after(3, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
 
-        app.use(["/foo/", "/bar"], function (req, res) {
+        app.use(["/foo/", "/bar"], (req, res) => {
           res.send(
             "saw " + req.method + " " + req.url + " through " + req.originalUrl,
           );
@@ -488,10 +480,10 @@ describe("app", function () {
       });
     });
 
-    it("should support array of paths with middleware array", async function () {
+    it("should support array of paths with middleware array", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var cb = after(2, function (err) {
+        const app = express();
+        const cb = after(2, err => {
           if (err) {
             return reject(err);
           }
@@ -533,17 +525,17 @@ describe("app", function () {
       });
     });
 
-    it("should support regexp path", async function () {
+    it("should support regexp path", async () => {
       await new Promise((resolve, reject) => {
-        var app = express();
-        var cb = after(4, function (err) {
+        const app = express();
+        const cb = after(4, err => {
           if (err) {
             return reject(err);
           }
           resolve();
         });
 
-        app.use(/^\/[a-z]oo/, function (req, res) {
+        app.use(/^\/[a-z]oo/, (req, res) => {
           res.send(
             "saw " + req.method + " " + req.url + " through " + req.originalUrl,
           );
@@ -561,10 +553,10 @@ describe("app", function () {
       });
     });
 
-    it("should support empty string path", async function () {
-      var app = express();
+    it("should support empty string path", async () => {
+      const app = express();
 
-      app.use("", function (req, res) {
+      app.use("", (req, res) => {
         res.send(
           "saw " + req.method + " " + req.url + " through " + req.originalUrl,
         );

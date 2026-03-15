@@ -4,55 +4,62 @@
  * Module dependencies.
  */
 
-var express = require('../../..');
-var fs = require('node:fs');
-var path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import express from "#express";
 
-module.exports = function(parent, options){
-  var dir = path.join(__dirname, '..', 'controllers');
-  var verbose = options.verbose;
-  fs.readdirSync(dir).forEach(function(name){
-    var file = path.join(dir, name)
-    if (!fs.statSync(file).isDirectory()) return;
-    verbose && console.log('\n   %s:', name);
-    var obj = require(file);
-    var name = obj.name || name;
-    var prefix = obj.prefix || '';
-    var app = express();
-    var handler;
-    var method;
-    var url;
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const RESERVED_EXPORTS = new Set(['name', 'prefix', 'engine', 'before']);
+
+export default async (parent, options) => {
+  const dir = path.join(__dirname, '..', 'controllers');
+  const verbose = options.verbose;
+
+  for (const entryName of fs.readdirSync(dir)) {
+    const file = path.join(dir, entryName);
+    if (!fs.statSync(file).isDirectory()) continue;
+
+    if (verbose) {
+      console.log('\n   %s:', entryName);
+    }
+
+    const moduleUrl = pathToFileURL(path.join(file, 'index.js')).href;
+    const obj = await import(moduleUrl);
+    const controllerName = obj.name || entryName;
+    const prefix = obj.prefix || '';
+    const app = express();
 
     // allow specifying the view engine
     if (obj.engine) app.set('view engine', obj.engine);
-    app.set('views', path.join(__dirname, '..', 'controllers', name, 'views'));
+    app.set('views', path.join(__dirname, '..', 'controllers', controllerName, 'views'));
 
-    // generate routes based
-    // on the exported methods
-    for (var key in obj) {
-      // "reserved" exports
-      if (~['name', 'prefix', 'engine', 'before'].indexOf(key)) continue;
-      // route exports
+    // generate routes based on the exported methods
+    for (const key of Object.keys(obj)) {
+      if (RESERVED_EXPORTS.has(key)) continue;
+
+      let method;
+      let url;
       switch (key) {
         case 'show':
           method = 'get';
-          url = '/' + name + '/:' + name + '_id';
+          url = '/' + controllerName + '/:' + controllerName + '_id';
           break;
         case 'list':
           method = 'get';
-          url = '/' + name + 's';
+          url = '/' + controllerName + 's';
           break;
         case 'edit':
           method = 'get';
-          url = '/' + name + '/:' + name + '_id/edit';
+          url = '/' + controllerName + '/:' + controllerName + '_id/edit';
           break;
         case 'update':
           method = 'put';
-          url = '/' + name + '/:' + name + '_id';
+          url = '/' + controllerName + '/:' + controllerName + '_id';
           break;
         case 'create':
           method = 'post';
-          url = '/' + name;
+          url = '/' + controllerName;
           break;
         case 'index':
           method = 'get';
@@ -60,24 +67,26 @@ module.exports = function(parent, options){
           break;
         default:
           /* istanbul ignore next */
-          throw new Error('unrecognized route: ' + name + '.' + key);
+          throw new Error('unrecognized route: ' + controllerName + '.' + key);
       }
 
-      // setup
-      handler = obj[key];
-      url = prefix + url;
+      const handler = obj[key];
+      const routePath = prefix + url;
 
-      // before middleware support
       if (obj.before) {
-        app[method](url, obj.before, handler);
-        verbose && console.log('     %s %s -> before -> %s', method.toUpperCase(), url, key);
+        app[method](routePath, obj.before, handler);
+        if (verbose) {
+          console.log('     %s %s -> before -> %s', method.toUpperCase(), routePath, key);
+        }
       } else {
-        app[method](url, handler);
-        verbose && console.log('     %s %s -> %s', method.toUpperCase(), url, key);
+        app[method](routePath, handler);
+        if (verbose) {
+          console.log('     %s %s -> %s', method.toUpperCase(), routePath, key);
+        }
       }
     }
 
     // mount the app
     parent.use(app);
-  });
+  }
 };

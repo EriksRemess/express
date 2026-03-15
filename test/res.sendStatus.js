@@ -1,34 +1,34 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("res", function () {
-  describe(".sendStatus(statusCode)", function () {
-    it("should send the status code and message as body", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".sendStatus(statusCode)", () => {
+    it("should send the status code and message as body", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.sendStatus(201);
       });
 
       await request(app).get("/").expect(201, "Created");
     });
 
-    it("should work with unknown code", async function () {
-      var app = express();
+    it("should work with unknown code", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.sendStatus(599);
       });
 
       await request(app).get("/").expect(599, "599");
     });
 
-    it("should raise error for invalid status code", async function () {
-      var app = express();
+    it("should raise error for invalid status code", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.sendStatus(undefined).end();
       });
 

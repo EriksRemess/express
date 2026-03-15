@@ -1,33 +1,35 @@
 'use strict'
 
-module.exports = User;
+export default User;
 
 // faux model
 
-function User(name, age, species) {
-  this.name = name;
-  this.age = age;
-  this.species = species;
+class User {
+  constructor(name, age, species) {
+    this.name = name;
+    this.age = age;
+    this.species = species;
+  }
 }
 
-User.all = function(fn){
+User.all = fn => {
   // process.nextTick makes sure this function API
   // behaves in an asynchronous manner, like if it
   // was a real DB query to read all users.
-  process.nextTick(function(){
+  process.nextTick(() => {
     fn(null, users);
   });
 };
 
-User.count = function(fn){
-  process.nextTick(function(){
+User.count = fn => {
+  process.nextTick(() => {
     fn(null, users.length);
   });
 };
 
 // faux database
 
-var users = [];
+const users = [];
 
 users.push(new User('Tobi', 2, 'ferret'));
 users.push(new User('Loki', 1, 'ferret'));

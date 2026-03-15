@@ -1,10 +1,10 @@
-var { describe, it } = require("node:test");
-var request = require("supertest"),
-  app = require("../../examples/ejs");
+import {describe, it} from "node:test";
+import request from "supertest";
+import app from "#examples/ejs/index";
 
-describe("ejs", function () {
-  describe("GET /", function () {
-    it("should respond with html", async function () {
+describe("ejs", () => {
+  describe("GET /", () => {
+    it("should respond with html", async () => {
       await request(app)
         .get("/")
         .expect("Content-Type", "text/html; charset=utf-8")

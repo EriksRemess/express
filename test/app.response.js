@@ -1,30 +1,30 @@
 "use strict";
-var { describe, it } = require("node:test");
-var after = require("after");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import after from "#test/support/after";
+import express from "#express";
+import request from "supertest";
 
-describe("app", function () {
-  describe(".response", function () {
-    it("should extend the response prototype", async function () {
-      var app = express();
+describe("app", () => {
+  describe(".response", () => {
+    it("should extend the response prototype", async () => {
+      const app = express();
 
       app.response.shout = function (str) {
         this.send(str.toUpperCase());
       };
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.shout("hey");
       });
 
       await request(app).get("/").expect("HEY");
     });
 
-    it("should only extend for the referenced app", async function () {
+    it("should only extend for the referenced app", async () => {
       await new Promise((resolve, reject) => {
-        var app1 = express();
-        var app2 = express();
-        var cb = after(2, function (err) {
+        const app1 = express();
+        const app2 = express();
+        const cb = after(2, err => {
           if (err) {
             return reject(err);
           }
@@ -35,11 +35,11 @@ describe("app", function () {
           this.send(str.toUpperCase());
         };
 
-        app1.get("/", function (req, res) {
+        app1.get("/", (req, res) => {
           res.shout("foo");
         });
 
-        app2.get("/", function (req, res) {
+        app2.get("/", (req, res) => {
           res.shout("foo");
         });
 
@@ -51,11 +51,11 @@ describe("app", function () {
       });
     });
 
-    it("should inherit to sub apps", async function () {
+    it("should inherit to sub apps", async () => {
       await new Promise((resolve, reject) => {
-        var app1 = express();
-        var app2 = express();
-        var cb = after(2, function (err) {
+        const app1 = express();
+        const app2 = express();
+        const cb = after(2, err => {
           if (err) {
             return reject(err);
           }
@@ -68,11 +68,11 @@ describe("app", function () {
 
         app1.use("/sub", app2);
 
-        app1.get("/", function (req, res) {
+        app1.get("/", (req, res) => {
           res.shout("foo");
         });
 
-        app2.get("/", function (req, res) {
+        app2.get("/", (req, res) => {
           res.shout("foo");
         });
 
@@ -82,11 +82,11 @@ describe("app", function () {
       });
     });
 
-    it("should allow sub app to override", async function () {
+    it("should allow sub app to override", async () => {
       await new Promise((resolve, reject) => {
-        var app1 = express();
-        var app2 = express();
-        var cb = after(2, function (err) {
+        const app1 = express();
+        const app2 = express();
+        const cb = after(2, err => {
           if (err) {
             return reject(err);
           }
@@ -103,11 +103,11 @@ describe("app", function () {
 
         app1.use("/sub", app2);
 
-        app1.get("/", function (req, res) {
+        app1.get("/", (req, res) => {
           res.shout("foo");
         });
 
-        app2.get("/", function (req, res) {
+        app2.get("/", (req, res) => {
           res.shout("foo");
         });
 
@@ -117,11 +117,11 @@ describe("app", function () {
       });
     });
 
-    it("should not pollute parent app", async function () {
+    it("should not pollute parent app", async () => {
       await new Promise((resolve, reject) => {
-        var app1 = express();
-        var app2 = express();
-        var cb = after(2, function (err) {
+        const app1 = express();
+        const app2 = express();
+        const cb = after(2, err => {
           if (err) {
             return reject(err);
           }
@@ -138,11 +138,11 @@ describe("app", function () {
 
         app1.use("/sub", app2);
 
-        app1.get("/sub/foo", function (req, res) {
+        app1.get("/sub/foo", (req, res) => {
           res.shout("foo");
         });
 
-        app2.get("/", function (req, res) {
+        app2.get("/", (req, res) => {
           res.shout("foo");
         });
 

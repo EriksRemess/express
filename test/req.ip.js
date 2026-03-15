@@ -1,16 +1,16 @@
 "use strict";
 
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
-describe("req", function () {
-  describe(".ip", function () {
-    describe("when X-Forwarded-For is present", function () {
-      describe('when "trust proxy" is enabled', function () {
-        it("should return the client addr", async function () {
-          var app = express();
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+describe("req", () => {
+  describe(".ip", () => {
+    describe("when X-Forwarded-For is present", () => {
+      describe('when "trust proxy" is enabled', () => {
+        it("should return the client addr", async () => {
+          const app = express();
           app.enable("trust proxy");
-          app.use(function (req, res, next) {
+          app.use((req, res, next) => {
             res.send(req.ip);
           });
           await request(app)
@@ -18,10 +18,10 @@ describe("req", function () {
             .set("X-Forwarded-For", "client, p1, p2")
             .expect("client");
         });
-        it("should return the addr after trusted proxy based on count", async function () {
-          var app = express();
+        it("should return the addr after trusted proxy based on count", async () => {
+          const app = express();
           app.set("trust proxy", 2);
-          app.use(function (req, res, next) {
+          app.use((req, res, next) => {
             res.send(req.ip);
           });
           await request(app)
@@ -29,10 +29,10 @@ describe("req", function () {
             .set("X-Forwarded-For", "client, p1, p2")
             .expect("p1");
         });
-        it("should return the addr after trusted proxy based on list", async function () {
-          var app = express();
+        it("should return the addr after trusted proxy based on list", async () => {
+          const app = express();
           app.set("trust proxy", "10.0.0.1, 10.0.0.2, 127.0.0.1, ::1");
-          app.get("/", function (req, res) {
+          app.get("/", (req, res) => {
             res.send(req.ip);
           });
           await request(app)
@@ -40,12 +40,12 @@ describe("req", function () {
             .set("X-Forwarded-For", "10.0.0.2, 10.0.0.3, 10.0.0.1", "10.0.0.4")
             .expect("10.0.0.3");
         });
-        it("should return the addr after trusted proxy, from sub app", async function () {
-          var app = express();
-          var sub = express();
+        it("should return the addr after trusted proxy, from sub app", async () => {
+          const app = express();
+          const sub = express();
           app.set("trust proxy", 2);
           app.use(sub);
-          sub.use(function (req, res, next) {
+          sub.use((req, res, next) => {
             res.send(req.ip);
           });
           await request(app)
@@ -54,26 +54,26 @@ describe("req", function () {
             .expect(200, "p1");
         });
       });
-      describe('when "trust proxy" is disabled', function () {
-        it("should return the remote address", async function () {
-          var app = express();
-          app.use(function (req, res, next) {
+      describe('when "trust proxy" is disabled', () => {
+        it("should return the remote address", async () => {
+          const app = express();
+          app.use((req, res, next) => {
             res.send(req.ip);
           });
-          var test = request(app).get("/");
+          const test = request(app).get("/");
           test.set("X-Forwarded-For", "client, p1, p2");
           await test.expect(200, getExpectedClientAddress(test._server));
         });
       });
     });
-    describe("when X-Forwarded-For is not present", function () {
-      it("should return the remote address", async function () {
-        var app = express();
+    describe("when X-Forwarded-For is not present", () => {
+      it("should return the remote address", async () => {
+        const app = express();
         app.enable("trust proxy");
-        app.use(function (req, res, next) {
+        app.use((req, res, next) => {
           res.send(req.ip);
         });
-        var test = request(app).get("/");
+        const test = request(app).get("/");
         await test.expect(200, getExpectedClientAddress(test._server));
       });
     });

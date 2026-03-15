@@ -1,31 +1,31 @@
 "use strict";
 
-var { describe, it, before } = require("node:test");
-var __testApp;
-var assert = require("node:assert");
-var AsyncLocalStorage = require("node:async_hooks").AsyncLocalStorage;
-const { Buffer } = require("node:buffer");
-var express = require("..");
-var request = require("supertest");
-describe("express.urlencoded()", function () {
-  before(function () {
+import {describe, it, before} from "node:test";
+let __testApp;
+import assert from "node:assert";
+import {AsyncLocalStorage} from "node:async_hooks";
+import {Buffer} from "node:buffer";
+import express from "#express";
+import request from "supertest";
+describe("express.urlencoded()", () => {
+  before(() => {
     __testApp = createApp();
   });
-  it("should parse x-www-form-urlencoded", async function () {
+  it("should parse x-www-form-urlencoded", async () => {
     await request(__testApp)
       .post("/")
       .set("Content-Type", "application/x-www-form-urlencoded")
       .send("user=tobi")
       .expect(200, '{"user":"tobi"}');
   });
-  it("should 400 when invalid content-length", async function () {
-    var app = express();
-    app.use(function (req, res, next) {
+  it("should 400 when invalid content-length", async () => {
+    const app = express();
+    app.use((req, res, next) => {
       req.headers["content-length"] = "20"; // bad length
       next();
     });
     app.use(express.urlencoded());
-    app.post("/", function (req, res) {
+    app.post("/", (req, res) => {
       res.json(req.body);
     });
     await request(app)
@@ -34,7 +34,7 @@ describe("express.urlencoded()", function () {
       .send("str=")
       .expect(400, /content length/);
   });
-  it("should handle Content-Length: 0", async function () {
+  it("should handle Content-Length: 0", async () => {
     await request(__testApp)
       .post("/")
       .set("Content-Type", "application/x-www-form-urlencoded")
@@ -42,7 +42,7 @@ describe("express.urlencoded()", function () {
       .send("")
       .expect(200, "{}");
   });
-  it("should handle empty message-body", async function () {
+  it("should handle empty message-body", async () => {
     await request(
       createApp({
         limit: "1kb",
@@ -54,11 +54,11 @@ describe("express.urlencoded()", function () {
       .send("")
       .expect(200, "{}");
   });
-  it("should handle duplicated middleware", async function () {
-    var app = express();
+  it("should handle duplicated middleware", async () => {
+    const app = express();
     app.use(express.urlencoded());
     app.use(express.urlencoded());
-    app.post("/", function (req, res) {
+    app.post("/", (req, res) => {
       res.json(req.body);
     });
     await request(app)
@@ -67,28 +67,28 @@ describe("express.urlencoded()", function () {
       .send("user=tobi")
       .expect(200, '{"user":"tobi"}');
   });
-  it("should not parse extended syntax", async function () {
+  it("should not parse extended syntax", async () => {
     await request(__testApp)
       .post("/")
       .set("Content-Type", "application/x-www-form-urlencoded")
       .send("user[name][first]=Tobi")
       .expect(200, '{"user[name][first]":"Tobi"}');
   });
-  describe("with extended option", function () {
-    describe("when false", function () {
-      before(function () {
+  describe("with extended option", () => {
+    describe("when false", () => {
+      before(() => {
         __testApp = createApp({
           extended: false,
         });
       });
-      it("should not parse extended syntax", async function () {
+      it("should not parse extended syntax", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("user[name][first]=Tobi")
           .expect(200, '{"user[name][first]":"Tobi"}');
       });
-      it("should parse multiple key instances", async function () {
+      it("should parse multiple key instances", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
@@ -96,74 +96,74 @@ describe("express.urlencoded()", function () {
           .expect(200, '{"user":["Tobi","Loki"]}');
       });
     });
-    describe("when true", function () {
-      before(function () {
+    describe("when true", () => {
+      before(() => {
         __testApp = createApp({
           extended: true,
         });
       });
-      it("should parse multiple key instances", async function () {
+      it("should parse multiple key instances", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("user=Tobi&user=Loki")
           .expect(200, '{"user":["Tobi","Loki"]}');
       });
-      it("should parse extended syntax", async function () {
+      it("should parse extended syntax", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("user[name][first]=Tobi")
           .expect(200, '{"user":{"name":{"first":"Tobi"}}}');
       });
-      it("should parse parameters with dots", async function () {
+      it("should parse parameters with dots", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("user.name=Tobi")
           .expect(200, '{"user.name":"Tobi"}');
       });
-      it("should parse fully-encoded extended syntax", async function () {
+      it("should parse fully-encoded extended syntax", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("user%5Bname%5D%5Bfirst%5D=Tobi")
           .expect(200, '{"user":{"name":{"first":"Tobi"}}}');
       });
-      it("should parse array index notation", async function () {
+      it("should parse array index notation", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("foo[0]=bar&foo[1]=baz")
           .expect(200, '{"foo":["bar","baz"]}');
       });
-      it("should parse array index notation with large array", async function () {
-        var str = "f[0]=0";
-        for (var i = 1; i < 500; i++) {
+      it("should parse array index notation with large array", async () => {
+        let str = "f[0]=0";
+        for (let i = 1; i < 500; i++) {
           str += "&f[" + i + "]=" + i.toString(16);
         }
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send(str)
-          .expect(function (res) {
-            var obj = JSON.parse(res.text);
+          .expect(res => {
+            const obj = JSON.parse(res.text);
             assert.strictEqual(Object.keys(obj).length, 1);
             assert.strictEqual(Array.isArray(obj.f), true);
             assert.strictEqual(obj.f.length, 500);
           })
           .expect(200);
       });
-      it("should parse array of objects syntax", async function () {
+      it("should parse array of objects syntax", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("foo[0][bar]=baz&foo[0][fizz]=buzz&foo[]=done!")
           .expect(200, '{"foo":[{"bar":"baz","fizz":"buzz"},"done!"]}');
       });
-      it("should parse deep object", async function () {
-        var str = "foo";
-        for (var i = 0; i < 32; i++) {
+      it("should parse deep object", async () => {
+        let str = "foo";
+        for (let i = 0; i < 32; i++) {
           str += "[p]";
         }
         str += "=bar";
@@ -171,12 +171,12 @@ describe("express.urlencoded()", function () {
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send(str)
-          .expect(function (res) {
-            var obj = JSON.parse(res.text);
+          .expect(res => {
+            const obj = JSON.parse(res.text);
             assert.strictEqual(Object.keys(obj).length, 1);
             assert.strictEqual(typeof obj.foo, "object");
-            var depth = 0;
-            var ref = obj.foo;
+            let depth = 0;
+            let ref = obj.foo;
             while ((ref = ref.p)) {
               depth++;
             }
@@ -186,15 +186,15 @@ describe("express.urlencoded()", function () {
       });
     });
   });
-  describe("with inflate option", function () {
-    describe("when false", function () {
-      before(function () {
+  describe("with inflate option", () => {
+    describe("when false", () => {
+      before(() => {
         __testApp = createApp({
           inflate: false,
         });
       });
-      it("should not accept content-encoding", async function () {
-        var test = request(__testApp).post("/");
+      it("should not accept content-encoding", async () => {
+        const test = request(__testApp).post("/");
         await test.set("Content-Encoding", "gzip");
         await test.set("Content-Type", "application/x-www-form-urlencoded");
         await test.write(
@@ -209,14 +209,14 @@ describe("express.urlencoded()", function () {
         );
       });
     });
-    describe("when true", function () {
-      before(function () {
+    describe("when true", () => {
+      before(() => {
         __testApp = createApp({
           inflate: true,
         });
       });
-      it("should accept content-encoding", async function () {
-        var test = request(__testApp).post("/");
+      it("should accept content-encoding", async () => {
+        const test = request(__testApp).post("/");
         await test.set("Content-Encoding", "gzip");
         await test.set("Content-Type", "application/x-www-form-urlencoded");
         await test.write(
@@ -229,9 +229,9 @@ describe("express.urlencoded()", function () {
       });
     });
   });
-  describe("with limit option", function () {
-    it("should 413 when over limit with Content-Length", async function () {
-      var buf = Buffer.alloc(1024, ".");
+  describe("with limit option", () => {
+    it("should 413 when over limit with Content-Length", async () => {
+      const buf = Buffer.alloc(1024, ".");
       await request(
         createApp({
           limit: "1kb",
@@ -243,23 +243,23 @@ describe("express.urlencoded()", function () {
         .send("str=" + buf.toString())
         .expect(413);
     });
-    it("should 413 when over limit with chunked encoding", async function () {
-      var app = createApp({
+    it("should 413 when over limit with chunked encoding", async () => {
+      const app = createApp({
         limit: "1kb",
       });
-      var buf = Buffer.alloc(1024, ".");
-      var test = request(app).post("/");
+      const buf = Buffer.alloc(1024, ".");
+      const test = request(app).post("/");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.set("Transfer-Encoding", "chunked");
       await test.write("str=");
       await test.write(buf.toString());
       await test.expect(413);
     });
-    it("should 413 when inflated body over limit", async function () {
-      var app = createApp({
+    it("should 413 when inflated body over limit", async () => {
+      const app = createApp({
         limit: "1kb",
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(
@@ -270,8 +270,8 @@ describe("express.urlencoded()", function () {
       );
       await test.expect(413);
     });
-    it("should accept number of bytes", async function () {
-      var buf = Buffer.alloc(1024, ".");
+    it("should accept number of bytes", async () => {
+      const buf = Buffer.alloc(1024, ".");
       await request(
         createApp({
           limit: 1024,
@@ -282,12 +282,12 @@ describe("express.urlencoded()", function () {
         .send("str=" + buf.toString())
         .expect(413);
     });
-    it("should not change when options altered", async function () {
-      var buf = Buffer.alloc(1024, ".");
-      var options = {
+    it("should not change when options altered", async () => {
+      const buf = Buffer.alloc(1024, ".");
+      const options = {
         limit: "1kb",
       };
-      var app = createApp(options);
+      const app = createApp(options);
       options.limit = "100kb";
       await request(app)
         .post("/")
@@ -295,23 +295,23 @@ describe("express.urlencoded()", function () {
         .send("str=" + buf.toString())
         .expect(413);
     });
-    it("should not hang response", async function () {
-      var app = createApp({
+    it("should not hang response", async () => {
+      const app = createApp({
         limit: "8kb",
       });
-      var buf = Buffer.alloc(10240, ".");
-      var test = request(app).post("/");
+      const buf = Buffer.alloc(10240, ".");
+      const test = request(app).post("/");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(buf);
       await test.write(buf);
       await test.write(buf);
       await test.expect(413);
     });
-    it("should not error when inflating", async function () {
-      var app = createApp({
+    it("should not error when inflating", async () => {
+      const app = createApp({
         limit: "1kb",
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(
@@ -323,9 +323,9 @@ describe("express.urlencoded()", function () {
       await test.expect(413);
     });
   });
-  describe("with parameterLimit option", function () {
-    describe("with extended: false", function () {
-      it("should reject 0", function () {
+  describe("with parameterLimit option", () => {
+    describe("with extended: false", () => {
+      it("should reject 0", () => {
         assert.throws(
           createApp.bind(null, {
             extended: false,
@@ -334,7 +334,7 @@ describe("express.urlencoded()", function () {
           /TypeError: option parameterLimit must be a positive number/,
         );
       });
-      it("should reject string", function () {
+      it("should reject string", () => {
         assert.throws(
           createApp.bind(null, {
             extended: false,
@@ -343,7 +343,7 @@ describe("express.urlencoded()", function () {
           /TypeError: option parameterLimit must be a positive number/,
         );
       });
-      it("should 413 if over limit", async function () {
+      it("should 413 if over limit", async () => {
         await request(
           createApp({
             extended: false,
@@ -355,7 +355,7 @@ describe("express.urlencoded()", function () {
           .send(createManyParams(11))
           .expect(413, "[parameters.too.many] too many parameters");
       });
-      it("should work when at the limit", async function () {
+      it("should work when at the limit", async () => {
         await request(
           createApp({
             extended: false,
@@ -368,7 +368,7 @@ describe("express.urlencoded()", function () {
           .expect(expectKeyCount(10))
           .expect(200);
       });
-      it("should work if number is floating point", async function () {
+      it("should work if number is floating point", async () => {
         await request(
           createApp({
             extended: false,
@@ -380,7 +380,7 @@ describe("express.urlencoded()", function () {
           .send(createManyParams(11))
           .expect(413, /too many parameters/);
       });
-      it("should work with large limit", async function () {
+      it("should work with large limit", async () => {
         await request(
           createApp({
             extended: false,
@@ -393,7 +393,7 @@ describe("express.urlencoded()", function () {
           .expect(expectKeyCount(5000))
           .expect(200);
       });
-      it("should work with Infinity limit", async function () {
+      it("should work with Infinity limit", async () => {
         await request(
           createApp({
             extended: false,
@@ -407,8 +407,8 @@ describe("express.urlencoded()", function () {
           .expect(200);
       });
     });
-    describe("with extended: true", function () {
-      it("should reject 0", function () {
+    describe("with extended: true", () => {
+      it("should reject 0", () => {
         assert.throws(
           createApp.bind(null, {
             extended: true,
@@ -417,7 +417,7 @@ describe("express.urlencoded()", function () {
           /TypeError: option parameterLimit must be a positive number/,
         );
       });
-      it("should reject string", function () {
+      it("should reject string", () => {
         assert.throws(
           createApp.bind(null, {
             extended: true,
@@ -426,7 +426,7 @@ describe("express.urlencoded()", function () {
           /TypeError: option parameterLimit must be a positive number/,
         );
       });
-      it("should 413 if over limit", async function () {
+      it("should 413 if over limit", async () => {
         await request(
           createApp({
             extended: true,
@@ -438,7 +438,7 @@ describe("express.urlencoded()", function () {
           .send(createManyParams(11))
           .expect(413, "[parameters.too.many] too many parameters");
       });
-      it("should work when at the limit", async function () {
+      it("should work when at the limit", async () => {
         await request(
           createApp({
             extended: true,
@@ -451,7 +451,7 @@ describe("express.urlencoded()", function () {
           .expect(expectKeyCount(10))
           .expect(200);
       });
-      it("should work if number is floating point", async function () {
+      it("should work if number is floating point", async () => {
         await request(
           createApp({
             extended: true,
@@ -463,7 +463,7 @@ describe("express.urlencoded()", function () {
           .send(createManyParams(11))
           .expect(413, /too many parameters/);
       });
-      it("should work with large limit", async function () {
+      it("should work with large limit", async () => {
         await request(
           createApp({
             extended: true,
@@ -476,7 +476,7 @@ describe("express.urlencoded()", function () {
           .expect(expectKeyCount(5000))
           .expect(200);
       });
-      it("should work with Infinity limit", async function () {
+      it("should work with Infinity limit", async () => {
         await request(
           createApp({
             extended: true,
@@ -491,21 +491,21 @@ describe("express.urlencoded()", function () {
       });
     });
   });
-  describe("with type option", function () {
-    describe('when "application/vnd.x-www-form-urlencoded"', function () {
-      before(function () {
+  describe("with type option", () => {
+    describe('when "application/vnd.x-www-form-urlencoded"', () => {
+      before(() => {
         __testApp = createApp({
           type: "application/vnd.x-www-form-urlencoded",
         });
       });
-      it("should parse for custom type", async function () {
+      it("should parse for custom type", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/vnd.x-www-form-urlencoded")
           .send("user=tobi")
           .expect(200, '{"user":"tobi"}');
       });
-      it("should ignore standard type", async function () {
+      it("should ignore standard type", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
@@ -513,27 +513,27 @@ describe("express.urlencoded()", function () {
           .expect(200, "");
       });
     });
-    describe('when ["urlencoded", "application/x-pairs"]', function () {
-      before(function () {
+    describe('when ["urlencoded", "application/x-pairs"]', () => {
+      before(() => {
         __testApp = createApp({
           type: ["urlencoded", "application/x-pairs"],
         });
       });
-      it('should parse "application/x-www-form-urlencoded"', async function () {
+      it('should parse "application/x-www-form-urlencoded"', async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send("user=tobi")
           .expect(200, '{"user":"tobi"}');
       });
-      it('should parse "application/x-pairs"', async function () {
+      it('should parse "application/x-pairs"', async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-pairs")
           .send("user=tobi")
           .expect(200, '{"user":"tobi"}');
       });
-      it("should ignore application/x-foo", async function () {
+      it("should ignore application/x-foo", async () => {
         await request(__testApp)
           .post("/")
           .set("Content-Type", "application/x-foo")
@@ -541,9 +541,9 @@ describe("express.urlencoded()", function () {
           .expect(200, "");
       });
     });
-    describe("when a function", function () {
-      it("should parse when truthy value returned", async function () {
-        var app = createApp({
+    describe("when a function", () => {
+      it("should parse when truthy value returned", async () => {
+        const app = createApp({
           type: accept,
         });
         function accept(req) {
@@ -555,19 +555,19 @@ describe("express.urlencoded()", function () {
           .send("user=tobi")
           .expect(200, '{"user":"tobi"}');
       });
-      it("should work without content-type", async function () {
-        var app = createApp({
+      it("should work without content-type", async () => {
+        const app = createApp({
           type: accept,
         });
         function accept(req) {
           return true;
         }
-        var test = request(app).post("/");
+        const test = request(app).post("/");
         await test.write("user=tobi");
         await test.expect(200, '{"user":"tobi"}');
       });
-      it("should not invoke without a body", async function () {
-        var app = createApp({
+      it("should not invoke without a body", async () => {
+        const app = createApp({
           type: accept,
         });
         function accept(req) {
@@ -577,8 +577,8 @@ describe("express.urlencoded()", function () {
       });
     });
   });
-  describe("with verify option", function () {
-    it("should assert value if function", function () {
+  describe("with verify option", () => {
+    it("should assert value if function", () => {
       assert.throws(
         createApp.bind(null, {
           verify: "lol",
@@ -586,9 +586,9 @@ describe("express.urlencoded()", function () {
         /TypeError: option verify must be function/,
       );
     });
-    it("should error from verify", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should error from verify", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] === 0x20) throw new Error("no leading space");
         },
       });
@@ -598,11 +598,11 @@ describe("express.urlencoded()", function () {
         .send(" user=tobi")
         .expect(403, "[entity.verify.failed] no leading space");
     });
-    it("should allow custom codes", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should allow custom codes", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] !== 0x20) return;
-          var err = new Error("no leading space");
+          const err = new Error("no leading space");
           err.status = 400;
           throw err;
         },
@@ -613,11 +613,11 @@ describe("express.urlencoded()", function () {
         .send(" user=tobi")
         .expect(400, "[entity.verify.failed] no leading space");
     });
-    it("should allow custom type", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should allow custom type", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] !== 0x20) return;
-          var err = new Error("no leading space");
+          const err = new Error("no leading space");
           err.type = "foo.bar";
           throw err;
         },
@@ -628,9 +628,9 @@ describe("express.urlencoded()", function () {
         .send(" user=tobi")
         .expect(403, "[foo.bar] no leading space");
     });
-    it("should allow pass-through", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should allow pass-through", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           if (buf[0] === 0x5b) throw new Error("no arrays");
         },
       });
@@ -640,13 +640,13 @@ describe("express.urlencoded()", function () {
         .send("user=tobi")
         .expect(200, '{"user":"tobi"}');
     });
-    it("should 415 on unknown charset prior to verify", async function () {
-      var app = createApp({
-        verify: function (req, res, buf) {
+    it("should 415 on unknown charset prior to verify", async () => {
+      const app = createApp({
+        verify: (req, res, buf) => {
           throw new Error("unexpected verify call");
         },
       });
-      var test = request(app).post("/");
+      const test = request(app).post("/");
       await test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=x-bogus",
@@ -658,38 +658,38 @@ describe("express.urlencoded()", function () {
       );
     });
   });
-  describe("async local storage", function () {
-    before(function () {
-      var app = express();
-      var store = {
+  describe("async local storage", () => {
+    before(() => {
+      const app = express();
+      const store = {
         foo: "bar",
       };
-      app.use(function (req, res, next) {
+      app.use((req, res, next) => {
         req.asyncLocalStorage = new AsyncLocalStorage();
         req.asyncLocalStorage.run(store, next);
       });
       app.use(express.urlencoded());
-      app.use(function (req, res, next) {
-        var local = req.asyncLocalStorage.getStore();
+      app.use((req, res, next) => {
+        const local = req.asyncLocalStorage.getStore();
         if (local) {
           res.setHeader("x-store-foo", String(local.foo));
         }
         next();
       });
-      app.use(function (err, req, res, next) {
-        var local = req.asyncLocalStorage.getStore();
+      app.use((err, req, res, next) => {
+        const local = req.asyncLocalStorage.getStore();
         if (local) {
           res.setHeader("x-store-foo", String(local.foo));
         }
         res.status(err.status || 500);
         res.send("[" + err.type + "] " + err.message);
       });
-      app.post("/", function (req, res) {
+      app.post("/", (req, res) => {
         res.json(req.body);
       });
       __testApp = app;
     });
-    it("should persist store", async function () {
+    it("should persist store", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/x-www-form-urlencoded")
@@ -698,7 +698,7 @@ describe("express.urlencoded()", function () {
         .expect("x-store-foo", "bar")
         .expect('{"user":"tobi"}');
     });
-    it("should persist store when unmatched content-type", async function () {
+    it("should persist store when unmatched content-type", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/fizzbuzz")
@@ -706,8 +706,8 @@ describe("express.urlencoded()", function () {
         .expect(200)
         .expect("x-store-foo", "bar");
     });
-    it("should persist store when inflated", async function () {
-      var test = request(__testApp).post("/");
+    it("should persist store when inflated", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(
@@ -721,8 +721,8 @@ describe("express.urlencoded()", function () {
       await test.expect('{"name":"论"}');
       await test;
     });
-    it("should persist store when inflate error", async function () {
-      var test = request(__testApp).post("/");
+    it("should persist store when inflate error", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(
@@ -735,7 +735,7 @@ describe("express.urlencoded()", function () {
       await test.expect("x-store-foo", "bar");
       await test;
     });
-    it("should persist store when limit exceeded", async function () {
+    it("should persist store when limit exceeded", async () => {
       await request(__testApp)
         .post("/")
         .set("Content-Type", "application/x-www-form-urlencoded")
@@ -744,12 +744,12 @@ describe("express.urlencoded()", function () {
         .expect("x-store-foo", "bar");
     });
   });
-  describe("charset", function () {
-    before(function () {
+  describe("charset", () => {
+    before(() => {
       __testApp = createApp();
     });
-    it("should parse utf-8", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse utf-8", async () => {
+      const test = request(__testApp).post("/");
       await test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=utf-8",
@@ -757,8 +757,8 @@ describe("express.urlencoded()", function () {
       await test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should parse when content-length != char length", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse when content-length != char length", async () => {
+      const test = request(__testApp).post("/");
       await test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=utf-8",
@@ -767,14 +767,14 @@ describe("express.urlencoded()", function () {
       await test.write(Buffer.from("746573743dc3a5", "hex"));
       await test.expect(200, '{"test":"å"}');
     });
-    it("should default to utf-8", async function () {
-      var test = request(__testApp).post("/");
+    it("should default to utf-8", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should fail on unknown charset", async function () {
-      var test = request(__testApp).post("/");
+    it("should fail on unknown charset", async () => {
+      const test = request(__testApp).post("/");
       await test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=koi8-r",
@@ -786,27 +786,27 @@ describe("express.urlencoded()", function () {
       );
     });
   });
-  describe("encoding", function () {
-    before(function () {
+  describe("encoding", () => {
+    before(() => {
       __testApp = createApp({
         limit: "10kb",
       });
     });
-    it("should parse without encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should parse without encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support identity encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should support identity encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "identity");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support gzip encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should support gzip encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "gzip");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(
@@ -817,15 +817,15 @@ describe("express.urlencoded()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support deflate encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should support deflate encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "deflate");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should be case-insensitive", async function () {
-      var test = request(__testApp).post("/");
+    it("should be case-insensitive", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "GZIP");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(
@@ -836,8 +836,8 @@ describe("express.urlencoded()", function () {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should 415 on unknown encoding", async function () {
-      var test = request(__testApp).post("/");
+    it("should 415 on unknown encoding", async () => {
+      const test = request(__testApp).post("/");
       await test.set("Content-Encoding", "nulls");
       await test.set("Content-Type", "application/x-www-form-urlencoded");
       await test.write(Buffer.from("000000000000", "hex"));
@@ -849,21 +849,21 @@ describe("express.urlencoded()", function () {
   });
 });
 function createManyParams(count) {
-  var str = "";
+  let str = "";
   if (count === 0) {
     return str;
   }
   str += "0=0";
-  for (var i = 1; i < count; i++) {
-    var n = i.toString(36);
+  for (let i = 1; i < count; i++) {
+    const n = i.toString(36);
     str += "&" + n + "=" + n;
   }
   return str;
 }
 function createApp(options) {
-  var app = express();
+  const app = express();
   app.use(express.urlencoded(options));
-  app.use(function (err, req, res, next) {
+  app.use((err, req, res, next) => {
     res.status(err.status || 500);
     res.send(
       String(
@@ -873,13 +873,13 @@ function createApp(options) {
       ),
     );
   });
-  app.post("/", function (req, res) {
+  app.post("/", (req, res) => {
     res.json(req.body);
   });
   return app;
 }
 function expectKeyCount(count) {
-  return function (res) {
+  return res => {
     assert.strictEqual(Object.keys(JSON.parse(res.text)).length, count);
   };
 }

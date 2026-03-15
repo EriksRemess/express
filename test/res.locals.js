@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("res", function () {
-  describe(".locals", function () {
-    it("should be empty by default", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".locals", () => {
+    it("should be empty by default", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.json(res.locals);
       });
 
@@ -16,18 +16,18 @@ describe("res", function () {
     });
   });
 
-  it("should work when mounted", async function () {
-    var app = express();
-    var blog = express();
+  it("should work when mounted", async () => {
+    const app = express();
+    const blog = express();
 
     app.use(blog);
 
-    blog.use(function (req, res, next) {
+    blog.use((req, res, next) => {
       res.locals.foo = "bar";
       next();
     });
 
-    app.use(function (req, res) {
+    app.use((req, res) => {
       res.json(res.locals);
     });
 

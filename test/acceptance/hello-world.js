@@ -1,16 +1,16 @@
-var { describe, it } = require("node:test");
-var app = require("../../examples/hello-world");
-var request = require("supertest");
+import {describe, it} from "node:test";
+import app from "#examples/hello-world/index";
+import request from "supertest";
 
-describe("hello-world", function () {
-  describe("GET /", function () {
-    it("should respond with hello world", async function () {
+describe("hello-world", () => {
+  describe("GET /", () => {
+    it("should respond with hello world", async () => {
       await request(app).get("/").expect(200, "Hello World");
     });
   });
 
-  describe("GET /missing", function () {
-    it("should respond with 404", async function () {
+  describe("GET /missing", () => {
+    it("should respond with 404", async () => {
       await request(app).get("/missing").expect(404);
     });
   });

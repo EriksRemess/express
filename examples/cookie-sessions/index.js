@@ -4,22 +4,28 @@
  * Module dependencies.
  */
 
-var cookieSession = require('cookie-session');
-var express = require('../../');
+import cookieSession from 'cookie-session';
 
-var app = module.exports = express();
+import express from "#express";
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+const app = express();
+
+export default app;
 
 // add req.session cookie support
 app.use(cookieSession({ secret: 'manny is cool' }));
 
 // do something with the session
-app.get('/', function (req, res) {
+app.get('/', (req, res) => {
   req.session.count = (req.session.count || 0) + 1
   res.send('viewed ' + req.session.count + ' times\n')
 })
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

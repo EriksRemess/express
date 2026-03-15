@@ -1,14 +1,14 @@
 "use strict";
 
-var { describe, it } = require("node:test");
-var express = require("..");
-var request = require("supertest");
-var utils = require("./support/utils");
-describe("res", function () {
-  describe(".redirect(url)", function () {
-    it("should default to a 302 redirect", async function () {
-      var app = express();
-      app.use(function (req, res) {
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+import utils from "#test/support/utils";
+describe("res", () => {
+  describe(".redirect(url)", () => {
+    it("should default to a 302 redirect", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("http://google.com");
       });
       await request(app)
@@ -16,9 +16,9 @@ describe("res", function () {
         .expect("location", "http://google.com")
         .expect(302);
     });
-    it('should encode "url"', async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it('should encode "url"', async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("https://google.com?q=\u2603 §10");
       });
       await request(app)
@@ -26,9 +26,9 @@ describe("res", function () {
         .expect("Location", "https://google.com?q=%E2%98%83%20%C2%A710")
         .expect(302);
     });
-    it('should not touch already-encoded sequences in "url"', async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it('should not touch already-encoded sequences in "url"', async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("https://google.com?q=%A710");
       });
       await request(app)
@@ -37,10 +37,10 @@ describe("res", function () {
         .expect(302);
     });
   });
-  describe(".redirect(status, url)", function () {
-    it("should set the response status", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".redirect(status, url)", () => {
+    it("should set the response status", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect(303, "http://google.com");
       });
       await request(app)
@@ -49,10 +49,10 @@ describe("res", function () {
         .expect(303);
     });
   });
-  describe("when the request method is HEAD", function () {
-    it("should ignore the body", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when the request method is HEAD", () => {
+    it("should ignore the body", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("http://google.com");
       });
       await request(app)
@@ -62,10 +62,10 @@ describe("res", function () {
         .expect(utils.shouldNotHaveBody());
     });
   });
-  describe("when accepting html", function () {
-    it("should respond with html", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when accepting html", () => {
+    it("should respond with html", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("http://google.com");
       });
       await request(app)
@@ -78,9 +78,9 @@ describe("res", function () {
           "<!DOCTYPE html><head><title>Found</title></head><body><p>Found. Redirecting to http://google.com</p></body>",
         );
     });
-    it("should escape the url", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should escape the url", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("<la'me>");
       });
       await request(app)
@@ -94,12 +94,12 @@ describe("res", function () {
           "<!DOCTYPE html><head><title>Found</title></head><body><p>Found. Redirecting to %3Cla&#39;me%3E</p></body>",
         );
     });
-    it("should not render evil javascript links in anchor href (prevent XSS)", async function () {
-      var app = express();
-      var xss = "javascript:eval(document.body.innerHTML=`<p>XSS</p>`);";
-      var encodedXss =
+    it("should not render evil javascript links in anchor href (prevent XSS)", async () => {
+      const app = express();
+      const xss = "javascript:eval(document.body.innerHTML=`<p>XSS</p>`);";
+      const encodedXss =
         "javascript:eval(document.body.innerHTML=%60%3Cp%3EXSS%3C/p%3E%60);";
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.redirect(xss);
       });
       await request(app)
@@ -115,9 +115,9 @@ describe("res", function () {
             "</p></body>",
         );
     });
-    it("should include the redirect type", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should include the redirect type", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect(301, "http://google.com");
       });
       await request(app)
@@ -131,10 +131,10 @@ describe("res", function () {
         );
     });
   });
-  describe("when accepting text", function () {
-    it("should respond with text", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when accepting text", () => {
+    it("should respond with text", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("http://google.com");
       });
       await request(app)
@@ -144,9 +144,9 @@ describe("res", function () {
         .expect("Location", "http://google.com")
         .expect(302, "Found. Redirecting to http://google.com");
     });
-    it("should encode the url", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should encode the url", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect(
           'http://example.com/?param=<script>alert("hax");</script>',
         );
@@ -165,9 +165,9 @@ describe("res", function () {
           "Found. Redirecting to http://example.com/?param=%3Cscript%3Ealert(%22hax%22);%3C/script%3E",
         );
     });
-    it("should include the redirect type", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should include the redirect type", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect(301, "http://google.com");
       });
       await request(app)
@@ -178,10 +178,10 @@ describe("res", function () {
         .expect(301, "Moved Permanently. Redirecting to http://google.com");
     });
   });
-  describe("when accepting neither text or html", function () {
-    it("should respond with an empty body", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe("when accepting neither text or html", () => {
+    it("should respond with an empty body", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.redirect("http://google.com");
       });
       await request(app)

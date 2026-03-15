@@ -1,18 +1,18 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".ips", function () {
-    describe("when X-Forwarded-For is present", function () {
-      describe('when "trust proxy" is enabled', function () {
-        it("should return an array of the specified addresses", async function () {
-          var app = express();
+describe("req", () => {
+  describe(".ips", () => {
+    describe("when X-Forwarded-For is present", () => {
+      describe('when "trust proxy" is enabled', () => {
+        it("should return an array of the specified addresses", async () => {
+          const app = express();
 
           app.enable("trust proxy");
 
-          app.use(function (req, res, next) {
+          app.use((req, res, next) => {
             res.send(req.ips);
           });
 
@@ -22,12 +22,12 @@ describe("req", function () {
             .expect('["client","p1","p2"]');
         });
 
-        it("should stop at first untrusted", async function () {
-          var app = express();
+        it("should stop at first untrusted", async () => {
+          const app = express();
 
           app.set("trust proxy", 2);
 
-          app.use(function (req, res, next) {
+          app.use((req, res, next) => {
             res.send(req.ips);
           });
 
@@ -38,11 +38,11 @@ describe("req", function () {
         });
       });
 
-      describe('when "trust proxy" is disabled', function () {
-        it("should return an empty array", async function () {
-          var app = express();
+      describe('when "trust proxy" is disabled', () => {
+        it("should return an empty array", async () => {
+          const app = express();
 
-          app.use(function (req, res, next) {
+          app.use((req, res, next) => {
             res.send(req.ips);
           });
 
@@ -54,11 +54,11 @@ describe("req", function () {
       });
     });
 
-    describe("when X-Forwarded-For is not present", function () {
-      it("should return []", async function () {
-        var app = express();
+    describe("when X-Forwarded-For is not present", () => {
+      it("should return []", async () => {
+        const app = express();
 
-        app.use(function (req, res, next) {
+        app.use((req, res, next) => {
           res.send(req.ips);
         });
 

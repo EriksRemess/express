@@ -11,10 +11,14 @@
  * Module dependencies.
  */
 
-var express = require('../..');
-var online = require('online');
-var redis = require('redis');
-var db = redis.createClient();
+import express from "#express";
+
+import online from 'online';
+import redis from 'redis';
+import { pathToFileURL } from "node:url";
+
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const db = redis.createClient();
 
 // online
 
@@ -22,12 +26,12 @@ online = online(db);
 
 // app
 
-var app = express();
+const app = express();
 
 // activity tracking, in this case using
 // the UA string, you would use req.user.id etc
 
-app.use(function(req, res, next){
+app.use((req, res, next) => {
   // fire-and-forget
   online.add(req.headers['user-agent']);
   next();
@@ -38,7 +42,7 @@ app.use(function(req, res, next){
  */
 
 function list(ids) {
-  return '<ul>' + ids.map(function(id){
+  return '<ul>' + ids.map(id => {
     return '<li>' + id + '</li>';
   }).join('') + '</ul>';
 }
@@ -47,15 +51,15 @@ function list(ids) {
  * GET users online.
  */
 
-app.get('/', function(req, res, next){
-  online.last(5, function(err, ids){
+app.get('/', (req, res, next) => {
+  online.last(5, (err, ids) => {
     if (err) return next(err);
     res.send('<p>Users online: ' + ids.length + '</p>' + list(ids));
   });
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }

@@ -1,15 +1,15 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("req", function () {
-  describe(".stale", function () {
-    it("should return false when the resource is not modified", async function () {
-      var app = express();
-      var etag = '"12345"';
+describe("req", () => {
+  describe(".stale", () => {
+    it("should return false when the resource is not modified", async () => {
+      const app = express();
+      const etag = '"12345"';
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.set("ETag", etag);
         res.send(req.stale);
       });
@@ -17,10 +17,10 @@ describe("req", function () {
       await request(app).get("/").set("If-None-Match", etag).expect(304);
     });
 
-    it("should return true when the resource is modified", async function () {
-      var app = express();
+    it("should return true when the resource is modified", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.set("ETag", '"123"');
         res.send(req.stale);
       });
@@ -31,11 +31,11 @@ describe("req", function () {
         .expect(200, "true");
     });
 
-    it("should return true without response headers", async function () {
-      var app = express();
+    it("should return true without response headers", async () => {
+      const app = express();
 
       app.disable("x-powered-by");
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.send(req.stale);
       });
 

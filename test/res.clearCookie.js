@@ -1,14 +1,14 @@
 "use strict";
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest");
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
 
-describe("res", function () {
-  describe(".clearCookie(name)", function () {
-    it("should set a cookie passed expiry", async function () {
-      var app = express();
+describe("res", () => {
+  describe(".clearCookie(name)", () => {
+    it("should set a cookie passed expiry", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.clearCookie("sid").end();
       });
 
@@ -22,11 +22,11 @@ describe("res", function () {
     });
   });
 
-  describe(".clearCookie(name, options)", function () {
-    it("should set the given params", async function () {
-      var app = express();
+  describe(".clearCookie(name, options)", () => {
+    it("should set the given params", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.clearCookie("sid", { path: "/admin" }).end();
       });
 
@@ -39,10 +39,10 @@ describe("res", function () {
         .expect(200);
     });
 
-    it("should ignore maxAge", async function () {
-      var app = express();
+    it("should ignore maxAge", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.clearCookie("sid", { path: "/admin", maxAge: 1000 }).end();
       });
 
@@ -55,10 +55,10 @@ describe("res", function () {
         .expect(200);
     });
 
-    it("should ignore user supplied expires param", async function () {
-      var app = express();
+    it("should ignore user supplied expires param", async () => {
+      const app = express();
 
-      app.use(function (req, res) {
+      app.use((req, res) => {
         res.clearCookie("sid", { path: "/admin", expires: new Date() }).end();
       });
 

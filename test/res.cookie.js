@@ -1,14 +1,14 @@
 "use strict";
 
-var { describe, it } = require("node:test");
-var express = require("../"),
-  request = require("supertest"),
-  cookieParser = require("cookie-parser");
-describe("res", function () {
-  describe(".cookie(name, object)", function () {
-    it("should generate a JSON cookie", async function () {
-      var app = express();
-      app.use(function (req, res) {
+import {describe, it} from "node:test";
+import express from "#express";
+import request from "supertest";
+import cookieParser from "#lib/utils/cookies";
+describe("res", () => {
+  describe(".cookie(name, object)", () => {
+    it("should generate a JSON cookie", async () => {
+      const app = express();
+      app.use((req, res) => {
         res
           .cookie("user", {
             name: "tobi",
@@ -21,10 +21,10 @@ describe("res", function () {
         .expect(200);
     });
   });
-  describe(".cookie(name, string)", function () {
-    it("should set a cookie", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".cookie(name, string)", () => {
+    it("should set a cookie", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.cookie("name", "tobi").end();
       });
       await request(app)
@@ -32,9 +32,9 @@ describe("res", function () {
         .expect("Set-Cookie", "name=tobi; Path=/")
         .expect(200);
     });
-    it("should allow multiple calls", async function () {
-      var app = express();
-      app.use(function (req, res) {
+    it("should allow multiple calls", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.cookie("name", "tobi");
         res.cookie("age", 1);
         res.cookie("gender", "?");
@@ -49,10 +49,10 @@ describe("res", function () {
         .expect(200);
     });
   });
-  describe(".cookie(name, string, options)", function () {
-    it("should set params", async function () {
-      var app = express();
-      app.use(function (req, res) {
+  describe(".cookie(name, string, options)", () => {
+    it("should set params", async () => {
+      const app = express();
+      app.use((req, res) => {
         res.cookie("name", "tobi", {
           httpOnly: true,
           secure: true,
@@ -64,10 +64,10 @@ describe("res", function () {
         .expect("Set-Cookie", "name=tobi; Path=/; HttpOnly; Secure")
         .expect(200);
     });
-    describe("expires", function () {
-      it("should throw on invalid date", async function () {
-        var app = express();
-        app.use(function (req, res) {
+    describe("expires", () => {
+      it("should throw on invalid date", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             expires: new Date(NaN),
           });
@@ -78,10 +78,10 @@ describe("res", function () {
           .expect(500, /option expires is invalid/);
       });
     });
-    describe("partitioned", function () {
-      it("should set partitioned", async function () {
-        var app = express();
-        app.use(function (req, res) {
+    describe("partitioned", () => {
+      it("should set partitioned", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             partitioned: true,
           });
@@ -93,10 +93,10 @@ describe("res", function () {
           .expect(200);
       });
     });
-    describe("maxAge", function () {
-      it("should set relative expires", async function () {
-        var app = express();
-        app.use(function (req, res) {
+    describe("maxAge", () => {
+      it("should set relative expires", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             maxAge: 1000,
           });
@@ -107,9 +107,9 @@ describe("res", function () {
           .expect("Set-Cookie", /name=tobi; Max-Age=1; Path=\/; Expires=/)
           .expect(200);
       });
-      it("should set max-age", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should set max-age", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             maxAge: 1000,
           });
@@ -119,23 +119,23 @@ describe("res", function () {
           .get("/")
           .expect("Set-Cookie", /Max-Age=1/);
       });
-      it("should not mutate the options object", async function () {
-        var app = express();
-        var options = {
+      it("should not mutate the options object", async () => {
+        const app = express();
+        const options = {
           maxAge: 1000,
         };
-        var optionsCopy = {
+        const optionsCopy = {
           ...options,
         };
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res.cookie("name", "tobi", options);
           res.json(options);
         });
         await request(app).get("/").expect(200, optionsCopy);
       });
-      it("should not throw on null", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should not throw on null", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             maxAge: null,
           });
@@ -146,9 +146,9 @@ describe("res", function () {
           .expect(200)
           .expect("Set-Cookie", "name=tobi; Path=/");
       });
-      it("should not throw on undefined", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should not throw on undefined", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             maxAge: undefined,
           });
@@ -159,9 +159,9 @@ describe("res", function () {
           .expect(200)
           .expect("Set-Cookie", "name=tobi; Path=/");
       });
-      it("should throw an error with invalid maxAge", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should throw an error with invalid maxAge", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             maxAge: "foobar",
           });
@@ -172,10 +172,10 @@ describe("res", function () {
           .expect(500, /option maxAge is invalid/);
       });
     });
-    describe("priority", function () {
-      it("should set low priority", async function () {
-        var app = express();
-        app.use(function (req, res) {
+    describe("priority", () => {
+      it("should set low priority", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             priority: "low",
           });
@@ -186,9 +186,9 @@ describe("res", function () {
           .expect("Set-Cookie", /Priority=Low/)
           .expect(200);
       });
-      it("should set medium priority", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should set medium priority", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             priority: "medium",
           });
@@ -199,9 +199,9 @@ describe("res", function () {
           .expect("Set-Cookie", /Priority=Medium/)
           .expect(200);
       });
-      it("should set high priority", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should set high priority", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             priority: "high",
           });
@@ -212,9 +212,9 @@ describe("res", function () {
           .expect("Set-Cookie", /Priority=High/)
           .expect(200);
       });
-      it("should throw with invalid priority", async function () {
-        var app = express();
-        app.use(function (req, res) {
+      it("should throw with invalid priority", async () => {
+        const app = express();
+        app.use((req, res) => {
           res.cookie("name", "tobi", {
             priority: "foobar",
           });
@@ -225,11 +225,11 @@ describe("res", function () {
           .expect(500, /option priority is invalid/);
       });
     });
-    describe("signed", function () {
-      it("should generate a signed JSON cookie", async function () {
-        var app = express();
+    describe("signed", () => {
+      it("should generate a signed JSON cookie", async () => {
+        const app = express();
         app.use(cookieParser("foo bar baz"));
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res
             .cookie(
               "user",
@@ -251,11 +251,11 @@ describe("res", function () {
           .expect(200);
       });
     });
-    describe("signed without secret", function () {
-      it("should throw an error", async function () {
-        var app = express();
+    describe("signed without secret", () => {
+      it("should throw an error", async () => {
+        const app = express();
         app.use(cookieParser());
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res
             .cookie("name", "tobi", {
               signed: true,
@@ -267,11 +267,11 @@ describe("res", function () {
           .expect(500, /secret\S+ required for signed cookies/);
       });
     });
-    describe(".signedCookie(name, string)", function () {
-      it("should set a signed cookie", async function () {
-        var app = express();
+    describe(".signedCookie(name, string)", () => {
+      it("should set a signed cookie", async () => {
+        const app = express();
         app.use(cookieParser("foo bar baz"));
-        app.use(function (req, res) {
+        app.use((req, res) => {
           res
             .cookie("name", "tobi", {
               signed: true,

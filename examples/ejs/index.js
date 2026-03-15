@@ -4,10 +4,18 @@
  * Module dependencies.
  */
 
-var express = require('../../');
-var path = require('node:path');
+import express from "#express";
+import ejs from 'ejs';
 
-var app = module.exports = express();
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+const app = express();
+
+export default app;
 
 // Register ejs as .html. If we did
 // not call this, we would need to
@@ -20,7 +28,7 @@ var app = module.exports = express();
 // we simply pass _any_ function, in this
 // case `ejs.__express`.
 
-app.engine('.html', require('ejs').__express);
+app.engine('.html', ejs.__express);
 
 // Optional since express defaults to CWD/views
 
@@ -36,13 +44,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'html');
 
 // Placeholder users
-var users = [
+const users = [
   { name: 'tobi', email: 'tobi@learnboost.com' },
   { name: 'loki', email: 'loki@learnboost.com' },
   { name: 'jane', email: 'jane@learnboost.com' }
 ];
 
-app.get('/', function(req, res){
+app.get('/', (req, res) => {
   res.render('users', {
     users: users,
     title: "EJS example",
@@ -51,7 +59,7 @@ app.get('/', function(req, res){
 });
 
 /* istanbul ignore next */
-if (!module.parent) {
+if (isMain) {
   app.listen(3000);
   console.log('Express started on port 3000');
 }
