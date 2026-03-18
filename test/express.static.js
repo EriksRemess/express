@@ -529,10 +529,10 @@ describe("express.static()", () => {
         .expect("Content-Type", /html/)
         .expect(301, />Redirecting to \/snow%20%E2%98%83\/</);
     });
-    it("should respond with default Content-Security-Policy", async () => {
+    it("should not send Content-Security-Policy on redirects", async () => {
       await request(__testApp)
         .get("/users")
-        .expect("Content-Security-Policy", "default-src 'none'")
+        .expect(utils.shouldNotHaveHeader("Content-Security-Policy"))
         .expect(301);
     });
     it("should not redirect incorrectly", async () => {
