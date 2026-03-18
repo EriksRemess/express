@@ -48,6 +48,15 @@ describe("http-errors", () => {
     assert.strictEqual(err.code, "X");
   });
 
+  it("should ignore inherited enumerable props", () => {
+    const props = Object.create({ inherited: "nope" });
+    props.code = "X";
+
+    const err = createError(404, props);
+    assert.strictEqual(err.code, "X");
+    assert.strictEqual("inherited" in err, false);
+  });
+
   it("should validate unsupported argument types", () => {
     assert.throws(() => {
       createError(404, null);
