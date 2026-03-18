@@ -29,4 +29,18 @@ describe("content-disposition", () => {
       'inline; filename="name.txt"',
     );
   });
+
+  it("should treat Windows-style paths like filenames", () => {
+    assert.strictEqual(
+      contentDisposition("C:\\path\\to\\report.pdf"),
+      'attachment; filename="report.pdf"',
+    );
+  });
+
+  it("should normalize Windows-style fallback paths", () => {
+    assert.strictEqual(
+      contentDisposition("/tmp/日本語.txt", { fallback: "C:\\temp\\report.txt" }),
+      'attachment; filename="report.txt"; filename*=UTF-8\'\'%E6%97%A5%E6%9C%AC%E8%AA%9E.txt',
+    );
+  });
 });
