@@ -25,6 +25,20 @@ describe("res", () => {
         .expect("X-Number", "123")
         .expect(200, "string");
     });
+
+    it("should preserve unknown Content-Type values", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.set("Content-Type", "some-custom-type");
+        res.end();
+      });
+
+      await request(app)
+        .get("/")
+        .expect("Content-Type", "some-custom-type")
+        .expect(200);
+    });
   });
   describe(".set(field, values)", () => {
     it("should set multiple response header fields", async () => {

@@ -182,6 +182,18 @@ describe("res", () => {
           .get("/")
           .expect(500, /Invalid status code/);
       });
+
+      it("should raise error for BigInt status code", async () => {
+        const app = express();
+
+        app.use((req, res) => {
+          res.status(200n).end();
+        });
+
+        await request(app)
+          .get("/")
+          .expect(500, /Invalid status code: 200n/);
+      });
     });
   });
 });

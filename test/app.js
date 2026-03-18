@@ -23,6 +23,32 @@ describe("app", () => {
   it("should 404 without routes", async () => {
     await request(express()).get("/").expect(404);
   });
+
+  it("should log the error object with the default handler", async () => {
+    const app = express();
+    const calls = [];
+    const cause = new Error("root cause");
+    const err = new Error("boom", { cause });
+    const originalError = console.error;
+
+    app.set("env", "development");
+    app.use((req, res, next) => {
+      next(err);
+    });
+
+    console.error = (...args) => {
+      calls.push(args);
+    };
+
+    try {
+      await request(app).get("/").expect(500);
+      await new Promise(resolve => setImmediate(resolve));
+    } finally {
+      console.error = originalError;
+    }
+
+    assert.deepStrictEqual(calls, [[err]]);
+  });
 });
 
 describe("app.parent", () => {

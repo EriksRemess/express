@@ -96,6 +96,19 @@ describe("express.static()", () => {
       await request(__testApp).get("/.name").expect(404, "Not Found");
     });
   });
+  describe("etag", () => {
+    it('should respect the app "etag" setting when disabled', async () => {
+      const app = express();
+
+      app.disable("etag");
+      app.use(express.static(fixtures));
+
+      await request(app)
+        .get("/todo.txt")
+        .expect(utils.shouldNotHaveHeader("ETag"))
+        .expect(200, "- groceries");
+    });
+  });
   (skipRelative ? describe.skip : describe)("current dir", () => {
     before(() => {
       __testApp = createApp(".");
