@@ -18,6 +18,40 @@ describe("query-string", () => {
   });
 
   describe("parseExtendedQueryString()", () => {
+    it("should preserve array values when later keys require an object", () => {
+      assert.deepEqual(
+        parseExtendedQueryString("a[]=1&a[b]=2"),
+        {
+          a: {
+            0: "1",
+            b: "2",
+          },
+        },
+      );
+
+      assert.deepEqual(
+        parseExtendedQueryString("a[0]=1&a[b]=2"),
+        {
+          a: {
+            0: "1",
+            b: "2",
+          },
+        },
+      );
+    });
+
+    it("should preserve scalar values when later keys require nesting", () => {
+      assert.deepEqual(
+        parseExtendedQueryString("a=1&a[b]=2"),
+        {
+          a: {
+            0: "1",
+            b: "2",
+          },
+        },
+      );
+    });
+
     it("should ignore unsafe __proto__ segments", () => {
       const query = parseExtendedQueryString("a[0]=x&a[__proto__][polluted]=yes");
 

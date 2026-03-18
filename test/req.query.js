@@ -29,6 +29,14 @@ describe("req", () => {
           .expect(200, '{"foo":[{"bar":"baz","fizz":"buzz"},"done!"]}');
       });
 
+      it("should preserve values when array notation later becomes object notation", async () => {
+        const app = createApp("extended");
+
+        await request(app)
+          .get("/?foo[]=done!&foo[bar]=baz")
+          .expect(200, '{"foo":{"0":"done!","bar":"baz"}}');
+      });
+
       it("should parse parameters with dots", async () => {
         const app = createApp("extended");
 

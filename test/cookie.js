@@ -36,6 +36,18 @@ describe("cookie utils", () => {
   });
 
   describe(".serialize()", () => {
+    it("should preserve falsy values when called with a cookie object", () => {
+      assert.strictEqual(
+        serialize({ name: "count", value: 0 }),
+        "count=0",
+      );
+
+      assert.strictEqual(
+        serialize({ name: "enabled", value: false }),
+        "enabled=false",
+      );
+    });
+
     it("should support a custom encoder", () => {
       const encoder = value => value.replaceAll(" ", "+");
 
