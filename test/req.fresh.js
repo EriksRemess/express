@@ -31,6 +31,35 @@ describe("req", () => {
         .expect(200, "false");
     });
 
+    it("should trim whitespace around a single If-None-Match token", async () => {
+      const app = express();
+      const etag = '"12345"';
+
+      app.use((req, res) => {
+        res.set("ETag", etag);
+        res.send(req.fresh);
+      });
+
+      await request(app)
+        .get("/")
+        .set("If-None-Match", ` ${etag} `)
+        .expect(304);
+    });
+
+    it("should treat weak and strong etags as equivalent validators", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.set("ETag", 'W/"12345"');
+        res.send(req.fresh);
+      });
+
+      await request(app)
+        .get("/")
+        .set("If-None-Match", '"12345"')
+        .expect(304);
+    });
+
     it("should return false without response headers", async () => {
       const app = express();
 
