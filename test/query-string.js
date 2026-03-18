@@ -34,6 +34,26 @@ describe("query-string", () => {
       );
     });
 
+    it("should split malformed bracket notation like qs", () => {
+      assert.deepEqual(
+        parseExtendedQueryString("foo[[bar]=baz"),
+        {
+          "foo[": {
+            bar: "baz",
+          },
+        },
+      );
+
+      assert.deepEqual(
+        parseExtendedQueryString("a[b[c]]=d"),
+        {
+          "a[b": {
+            c: "d",
+          },
+        },
+      );
+    });
+
     it("should preserve array values when later keys require an object", () => {
       assert.deepEqual(
         parseExtendedQueryString("a[]=1&a[b]=2"),

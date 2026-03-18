@@ -45,6 +45,14 @@ describe("req", () => {
           .expect(200, '{"foo":["bar","baz"]}');
       });
 
+      it("should parse malformed bracket notation consistently", async () => {
+        const app = createApp("extended");
+
+        await request(app)
+          .get("/?foo%5B%5Bbar%5D=baz")
+          .expect(200, '{"foo[":{"bar":"baz"}}');
+      });
+
       it("should parse parameters with dots", async () => {
         const app = createApp("extended");
 
