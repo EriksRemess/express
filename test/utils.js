@@ -49,6 +49,18 @@ describe("normalizeType acceptParams method", () => {
       params: {},
     });
   });
+
+  it("should keep quoted semicolons inside parameter values", () => {
+    const result = normalizeType('text/plain; foo="a;b"; q=0.5; charset=utf-8');
+    assert.deepEqual(result, {
+      value: "text/plain",
+      quality: 0.5,
+      params: {
+        foo: '"a;b"',
+        charset: "utf-8",
+      },
+    });
+  });
 });
 
 describe("setCharset(type, charset)", () => {
