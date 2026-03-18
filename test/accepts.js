@@ -82,4 +82,18 @@ describe("accepts", () => {
     const missing = accepts(makeReq());
     assert.strictEqual(missing.languages("en"), "en");
   });
+
+  it("should trim provided candidates before matching", () => {
+    const accept = accepts(makeReq({
+      accept: "application/json",
+      "accept-charset": "utf-8",
+      "accept-encoding": "gzip",
+      "accept-language": "en-us",
+    }));
+
+    assert.strictEqual(accept.types([" json ", " html "]), " json ");
+    assert.strictEqual(accept.charsets([" utf-8 "]), " utf-8 ");
+    assert.strictEqual(accept.encodings([" gzip "]), " gzip ");
+    assert.strictEqual(accept.languages([" en-us "]), " en-us ");
+  });
 });
