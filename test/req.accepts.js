@@ -111,4 +111,17 @@ describe("req", () => {
       await request(app).get("/").set("Accept", "*/html").expect("text/html");
     });
   });
+
+  it("should not duplicate acceptable types when quoted parameters contain commas", async () => {
+    const app = express();
+
+    app.use((req, res, next) => {
+      res.json(req.accepts());
+    });
+
+    await request(app)
+      .get("/")
+      .set("Accept", 'application/json; foo="a,b"; q=.7, text/html; q=.6')
+      .expect(200, ["application/json", "text/html"]);
+  });
 });

@@ -40,6 +40,14 @@ describe("accepts", () => {
     assert.strictEqual(accept.types(["text/html", "application/json"]), false);
   });
 
+  it("should not duplicate media types when quoted parameters contain commas", () => {
+    const accept = accepts(
+      makeReq({ accept: 'application/json; foo="a,b"; q=.7, text/html; q=.6' }),
+    );
+
+    assert.deepStrictEqual(accept.types(), ["application/json", "text/html"]);
+  });
+
   it("should negotiate charsets", () => {
     const missing = accepts(makeReq());
     assert.strictEqual(missing.charsets("utf-8"), "utf-8");
