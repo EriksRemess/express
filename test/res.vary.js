@@ -1,7 +1,9 @@
 "use strict";
 import {describe, it} from "node:test";
+import assert from "node:assert";
 import express from "#express";
 import request from "supertest";
+import { append } from "#lib/utils/vary";
 import utils from "#test/support/utils";
 
 describe("res.vary()", () => {
@@ -97,5 +99,18 @@ describe("res.vary()", () => {
         .expect("Vary", "Accept, Accept-Encoding")
         .expect(200);
     });
+  });
+});
+
+describe("vary.append()", () => {
+  it("should normalize * when provided in new fields", () => {
+    assert.strictEqual(append("Accept-Encoding", ["Accept", "*"]), "*");
+  });
+
+  it("should not duplicate fields case-insensitively", () => {
+    assert.strictEqual(
+      append("Accept-Encoding", ["accept-encoding", "Accept"]),
+      "Accept-Encoding, Accept",
+    );
   });
 });
