@@ -393,6 +393,18 @@ describe("express.urlencoded()", () => {
           .expect(expectKeyCount(5000))
           .expect(200);
       });
+      it("should work with very large finite limits", async () => {
+        await request(
+          createApp({
+            extended: false,
+            parameterLimit: 2147483648,
+          }),
+        )
+          .post("/")
+          .set("Content-Type", "application/x-www-form-urlencoded")
+          .send("user=tobi")
+          .expect(200, '{"user":"tobi"}');
+      });
       it("should work with Infinity limit", async () => {
         await request(
           createApp({
@@ -475,6 +487,18 @@ describe("express.urlencoded()", () => {
           .send(createManyParams(5000))
           .expect(expectKeyCount(5000))
           .expect(200);
+      });
+      it("should work with very large finite limits", async () => {
+        await request(
+          createApp({
+            extended: true,
+            parameterLimit: 2147483648,
+          }),
+        )
+          .post("/")
+          .set("Content-Type", "application/x-www-form-urlencoded")
+          .send("user[name]=tobi")
+          .expect(200, '{"user":{"name":"tobi"}}');
       });
       it("should work with Infinity limit", async () => {
         await request(
