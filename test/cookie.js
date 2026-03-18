@@ -3,6 +3,7 @@
 import {describe, it} from "node:test";
 import assert from "node:assert";
 import {
+  JSONCookies,
   parse,
   parseSetCookie,
   serialize,
@@ -96,6 +97,22 @@ describe("cookie utils", () => {
         sameSite: "lax",
         secure: true,
         value: "abc",
+      });
+    });
+  });
+
+  describe(".JSONCookies()", () => {
+    it("should parse falsy JSON cookie values", () => {
+      const cookies = {
+        disabled: "j:false",
+        empty: "j:null",
+        count: "j:0",
+      };
+
+      assert.deepStrictEqual(JSONCookies(cookies), {
+        disabled: false,
+        empty: null,
+        count: 0,
       });
     });
   });

@@ -40,5 +40,42 @@ describe("req", () => {
           });
       });
     });
+
+    it("should return falsy signed JSON cookies", async () => {
+      await new Promise((resolve, reject) => {
+        const app = express();
+
+        app.use(cookieParser("secret"));
+
+        app.use((req, res) => {
+          if (req.path === "/set") {
+            res.cookie("disabled", "j:false", { signed: true });
+            res.cookie("count", "j:0", { signed: true });
+            res.cookie("empty", "j:null", { signed: true });
+            res.end();
+          } else {
+            res.send(req.signedCookies);
+          }
+        });
+
+        request(app)
+          .get("/set")
+          .end((err, res) => {
+            if (err) return reject(err);
+            const cookie = res.header["set-cookie"];
+
+            request(app)
+              .get("/")
+              .set("Cookie", cookie)
+              .expect(200, { count: 0, disabled: false, empty: null }, err => {
+                if (err != null) {
+                  reject(err);
+                  return;
+                }
+                resolve();
+              });
+          });
+      });
+    });
   });
 });
