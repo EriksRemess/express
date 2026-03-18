@@ -57,6 +57,14 @@ describe("accepts", () => {
     assert.strictEqual(accept.encodings("bogus"), false);
   });
 
+  it("should ignore empty accept-encoding entries", () => {
+    const accept = accepts(makeReq({ "accept-encoding": "" }));
+
+    assert.deepStrictEqual(accept.encodings(), ["identity"]);
+    assert.strictEqual(accept.encodings("gzip"), false);
+    assert.strictEqual(accept.encodings("identity"), "identity");
+  });
+
   it("should negotiate languages", () => {
     const accept = accepts(makeReq({ "accept-language": "en;q=.5, en-us" }));
     assert.strictEqual(accept.languages("en-us"), "en-us");

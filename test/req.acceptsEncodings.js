@@ -35,5 +35,21 @@ describe("req", () => {
         .set("Accept-Encoding", " gzip, deflate")
         .expect(200, { bogus: false });
     });
+
+    it("should ignore an empty Accept-Encoding header", async () => {
+      const app = express();
+
+      app.get("/", (req, res) => {
+        res.send({
+          gzip: req.acceptsEncodings("gzip"),
+          identity: req.acceptsEncodings("identity"),
+        });
+      });
+
+      await request(app)
+        .get("/")
+        .set("Accept-Encoding", "")
+        .expect(200, { gzip: false, identity: "identity" });
+    });
   });
 });
