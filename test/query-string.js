@@ -18,6 +18,22 @@ describe("query-string", () => {
   });
 
   describe("parseExtendedQueryString()", () => {
+    it("should compact sparse indexed arrays while preserving order", () => {
+      assert.deepEqual(
+        parseExtendedQueryString("a[1]=b&a[15]=c"),
+        {
+          a: ["b", "c"],
+        },
+      );
+
+      assert.deepEqual(
+        parseExtendedQueryString("a[0][1]=b&a[0][3]=c"),
+        {
+          a: [["b", "c"]],
+        },
+      );
+    });
+
     it("should preserve array values when later keys require an object", () => {
       assert.deepEqual(
         parseExtendedQueryString("a[]=1&a[b]=2"),

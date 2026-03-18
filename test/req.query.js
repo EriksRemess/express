@@ -37,6 +37,14 @@ describe("req", () => {
           .expect(200, '{"foo":{"0":"done!","bar":"baz"}}');
       });
 
+      it("should compact sparse indexed arrays", async () => {
+        const app = createApp("extended");
+
+        await request(app)
+          .get("/?foo[1]=bar&foo[3]=baz")
+          .expect(200, '{"foo":["bar","baz"]}');
+      });
+
       it("should parse parameters with dots", async () => {
         const app = createApp("extended");
 
