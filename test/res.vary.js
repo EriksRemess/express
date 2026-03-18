@@ -50,6 +50,20 @@ describe("res.vary()", () => {
         .expect("Vary", "Accept, Accept-Language, Accept-Encoding")
         .expect(200);
     });
+
+    it("should trim whitespace in array values", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.vary(["Accept", " Accept-Encoding "]);
+        res.end();
+      });
+
+      await request(app)
+        .get("/")
+        .expect("Vary", "Accept, Accept-Encoding")
+        .expect(200);
+    });
   });
 
   describe("with a string", () => {
