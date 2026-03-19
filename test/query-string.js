@@ -34,6 +34,26 @@ describe("query-string", () => {
       );
     });
 
+    it("should treat indexes above the default array limit as object keys", () => {
+      assert.deepEqual(
+        parseExtendedQueryString("a[1000000000]=x"),
+        {
+          a: {
+            1000000000: "x",
+          },
+        },
+      );
+    });
+
+    it("should allow a custom array index limit", () => {
+      assert.deepEqual(
+        parseExtendedQueryString("a[25]=x", { arrayLimit: 30 }),
+        {
+          a: ["x"],
+        },
+      );
+    });
+
     it("should split malformed bracket notation like qs", () => {
       assert.deepEqual(
         parseExtendedQueryString("foo[[bar]=baz"),
