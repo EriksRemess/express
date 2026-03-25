@@ -69,6 +69,14 @@ describe("res", () => {
           });
       });
     });
+    it("should support precondition checks", async () => {
+      const app = createApp(path.resolve(fixtures, "name.txt"));
+
+      await request(app)
+        .get("/")
+        .set("If-Match", '"foo"')
+        .expect(412);
+    });
     it("should disable the ETag function if requested", async () => {
       const app = createApp(path.resolve(fixtures, "name.txt")).disable("etag");
       await request(app).get("/").expect(handleHeaders).expect(200);
@@ -350,6 +358,32 @@ describe("res", () => {
             .set("Range", "bytes=0-4")
             .expect(206, "12345");
         });
+        it("should ignore range when If-Range ETag is stale", async () => {
+          const app = express();
+          app.use((req, res) => {
+            res.sendFile(path.resolve(fixtures, "nums.txt"), {
+              acceptRanges: true,
+            });
+          });
+          await request(app)
+            .get("/")
+            .set("Range", "bytes=0-4")
+            .set("If-Range", '"stale"')
+            .expect(200, "123456789");
+        });
+        it("should ignore range when If-Range date is stale", async () => {
+          const app = express();
+          app.use((req, res) => {
+            res.sendFile(path.resolve(fixtures, "nums.txt"), {
+              acceptRanges: true,
+            });
+          });
+          await request(app)
+            .get("/")
+            .set("Range", "bytes=0-4")
+            .set("If-Range", new Date(0).toUTCString())
+            .expect(200, "123456789");
+        });
       });
       describe("when false", () => {
         it("should not advertise accept-ranges", async () => {
@@ -409,6 +443,17 @@ describe("res", () => {
       });
     });
     describe('with "dotfiles" option', () => {
+      it("should reject invalid values", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.sendFile(path.resolve(fixtures, ".name"), {
+            dotfiles: "nope",
+          });
+        });
+        await request(app)
+          .get("/")
+          .expect(500, /dotfiles option must be/);
+      });
       describe('when "allow"', () => {
         it("should allow dotfiles", async () => {
           const app = express();
@@ -714,6 +759,45 @@ describe("res", () => {
             .expect(200)
             .expect("Cache-Control", "public, max-age=1728000");
         });
+        it("should treat invalid strings as 0", async () => {
+          const app = express();
+          app.use((req, res) => {
+            res.sendFile(path.resolve(fixtures, "user.html"), {
+              maxAge: "pizza",
+            });
+          });
+          await request(app)
+            .get("/")
+            .expect(200)
+            .expect("Cache-Control", "public, max-age=0");
+        });
+      });
+    });
+    describe('with "extensions" option', () => {
+      it("should reject non-string entries", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.sendFile("todo", {
+            extensions: ["txt", 42],
+            root: fixtures,
+          });
+        });
+        await request(app)
+          .get("/")
+          .expect(500, /extensions option must be array of strings or false/);
+      });
+    });
+    describe('with "index" option', () => {
+      it("should reject non-string entries", async () => {
+        const app = express();
+        app.use((req, res) => {
+          res.sendFile(path.resolve(fixtures, "users/"), {
+            index: ["index.html", 42],
+          });
+        });
+        await request(app)
+          .get("/")
+          .expect(500, /index option must be array of strings or false/);
       });
     });
     describe('with "root" option', () => {

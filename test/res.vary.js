@@ -3,7 +3,7 @@ import {describe, it} from "node:test";
 import assert from "node:assert";
 import express from "#express";
 import request from "supertest";
-import { append } from "#lib/utils/vary";
+import vary, { append } from "#lib/utils/vary";
 import utils from "#test/support/utils";
 
 describe("res.vary()", () => {
@@ -103,8 +103,24 @@ describe("res.vary()", () => {
 });
 
 describe("vary.append()", () => {
+  it("should require the header argument", () => {
+    assert.throws(() => {
+      append();
+    }, /header argument is required/);
+  });
+
+  it("should require the field argument", () => {
+    assert.throws(() => {
+      append("Accept");
+    }, /field argument is required/);
+  });
+
   it("should normalize * when provided in new fields", () => {
     assert.strictEqual(append("Accept-Encoding", ["Accept", "*"]), "*");
+  });
+
+  it("should preserve an existing wildcard", () => {
+    assert.strictEqual(append("*", "Accept-Encoding"), "*");
   });
 
   it("should not duplicate fields case-insensitively", () => {
@@ -112,5 +128,37 @@ describe("vary.append()", () => {
       append("Accept-Encoding", ["accept-encoding", "Accept"]),
       "Accept-Encoding, Accept",
     );
+  });
+
+  it("should reject invalid header names", () => {
+    assert.throws(() => {
+      append("Accept-Encoding", "bad header");
+    }, /invalid header name/);
+  });
+});
+
+describe("vary()", () => {
+  it("should require a response-like object", () => {
+    assert.throws(() => {
+      vary();
+    }, /res argument is required/);
+  });
+
+  it("should join existing array headers before appending", () => {
+    let header;
+    const res = {
+      getHeader(name) {
+        assert.strictEqual(name, "Vary");
+        return ["Accept", "Accept-Language"];
+      },
+      setHeader(name, value) {
+        assert.strictEqual(name, "Vary");
+        header = value;
+      },
+    };
+
+    vary(res, "Accept-Encoding");
+
+    assert.strictEqual(header, "Accept, Accept-Language, Accept-Encoding");
   });
 });

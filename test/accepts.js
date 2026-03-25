@@ -9,6 +9,22 @@ function makeReq(headers) {
 }
 
 describe("accepts", () => {
+  it("should support alias methods", () => {
+    const accept = accepts(makeReq({
+      accept: "application/json",
+      "accept-charset": "utf-8",
+      "accept-encoding": "gzip",
+      "accept-language": "en-us",
+    }));
+
+    assert.strictEqual(accept.type("json", "html"), "json");
+    assert.strictEqual(accept.charset("utf-8"), "utf-8");
+    assert.strictEqual(accept.encoding("gzip"), "gzip");
+    assert.strictEqual(accept.lang("en-us"), "en-us");
+    assert.strictEqual(accept.langs("en-us"), "en-us");
+    assert.strictEqual(accept.language("en-us"), "en-us");
+  });
+
   it("should return first type when Accept is missing", () => {
     const accept = accepts(makeReq());
     assert.strictEqual(accept.types("json", "html"), "json");
@@ -48,6 +64,33 @@ describe("accepts", () => {
     assert.deepStrictEqual(accept.types(), ["application/json", "text/html"]);
   });
 
+  it("should match media type parameters case-insensitively", () => {
+    const accept = accepts(
+      makeReq({ accept: "text/html; level=ONE, text/html; q=.5" }),
+    );
+
+    assert.strictEqual(
+      accept.types(["text/html;level=two", "text/html;level=one"]),
+      "text/html;level=one",
+    );
+  });
+
+  it("should allow wildcard media type parameters", () => {
+    const accept = accepts(
+      makeReq({ accept: "text/html; level=*; q=.7, text/html; q=.5" }),
+    );
+
+    assert.strictEqual(
+      accept.types(["text/html;level=two", "text/html"]),
+      "text/html;level=two",
+    );
+  });
+
+  it("should ignore invalid provided media type candidates", () => {
+    const accept = accepts(makeReq({ accept: "application/json" }));
+    assert.strictEqual(accept.types("bogus", "json"), "json");
+  });
+
   it("should negotiate charsets", () => {
     const missing = accepts(makeReq());
     assert.strictEqual(missing.charsets("utf-8"), "utf-8");
@@ -59,10 +102,26 @@ describe("accepts", () => {
     );
   });
 
+  it("should list preferred charsets when no candidates are provided", () => {
+    const accept = accepts(
+      makeReq({ "accept-charset": "utf-8;q=.5, iso-8859-1" }),
+    );
+
+    assert.deepStrictEqual(accept.charsets(), ["iso-8859-1", "utf-8"]);
+  });
+
   it("should negotiate encodings", () => {
     const accept = accepts(makeReq({ "accept-encoding": "gzip, deflate" }));
     assert.strictEqual(accept.encodings("gzip"), "gzip");
     assert.strictEqual(accept.encodings("bogus"), false);
+  });
+
+  it("should list preferred encodings when no candidates are provided", () => {
+    const accept = accepts(
+      makeReq({ "accept-encoding": "gzip;q=.5, deflate" }),
+    );
+
+    assert.deepStrictEqual(accept.encodings(), ["deflate", "gzip", "identity"]);
   });
 
   it("should ignore empty accept-encoding entries", () => {
@@ -81,6 +140,14 @@ describe("accepts", () => {
 
     const missing = accepts(makeReq());
     assert.strictEqual(missing.languages("en"), "en");
+  });
+
+  it("should list preferred languages when no candidates are provided", () => {
+    const accept = accepts(
+      makeReq({ "accept-language": "en;q=.5, en-us" }),
+    );
+
+    assert.deepStrictEqual(accept.languages(), ["en-us", "en"]);
   });
 
   it("should trim provided candidates before matching", () => {

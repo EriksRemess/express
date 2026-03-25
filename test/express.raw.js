@@ -42,6 +42,30 @@ describe("express.raw()", () => {
       .send("stuff")
       .expect(400, /content length/);
   });
+  it("should ignore non-numeric content-length when body is chunked", async () => {
+    const app = express();
+    app.use((req, res, next) => {
+      req.headers["content-length"] = "nope";
+      next();
+    });
+    app.use(express.raw());
+    app.post("/", (req, res) => {
+      if (Buffer.isBuffer(req.body)) {
+        res.json({
+          buf: req.body.toString("hex"),
+        });
+      } else {
+        res.json(req.body);
+      }
+    });
+    const test = request(app).post("/");
+    await test.set("Content-Type", "application/octet-stream");
+    await test.set("Transfer-Encoding", "chunked");
+    await test.write("stuff");
+    await test.expect(200, {
+      buf: "7374756666",
+    });
+  });
   it("should handle Content-Length: 0", async () => {
     await request(__testApp)
       .post("/")
@@ -506,6 +530,15 @@ describe("express.raw()", () => {
       await test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
       await test.expect(200, {
         buf: "6e616d653de8aeba",
+      });
+    });
+    it("should support brotli encoding", async () => {
+      const test = request(__testApp).post("/");
+      await test.set("Content-Encoding", "br");
+      await test.set("Content-Type", "application/octet-stream");
+      await test.write(Buffer.from("8b06806e616d653d25453825414525424103", "hex"));
+      await test.expect(200, {
+        buf: "6e616d653d254538254145254241",
       });
     });
     it("should be case-insensitive", async () => {

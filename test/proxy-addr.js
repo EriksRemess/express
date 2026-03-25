@@ -4,6 +4,26 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import proxyaddr from "#lib/utils/proxy-addr";
 
+function makeReq(forwardedFor, remoteAddress, useConnection) {
+  const req = {
+    headers: {},
+    socket: {
+      remoteAddress,
+    },
+  };
+
+  if (forwardedFor !== undefined) {
+    req.headers["x-forwarded-for"] = forwardedFor;
+  }
+
+  if (useConnection) {
+    req.connection = req.socket;
+    delete req.socket;
+  }
+
+  return req;
+}
+
 describe("proxyaddr.compile()", () => {
   it("should accept an IPv4 /0 range", () => {
     const trust = proxyaddr.compile("0.0.0.0/0");
@@ -32,5 +52,124 @@ describe("proxyaddr.compile()", () => {
 
     assert.equal(trust("::ffff:127.0.0.1"), true);
     assert.equal(trust("::ffff:203.0.113.10"), false);
+  });
+
+  it("should expand named IP ranges", () => {
+    const trust = proxyaddr.compile(["linklocal", "uniquelocal"]);
+
+    assert.equal(trust("169.254.10.20"), true);
+    assert.equal(trust("fe80::1"), true);
+    assert.equal(trust("10.1.2.3"), true);
+    assert.equal(trust("fc00::1"), true);
+    assert.equal(trust("203.0.113.10"), false);
+  });
+
+  it("should accept dotted IPv4 netmasks", () => {
+    const trust = proxyaddr.compile("192.168.0.0/255.255.0.0");
+
+    assert.equal(trust("192.168.10.20"), true);
+    assert.equal(trust("192.169.10.20"), false);
+  });
+
+  it("should reject unsupported trust argument types", () => {
+    assert.throws(() => {
+      proxyaddr.compile({});
+    }, /unsupported trust argument/);
+  });
+
+  it("should reject invalid IP addresses", () => {
+    assert.throws(() => {
+      proxyaddr.compile("not-an-ip");
+    }, /invalid IP address/);
+  });
+
+  it("should reject invalid CIDR ranges", () => {
+    assert.throws(() => {
+      proxyaddr.compile("127.0.0.1/33");
+    }, /invalid range on address/);
+  });
+
+  it("should reject non-contiguous netmasks", () => {
+    assert.throws(() => {
+      proxyaddr.compile("192.168.0.0/255.0.255.0");
+    }, /invalid range on address/);
+  });
+});
+
+describe("proxyaddr.all()", () => {
+  it("should return all addresses from socket and x-forwarded-for", () => {
+    const req = makeReq("203.0.113.1, 10.0.0.1", "127.0.0.1");
+
+    assert.deepStrictEqual(proxyaddr.all(req), [
+      "127.0.0.1",
+      "10.0.0.1",
+      "203.0.113.1",
+    ]);
+  });
+
+  it("should trim empty x-forwarded-for entries", () => {
+    const req = makeReq(" 203.0.113.1 , , 10.0.0.1 ", "127.0.0.1");
+
+    assert.deepStrictEqual(proxyaddr.all(req), [
+      "127.0.0.1",
+      "10.0.0.1",
+      "203.0.113.1",
+    ]);
+  });
+
+  it("should stop at the first untrusted hop", () => {
+    const req = makeReq("203.0.113.1, 10.0.0.1", "127.0.0.1");
+
+    assert.deepStrictEqual(proxyaddr.all(req, "loopback"), [
+      "127.0.0.1",
+      "10.0.0.1",
+    ]);
+  });
+
+  it("should accept a custom trust function", () => {
+    const calls = [];
+    const req = makeReq("203.0.113.1, 10.0.0.1", "127.0.0.1");
+
+    const addrs = proxyaddr.all(req, (addr, index) => {
+      calls.push([addr, index]);
+      return index < 2;
+    });
+
+    assert.deepStrictEqual(addrs, [
+      "127.0.0.1",
+      "10.0.0.1",
+      "203.0.113.1",
+    ]);
+    assert.deepStrictEqual(calls, [
+      ["127.0.0.1", 0],
+      ["10.0.0.1", 1],
+    ]);
+  });
+});
+
+describe("proxyaddr()", () => {
+  it("should return the client address after trusted proxies", () => {
+    const req = makeReq("203.0.113.1, 10.0.0.1", "127.0.0.1");
+
+    assert.strictEqual(
+      proxyaddr(req, ["loopback", "uniquelocal"]),
+      "203.0.113.1",
+    );
+  });
+
+  it("should fall back to req.connection.remoteAddress", () => {
+    const req = makeReq("203.0.113.1", "127.0.0.1", true);
+
+    assert.strictEqual(proxyaddr(req, "loopback"), "203.0.113.1");
+  });
+
+  it("should validate required arguments", () => {
+    assert.throws(() => {
+      proxyaddr();
+    }, /req argument is required/);
+
+    assert.throws(() => {
+      proxyaddr(makeReq(undefined, "127.0.0.1"));
+    }, /trust argument is required/);
   });
 });
