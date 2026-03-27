@@ -47,7 +47,7 @@
   ],
   "dependencies": {
     "mime-types": "^3.0.2",
-    "path-to-regexp": "^8.3.0"
+    "path-to-regexp": "^8.4.0"
   },
   "devDependencies": {
     "connect-redis": "^9.0.0",
