@@ -15,6 +15,27 @@ describe("query-string", () => {
         { color: "black" },
       );
     });
+
+    it("should preserve repeated decoded keys as arrays", () => {
+      assert.deepEqual(
+        parseSimpleQueryString("full+name=tj&full+name=holowaychuk"),
+        { "full name": ["tj", "holowaychuk"] },
+      );
+    });
+
+    it("should decode malformed percent-encoding like URLSearchParams", () => {
+      assert.deepEqual(
+        parseSimpleQueryString("a=%E0%A4%A&b=%ZZ&c=%"),
+        { a: "�%A", b: "%ZZ", c: "%" },
+      );
+    });
+
+    it("should preserve empty keys when explicitly provided", () => {
+      assert.deepEqual(
+        parseSimpleQueryString("=x&&color=black"),
+        { "": "x", color: "black" },
+      );
+    });
   });
 
   describe("parseExtendedQueryString()", () => {

@@ -77,6 +77,30 @@ describe("res", () => {
         .set("If-Match", '"foo"')
         .expect(412);
     });
+    it("should support comma-separated If-Match validators", async () => {
+      await new Promise((resolve, reject) => {
+        const app = createApp(path.resolve(fixtures, "name.txt"));
+
+        request(app)
+          .get("/")
+          .expect("ETag", /^(?:W\/)?"[^"]+"$/)
+          .expect(200, "tobi", (err, res) => {
+            if (err) return reject(err);
+
+            request(app)
+              .get("/")
+              .set("If-Match", ` "foo", ${res.headers.etag} `)
+              .expect(200, "tobi", secondErr => {
+                if (secondErr) {
+                  reject(secondErr);
+                  return;
+                }
+
+                resolve();
+              });
+          });
+      });
+    });
     it("should disable the ETag function if requested", async () => {
       const app = createApp(path.resolve(fixtures, "name.txt")).disable("etag");
       await request(app).get("/").expect(handleHeaders).expect(200);

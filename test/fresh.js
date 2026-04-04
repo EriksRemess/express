@@ -34,6 +34,22 @@ describe("fresh()", () => {
     assert.strictEqual(isFresh(reqHeaders, '"12345"'), true);
   });
 
+  it("should match a token within a comma-separated If-None-Match list", () => {
+    const reqHeaders = {
+      "if-none-match": '"other", W/"12345", "third"',
+    };
+
+    assert.strictEqual(isFresh(reqHeaders, '"12345"'), true);
+  });
+
+  it('should treat whitespace-wrapped "If-None-Match: *" as fresh', () => {
+    const reqHeaders = {
+      "if-none-match": " * ",
+    };
+
+    assert.strictEqual(isFresh(reqHeaders, '"12345"'), true);
+  });
+
   it("should return false when if-none-match is present without an etag", () => {
     const reqHeaders = {
       "if-none-match": '"12345"',

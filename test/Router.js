@@ -273,6 +273,203 @@ describe("Router", () => {
         router.handle({ url: "/foo", method: "GET" }, res, () => {});
       });
     });
+
+    it("should match trailing slashes for static routes when not strict", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router();
+
+        router.get("/foo", (req, res) => {
+          res.end("ok");
+        });
+
+        router.handle(
+          { url: "/foo/", method: "GET" },
+          {
+            end: value => {
+              try {
+                assert.strictEqual(value, "ok");
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+          },
+          reject,
+        );
+      });
+    });
+
+    it("should preserve route order when dynamic routes disable the fast path", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router();
+        const hits = [];
+
+        router.get("/:name", (req, res, next) => {
+          hits.push(`dynamic:${req.params.name}`);
+          next("route");
+        });
+
+        router.get("/foo", (req, res) => {
+          hits.push("static");
+          res.end("done");
+        });
+
+        router.handle(
+          { url: "/foo", method: "GET" },
+          {
+            end: value => {
+              try {
+                assert.strictEqual(value, "done");
+                assert.deepStrictEqual(hits, ["dynamic:foo", "static"]);
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+          },
+          reject,
+        );
+      });
+    });
+
+    it("should collect OPTIONS for static-only routes", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router();
+        const headers = {};
+
+        router.get("/foo", () => {});
+        router.put("/foo", () => {});
+
+        router.handle(
+          { url: "/foo", method: "OPTIONS" },
+          {
+            end: value => {
+              try {
+                assert.strictEqual(value, "GET, HEAD, PUT");
+                assert.strictEqual(headers.Allow, "GET, HEAD, PUT");
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+            setHeader(name, value) {
+              headers[name] = value;
+            },
+          },
+          reject,
+        );
+      });
+    });
+
+    it("should match trailing slashes for static routes after middleware disables the fast path", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router();
+
+        router.use((req, res, next) => {
+          next();
+        });
+
+        router.get("/foo", (req, res) => {
+          res.end("ok");
+        });
+
+        router.handle(
+          { url: "/foo/", method: "GET" },
+          {
+            end: value => {
+              try {
+                assert.strictEqual(value, "ok");
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+          },
+          reject,
+        );
+      });
+    });
+
+    it("should preserve case-sensitive static route matching after middleware disables the fast path", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router({ caseSensitive: true });
+        let matched = false;
+
+        router.use((req, res, next) => {
+          next();
+        });
+
+        router.get("/Foo", (req, res) => {
+          matched = true;
+          res.end("matched");
+        });
+
+        router.handle(
+          { url: "/foo", method: "GET" },
+          {},
+          err => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            assert.strictEqual(matched, false);
+            resolve();
+          },
+        );
+      });
+    });
+
+    it("should match static middleware prefixes without crossing segment boundaries", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router();
+        let hit = false;
+
+        router.use("/foo", (req, res) => {
+          hit = true;
+          res.end(req.url);
+        });
+
+        router.handle(
+          { url: "/foobar", method: "GET" },
+          {},
+          err => {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            assert.strictEqual(hit, false);
+            resolve();
+          },
+        );
+      });
+    });
+
+    it("should trim static middleware prefixes after matching", async () => {
+      await new Promise((resolve, reject) => {
+        const router = new Router();
+
+        router.use("/foo/", (req, res) => {
+          res.end(req.url);
+        });
+
+        router.handle(
+          { url: "/foo/bar", method: "GET" },
+          {
+            end: value => {
+              try {
+                assert.strictEqual(value, "/bar");
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+          },
+          reject,
+        );
+      });
+    });
   });
 
   describe(".multiple callbacks", () => {

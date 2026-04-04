@@ -186,6 +186,65 @@ describe("Route", () => {
         });
       });
     });
+
+    it("should skip error handlers when no error is raised", async () => {
+      await new Promise((resolve, reject) => {
+        const req = { method: "GET", order: "", url: "/" };
+        const route = new Route("");
+
+        route.get((req, res, next) => {
+          req.order += "a";
+          next();
+        });
+
+        route.get((err, req, res, next) => {
+          req.order += "x";
+          next(err);
+        });
+
+        route.get((req, res, next) => {
+          req.order += "b";
+          next();
+        });
+
+        route.dispatch(req, {}, err => {
+          if (err) return reject(err);
+          assert.strictEqual(req.order, "ab");
+          resolve();
+        });
+      });
+    });
+
+    it("should invalidate cached dispatch stacks when handlers are added later", async () => {
+      const route = new Route("");
+
+      await new Promise((resolve, reject) => {
+        route.get((req, res, next) => {
+          req.order = "a";
+          next();
+        });
+
+        route.dispatch({ method: "GET", url: "/" }, {}, err => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+
+      route.get((req, res, next) => {
+        req.order += "b";
+        next();
+      });
+
+      await new Promise((resolve, reject) => {
+        const req = { method: "GET", order: "", url: "/" };
+
+        route.dispatch(req, {}, err => {
+          if (err) return reject(err);
+          assert.strictEqual(req.order, "ab");
+          resolve();
+        });
+      });
+    });
   });
 
   describe("errors", () => {
@@ -240,6 +299,34 @@ describe("Route", () => {
           assert.ok(err);
           assert.strictEqual(err.message, "foobar");
           assert.strictEqual(req.order, "a");
+          resolve();
+        });
+      });
+    });
+
+    it("should resume request handlers after an error handler clears the error", async () => {
+      await new Promise((resolve, reject) => {
+        const req = { order: "", method: "GET", url: "/" };
+        const route = new Route("");
+
+        route.get((req, res, next) => {
+          req.order += "a";
+          next(new Error("boom"));
+        });
+
+        route.get((err, req, res, next) => {
+          req.order += "b";
+          next();
+        });
+
+        route.get((req, res, next) => {
+          req.order += "c";
+          next();
+        });
+
+        route.dispatch(req, {}, err => {
+          if (err) return reject(err);
+          assert.strictEqual(req.order, "abc");
           resolve();
         });
       });
