@@ -143,6 +143,44 @@ describe("res", () => {
       }
     });
 
+    it("should render the validated target when a view symlink changes before the engine reads it", async () => {
+      const app = createApp();
+      const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-view-"));
+      const views = path.join(tempRoot, "views");
+      const outside = path.join(tempRoot, "outside");
+      let swapped = false;
+
+      try {
+        fs.mkdirSync(views);
+        fs.mkdirSync(outside);
+        fs.writeFileSync(path.join(views, "safe.tmpl"), "<p>SAFE</p>");
+        fs.writeFileSync(path.join(outside, "evil.tmpl"), "<p>PWN!</p>");
+        fs.symlinkSync(path.join(views, "safe.tmpl"), path.join(views, "swap.tmpl"));
+
+        app.set("views", views);
+        app.engine("tmpl", (fileName, options, callback) => {
+          if (!swapped) {
+            swapped = true;
+            fs.rmSync(path.join(views, "swap.tmpl"));
+            fs.symlinkSync(path.join(outside, "evil.tmpl"), path.join(views, "swap.tmpl"));
+          }
+
+          fs.readFile(fileName, "utf8", callback);
+        });
+        app.set("view engine", "tmpl");
+
+        app.use((req, res) => {
+          res.render("swap");
+        });
+
+        await request(app)
+          .get("/")
+          .expect(200, "<p>SAFE</p>");
+      } finally {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+      }
+    });
+
     it("should support index.<engine>", async () => {
       const app = createApp();
 

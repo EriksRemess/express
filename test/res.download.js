@@ -6,6 +6,8 @@ import assert from "node:assert";
 import {AsyncLocalStorage} from "node:async_hooks";
 import {Buffer} from "node:buffer";
 import express from "#express";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import utils from "#test/support/utils";
@@ -299,6 +301,74 @@ describe("res", () => {
           .expect(403)
           .expect(utils.shouldNotHaveHeader("Content-Disposition"));
       });
+      it("should not follow symlinks outside root", async () => {
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-download-"));
+        const root = path.join(tempRoot, "root");
+
+        try {
+          fs.mkdirSync(root);
+          fs.symlinkSync(FIXTURES_PATH, path.join(root, "escape"));
+
+          const app = express();
+          app.use((req, res) => {
+            res.download("escape/name.txt", {
+              root,
+            });
+          });
+
+          await request(app)
+            .get("/")
+            .expect(403)
+            .expect(utils.shouldNotHaveHeader("Content-Disposition"));
+        } finally {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        }
+      });
+
+      it("should keep serving the validated file when a symlink changes after headers", async () => {
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-download-"));
+        const root = path.join(tempRoot, "root");
+        const safe = path.join(root, "safe");
+        const outside = path.join(tempRoot, "outside");
+
+        try {
+          fs.mkdirSync(root);
+          fs.mkdirSync(safe);
+          fs.mkdirSync(outside);
+          fs.writeFileSync(path.join(safe, "file.txt"), "SAFE");
+          fs.writeFileSync(path.join(outside, "file.txt"), "PWN!");
+          fs.symlinkSync(safe, path.join(root, "link"));
+
+          const app = express();
+          app.use((req, res) => {
+            const setHeader = res.setHeader.bind(res);
+            let swapped = false;
+
+            res.setHeader = function patchedSetHeader(name, value) {
+              if (!swapped && name === "Content-Length") {
+                swapped = true;
+                fs.rmSync(path.join(root, "link"));
+                fs.symlinkSync(outside, path.join(root, "link"));
+              }
+
+              return setHeader(name, value);
+            };
+
+            res.download("link/file.txt", {
+              root,
+            });
+          });
+
+          await request(app)
+            .get("/")
+            .expect(200)
+            .expect("Content-Disposition", 'attachment; filename="file.txt"')
+            .expect(utils.shouldHaveBody(Buffer.from("SAFE")));
+        } finally {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        }
+      });
+
     });
   });
   describe(".download(path, filename, fn)", () => {

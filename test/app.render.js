@@ -472,6 +472,47 @@ describe("app", () => {
       });
     });
 
+    it("should render the validated target when a view symlink changes before the engine reads it", async () => {
+      await new Promise((resolve, reject) => {
+        const app = createApp();
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-view-"));
+        const views = path.join(tempRoot, "views");
+        const outside = path.join(tempRoot, "outside");
+        let swapped = false;
+
+        try {
+          fs.mkdirSync(views);
+          fs.mkdirSync(outside);
+          fs.writeFileSync(path.join(views, "safe.tmpl"), "<p>SAFE</p>");
+          fs.writeFileSync(path.join(outside, "evil.tmpl"), "<p>PWN!</p>");
+          fs.symlinkSync(path.join(views, "safe.tmpl"), path.join(views, "swap.tmpl"));
+
+          app.set("views", views);
+          app.engine("tmpl", (fileName, options, callback) => {
+            if (!swapped) {
+              swapped = true;
+              fs.rmSync(path.join(views, "swap.tmpl"));
+              fs.symlinkSync(path.join(outside, "evil.tmpl"), path.join(views, "swap.tmpl"));
+            }
+
+            fs.readFile(fileName, "utf8", callback);
+          });
+          app.set("view engine", "tmpl");
+
+          app.render("swap", (err, str) => {
+            fs.rmSync(tempRoot, { recursive: true, force: true });
+
+            if (err) return reject(err);
+            assert.strictEqual(str, "<p>SAFE</p>");
+            resolve();
+          });
+        } catch (err) {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+          throw err;
+        }
+      });
+    });
+
     describe("caching", () => {
       it("should cache with cache option", async () => {
         await new Promise((resolve, reject) => {

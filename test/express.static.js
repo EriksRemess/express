@@ -4,6 +4,8 @@ import {describe, it, before} from "node:test";
 let __testApp;
 import assert from "node:assert";
 import express from "#express";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import {Buffer} from "node:buffer";
 import request from "supertest";
@@ -420,6 +422,50 @@ describe("express.static()", () => {
         .expect(200)
         .expect(utils.shouldHaveBody(Buffer.from("tobi")));
     });
+
+    it("should not follow symlinks outside the root", async () => {
+      const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));
+      const root = path.join(tempRoot, "root");
+
+      try {
+        fs.mkdirSync(root);
+        fs.symlinkSync(fixtures, path.join(root, "escape"));
+
+        await request(createApp(root))
+          .get("/escape/name.txt")
+          .expect(404);
+      } finally {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+      }
+    });
+
+    it("should keep serving the validated file when a symlink changes after headers", async () => {
+      const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));
+      const root = path.join(tempRoot, "root");
+      const safe = path.join(root, "safe");
+      const outside = path.join(tempRoot, "outside");
+
+      try {
+        fs.mkdirSync(root);
+        fs.mkdirSync(safe);
+        fs.mkdirSync(outside);
+        fs.writeFileSync(path.join(safe, "file.txt"), "SAFE");
+        fs.writeFileSync(path.join(outside, "file.txt"), "PWN!");
+        fs.symlinkSync(safe, path.join(root, "link"));
+
+        await request(createApp(root, {
+          setHeaders() {
+            fs.rmSync(path.join(root, "link"));
+            fs.symlinkSync(outside, path.join(root, "link"));
+          },
+        }))
+          .get("/link/file.txt")
+          .expect(200, "SAFE");
+      } finally {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+      }
+    });
+
   });
   describe("immutable", () => {
     it("should default to false", async () => {
