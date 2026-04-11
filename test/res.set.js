@@ -110,5 +110,27 @@ describe("res", () => {
         .expect("X-Number", "123")
         .expect(200, "string");
     });
+
+    it("should ignore inherited enumerable properties", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        const headers = Object.create({ "X-Inherited": "nope" });
+        headers["X-Own"] = "ok";
+
+        res.set(headers);
+        res.end();
+      });
+
+      await request(app)
+        .get("/")
+        .expect(200)
+        .expect("X-Own", "ok")
+        .expect((res) => {
+          if (res.headers["x-inherited"] !== undefined) {
+            throw new Error("expected inherited header to be ignored");
+          }
+        });
+    });
   });
 });

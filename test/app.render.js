@@ -2,20 +2,24 @@
 import {describe, it} from "node:test";
 import assert from "node:assert";
 import express from "#express";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import tmpl from "#test/support/tmpl";
 
 
 describe("app", () => {
   describe(".render(name, fn)", () => {
-    it("should support absolute paths", async () => {
+    it("should support absolute paths within the configured views root", async () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
+        const views = path.join(import.meta.dirname, "fixtures");
 
+        app.set("views", views);
         app.locals.user = { name: "tobi" };
 
         app.render(
-          path.join(import.meta.dirname, "fixtures", "user.tmpl"),
+          path.join(views, "user.tmpl"),
           (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
@@ -25,18 +29,37 @@ describe("app", () => {
       });
     });
 
-    it('should support absolute paths with "view engine"', async () => {
+    it('should support absolute paths within the configured views root with "view engine"', async () => {
       await new Promise((resolve, reject) => {
         const app = createApp();
+        const views = path.join(import.meta.dirname, "fixtures");
 
         app.set("view engine", "tmpl");
+        app.set("views", views);
         app.locals.user = { name: "tobi" };
 
         app.render(
-          path.join(import.meta.dirname, "fixtures", "user"),
+          path.join(views, "user"),
           (err, str) => {
             if (err) return reject(err);
             assert.strictEqual(str, "<p>tobi</p>");
+            resolve();
+          },
+        );
+      });
+    });
+
+    it("should reject absolute paths outside the configured views root", async () => {
+      await new Promise((resolve) => {
+        const app = createApp();
+
+        app.set("views", path.join(import.meta.dirname, "fixtures", "default_layout"));
+
+        app.render(
+          path.join(import.meta.dirname, "fixtures", "user.tmpl"),
+          (err) => {
+            assert.ok(err);
+            assert.equal(err.view.path, undefined);
             resolve();
           },
         );
@@ -408,6 +431,44 @@ describe("app", () => {
             resolve();
           });
         });
+      });
+    });
+
+    it("should not resolve views outside the configured root with relative paths", async () => {
+      await new Promise((resolve) => {
+        const app = createApp();
+
+        app.set("views", path.join(import.meta.dirname, "fixtures", "default_layout"));
+
+        app.render("../name.tmpl", (err) => {
+          assert.ok(err);
+          assert.equal(err.view.path, undefined);
+          assert.match(err.message, /Failed to lookup view "\.\.\/name\.tmpl"/);
+          resolve();
+        });
+      });
+    });
+
+    it("should not follow symlinks outside the configured views root", async () => {
+      await new Promise((resolve) => {
+        const app = createApp();
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-view-"));
+        const views = path.join(tempRoot, "views");
+        try {
+          fs.mkdirSync(views);
+          fs.symlinkSync(path.join(import.meta.dirname, "fixtures"), path.join(views, "escape"));
+          app.set("views", views);
+
+          app.render("escape/name.tmpl", (err) => {
+            assert.ok(err);
+            assert.equal(err.view.path, undefined);
+            fs.rmSync(tempRoot, { recursive: true, force: true });
+            resolve();
+          });
+        } catch (err) {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+          throw err;
+        }
       });
     });
 

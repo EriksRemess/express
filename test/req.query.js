@@ -60,6 +60,52 @@ describe("req", () => {
           .get("/?user.name=tj")
           .expect(200, '{"user.name":"tj"}');
       });
+
+      it("should not overflow the stack on deeply nested input", async () => {
+        const app = express();
+        let key = "a";
+
+        app.set("query parser", "extended");
+        app.use((req, res) => {
+          void req.query;
+          res.send("ok");
+        });
+
+        for (let i = 0; i < 5000; i++) {
+          key += "[a]";
+        }
+
+        await request(app)
+          .get(`/?${key}=1`)
+          .expect(200, "ok");
+      });
+
+      it("should preserve deeply nested structures without truncation", async () => {
+        const app = express();
+        let key = "a";
+        const expectedDepth = 100;
+
+        app.set("query parser", "extended");
+        app.use((req, res) => {
+          let current = req.query;
+          let depth = 0;
+
+          while (current && typeof current === "object" && current.a !== undefined) {
+            current = current.a;
+            depth++;
+          }
+
+          res.send(String(depth));
+        });
+
+        for (let i = 0; i < expectedDepth; i++) {
+          key += "[a]";
+        }
+
+        await request(app)
+          .get(`/?${key}=1`)
+          .expect(200, String(expectedDepth + 1));
+      });
     });
 
     describe('when "query parser" is simple', () => {
