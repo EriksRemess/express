@@ -68,6 +68,19 @@ describe("content-disposition", () => {
     }, /fallback must be ISO-8859-1 string/);
   });
 
+  it("should reject fallback strings with invalid header characters", () => {
+    assert.throws(() => {
+      contentDisposition("name.txt", { fallback: "bad\nname.txt" });
+    }, /fallback must be ISO-8859-1 string/);
+  });
+
+  it("should sanitize generated fallback strings with invalid header characters", () => {
+    assert.strictEqual(
+      contentDisposition("bad\n日本語.txt"),
+      'attachment; filename="bad????.txt"; filename*=UTF-8\'\'bad%0A%E6%97%A5%E6%9C%AC%E8%AA%9E.txt',
+    );
+  });
+
   it("should escape quoted filename characters", () => {
     assert.strictEqual(
       contentDisposition('he"llo.txt'),

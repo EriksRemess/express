@@ -64,6 +64,14 @@ describe("cookie utils", () => {
       }, /argument name is invalid/);
     });
 
+    it("should reject cookie names with HTTP separators", () => {
+      for (const name of ["bad<name", "bad>name", "bad@name", "bad[name]", "bad{name}"]) {
+        assert.throws(() => {
+          serialize(name, "value");
+        }, /argument name is invalid/);
+      }
+    });
+
     it("should reject invalid cookie values", () => {
       assert.throws(() => {
         serialize("name", "bad value", { encode: value => value });

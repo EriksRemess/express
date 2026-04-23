@@ -5,6 +5,7 @@ let __testApp;
 import assert from "node:assert";
 import express from "#express";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import {Buffer} from "node:buffer";
@@ -99,6 +100,27 @@ describe("express.static()", () => {
     });
   });
   describe("etag", () => {
+    it("should send ETag when used without an Express app", async () => {
+      const middleware = express.static(fixtures);
+      const server = http.createServer((req, res) => {
+        middleware(req, res, err => {
+          if (err) {
+            res.statusCode = err.status || 500;
+            res.end(err.message);
+            return;
+          }
+
+          res.statusCode = 404;
+          res.end("Not Found");
+        });
+      });
+
+      await request(server)
+        .get("/todo.txt")
+        .expect("ETag", /^W\//)
+        .expect(200, "- groceries");
+    });
+
     it('should respect the app "etag" setting when disabled', async () => {
       const app = express();
 

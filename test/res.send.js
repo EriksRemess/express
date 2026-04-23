@@ -146,6 +146,18 @@ describe("res", () => {
         .expect("Content-Type", "text/plain; charset=utf-8")
         .expect(200, "hey");
     });
+    it("should accept DataView", async () => {
+      const app = express();
+      app.use((req, res) => {
+        const encodedValue = new TextEncoder().encode("xxheyzz");
+        const view = new DataView(encodedValue.buffer, 2, 3);
+        res.set("Content-Type", "text/plain").send(view);
+      });
+      await request(app)
+        .get("/")
+        .expect("Content-Type", "text/plain; charset=utf-8")
+        .expect(200, "hey");
+    });
     it("should not override ETag", async () => {
       const app = express();
       app.use((req, res) => {

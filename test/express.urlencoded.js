@@ -500,6 +500,18 @@ describe("express.urlencoded()", () => {
           .send("user[name]=tobi")
           .expect(200, '{"user":{"name":"tobi"}}');
       });
+      it("should not create sparse arrays for very large finite limits", async () => {
+        await request(
+          createApp({
+            extended: true,
+            parameterLimit: 2147483648,
+          }),
+        )
+          .post("/")
+          .set("Content-Type", "application/x-www-form-urlencoded")
+          .send("items[2147483647]=x")
+          .expect(200, '{"items":{"2147483647":"x"}}');
+      });
       it("should work with Infinity limit", async () => {
         await request(
           createApp({

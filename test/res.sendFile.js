@@ -892,6 +892,35 @@ describe("res", () => {
         }
       });
 
+      it("should reject outside files after root is replaced with a symlink", async () => {
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-sendfile-"));
+        const root = path.join(tempRoot, "root");
+        const outside = path.join(tempRoot, "outside");
+
+        try {
+          fs.mkdirSync(root);
+          fs.mkdirSync(outside);
+          fs.writeFileSync(path.join(root, "file.txt"), "SAFE");
+          fs.writeFileSync(path.join(outside, "file.txt"), "PWN!");
+
+          const app = express();
+          app.use((req, res) => {
+            res.sendFile("file.txt", {
+              root,
+            });
+          });
+
+          await request(app).get("/").expect(200, "SAFE");
+
+          fs.rmSync(root, { recursive: true, force: true });
+          fs.symlinkSync(outside, root);
+
+          await request(app).get("/").expect(403);
+        } finally {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        }
+      });
+
       it("should keep serving the validated file when a symlink changes after headers", async () => {
         const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-sendfile-"));
         const root = path.join(tempRoot, "root");
