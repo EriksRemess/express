@@ -39,6 +39,46 @@ describe("res", () => {
       const app = createApp(path.resolve(fixtures, "name.txt"));
       await request(app).get("/").expect(200, "tobi");
     });
+    it("should ignore inherited range header values", async () => {
+      const app = express();
+
+      app.use((req, res, next) => {
+        const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "range");
+        let restored = false;
+
+        function restore() {
+          if (restored) {
+            return;
+          }
+
+          restored = true;
+          if (descriptor) {
+            Object.defineProperty(Object.prototype, "range", descriptor);
+          } else {
+            delete Object.prototype.range;
+          }
+        }
+
+        Object.defineProperty(Object.prototype, "range", {
+          configurable: true,
+          value: "bytes=0-0",
+          writable: true,
+        });
+        Object.setPrototypeOf(req.headers, Object.prototype);
+        res.once("close", restore);
+        res.once("finish", restore);
+        next();
+      });
+
+      app.use((req, res) => {
+        res.sendFile(path.resolve(fixtures, "name.txt"));
+      });
+
+      await request(app)
+        .get("/")
+        .expect(utils.shouldNotHaveHeader("Content-Range"))
+        .expect(200, "tobi");
+    });
     it("should transfer a file with special characters in string", async () => {
       const app = createApp(path.resolve(fixtures, "% of dogs.txt"));
       await request(app).get("/").expect(200, "20%");

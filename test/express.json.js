@@ -106,6 +106,47 @@ describe("express.json()", () => {
         .expect(403, "[entity.verify.failed] blocked");
     });
   });
+  it("should ignore inherited content-encoding header values", async () => {
+    const app = express();
+
+    app.use((req, res, next) => {
+      const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "content-encoding");
+      let restored = false;
+
+      function restore() {
+        if (restored) {
+          return;
+        }
+
+        restored = true;
+        if (descriptor) {
+          Object.defineProperty(Object.prototype, "content-encoding", descriptor);
+        } else {
+          delete Object.prototype["content-encoding"];
+        }
+      }
+
+      Object.defineProperty(Object.prototype, "content-encoding", {
+        configurable: true,
+        value: "gzip",
+        writable: true,
+      });
+      Object.setPrototypeOf(req.headers, Object.prototype);
+      res.once("close", restore);
+      res.once("finish", restore);
+      next();
+    });
+    app.use(express.json());
+    app.post("/", (req, res) => {
+      res.json(req.body);
+    });
+
+    await request(app)
+      .post("/")
+      .set("Content-Type", "application/json")
+      .send('{"user":"tobi"}')
+      .expect(200, '{"user":"tobi"}');
+  });
   describe("when JSON is invalid", () => {
     before(() => {
       __testApp = createApp();

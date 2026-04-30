@@ -181,6 +181,53 @@ describe("res", () => {
             .expect(406, "Supports: text/plain");
         });
       });
+
+      it("should ignore inherited Accept header values", async () => {
+        const app = express();
+
+        app.use((req, res, next) => {
+          const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "accept");
+          let restored = false;
+
+          function restore() {
+            if (restored) {
+              return;
+            }
+
+            restored = true;
+            if (descriptor) {
+              Object.defineProperty(Object.prototype, "accept", descriptor);
+            } else {
+              delete Object.prototype.accept;
+            }
+          }
+
+          Object.defineProperty(Object.prototype, "accept", {
+            configurable: true,
+            value: "application/json",
+            writable: true,
+          });
+          Object.setPrototypeOf(req.headers, Object.prototype);
+          res.once("close", restore);
+          res.once("finish", restore);
+          next();
+        });
+
+        app.use((req, res) => {
+          res.format({
+            text: () => {
+              res.send("text");
+            },
+            json: () => {
+              res.send("json");
+            },
+          });
+        });
+
+        await request(app)
+          .get("/")
+          .expect(200, "text");
+      });
     });
     describe("in router", () => {
       test(app4);

@@ -49,4 +49,47 @@ describe("vhost()", () => {
       .set("X-Forwarded-Host", "bar.example.com")
       .expect(200, "foo.example.com");
   });
+
+  it("should ignore inherited Host header values", async () => {
+    const app = express();
+
+    app.use((req, res, next) => {
+      const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "host");
+      let restored = false;
+
+      function restore() {
+        if (restored) {
+          return;
+        }
+
+        restored = true;
+        if (descriptor) {
+          Object.defineProperty(Object.prototype, "host", descriptor);
+        } else {
+          delete Object.prototype.host;
+        }
+      }
+
+      Object.defineProperty(Object.prototype, "host", {
+        configurable: true,
+        value: "foo.example.com",
+        writable: true,
+      });
+      delete req.headers.host;
+      Object.setPrototypeOf(req.headers, Object.prototype);
+      res.once("close", restore);
+      res.once("finish", restore);
+      next();
+    });
+    app.use(vhost("*.example.com", (req, res) => {
+      res.send("matched");
+    }));
+    app.use((req, res) => {
+      res.sendStatus(404);
+    });
+
+    await request(app)
+      .get("/")
+      .expect(404);
+  });
 });

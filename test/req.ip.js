@@ -76,6 +76,42 @@ describe("req", () => {
         const test = request(app).get("/");
         await test.expect(200, getExpectedClientAddress(test._server));
       });
+
+      it("should ignore inherited X-Forwarded-For header values", async () => {
+        const app = express();
+        app.enable("trust proxy");
+        app.use((req, res) => {
+          const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "x-forwarded-for");
+          let restored = false;
+
+          function restore() {
+            if (restored) {
+              return;
+            }
+
+            restored = true;
+            if (descriptor) {
+              Object.defineProperty(Object.prototype, "x-forwarded-for", descriptor);
+            } else {
+              delete Object.prototype["x-forwarded-for"];
+            }
+          }
+
+          Object.defineProperty(Object.prototype, "x-forwarded-for", {
+            configurable: true,
+            value: "198.51.100.77",
+            writable: true,
+          });
+          delete req.headers["x-forwarded-for"];
+          Object.setPrototypeOf(req.headers, Object.prototype);
+          res.once("close", restore);
+          res.once("finish", restore);
+          res.send(req.ip);
+        });
+
+        const test = request(app).get("/");
+        await test.expect(200, getExpectedClientAddress(test._server));
+      });
     });
   });
 });
