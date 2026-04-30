@@ -488,6 +488,32 @@ describe("express.static()", () => {
       }
     });
 
+    it("should keep serving the validated file when the final path changes after headers", async () => {
+      const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));
+      const root = path.join(tempRoot, "root");
+      const safe = path.join(root, "safe");
+      const outside = path.join(tempRoot, "outside");
+
+      try {
+        fs.mkdirSync(root);
+        fs.mkdirSync(safe);
+        fs.mkdirSync(outside);
+        fs.writeFileSync(path.join(safe, "file.txt"), "SAFE");
+        fs.writeFileSync(path.join(outside, "file.txt"), "PWN!");
+
+        await request(createApp(root, {
+          setHeaders() {
+            fs.rmSync(path.join(safe, "file.txt"));
+            fs.symlinkSync(path.join(outside, "file.txt"), path.join(safe, "file.txt"));
+          },
+        }))
+          .get("/safe/file.txt")
+          .expect(200, "SAFE");
+      } finally {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+      }
+    });
+
   });
   describe("immutable", () => {
     it("should default to false", async () => {

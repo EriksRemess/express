@@ -300,6 +300,32 @@ describe("app.router", () => {
         .expect(200, '[["action","get"],["user","tj"]]');
     });
 
+    it("should merge prototype-named params as own properties", async () => {
+      const app = express();
+      const router = new express.Router({ mergeParams: true });
+
+      router.get("/:constructor", (req, res) => {
+        const keys = Object.keys(req.params).sort();
+
+        res.send({
+          keys,
+          prototype: Object.getPrototypeOf(req.params),
+          values: keys.map(k => {
+            return [k, req.params[k]];
+          }),
+        });
+      });
+
+      app.use("/user/:__proto__", router);
+
+      await request(app)
+        .get("/user/tj/get")
+        .expect(
+          200,
+          '{"keys":["__proto__","constructor"],"prototype":null,"values":[["__proto__","tj"],["constructor","get"]]}',
+        );
+    });
+
     it("should use params from router", async () => {
       const app = express();
       const router = new express.Router({ mergeParams: true });

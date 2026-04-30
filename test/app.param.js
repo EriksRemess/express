@@ -63,6 +63,29 @@ describe("app", () => {
       await request(app).get("/user/123").expect(200, "number:123");
     });
 
+    it("should map prototype-named params", async () => {
+      const app = express();
+      const seen = [];
+
+      app.param("__proto__", (req, res, next, value, name) => {
+        seen.push([name, value]);
+        next();
+      });
+
+      app.param("constructor", (req, res, next, value, name) => {
+        seen.push([name, value]);
+        next();
+      });
+
+      app.get("/:constructor/:__proto__", (req, res) => {
+        res.send(seen);
+      });
+
+      await request(app)
+        .get("/thing/value")
+        .expect(200, '[["constructor","thing"],["__proto__","value"]]');
+    });
+
     it("should only call once per request", async () => {
       const app = express();
       let called = 0;
