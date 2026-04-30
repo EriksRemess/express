@@ -4,6 +4,7 @@ import express from "#express";
 import request from "supertest";
 import assert from "node:assert";
 import utils from "#test/support/utils";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("res", () => {
   describe(".jsonp(object)", () => {
@@ -140,6 +141,23 @@ describe("res", () => {
         .expect("Content-Type", "application/vnd.example+json; charset=utf-8")
         .expect(utils.shouldNotHaveHeader("X-Content-Type-Options"))
         .expect(200, '{"hello":"world"}');
+    });
+
+    it("should ignore inherited callback names from query parser output", async () => {
+      const app = express();
+
+      app.set("query parser", () => ({}));
+
+      app.use((req, res) => {
+        res.jsonp({ count: 1 });
+      });
+
+      await withObjectPrototypeProperties({ callback: "polluted" }, async () => {
+        await request(app)
+          .get("/")
+          .expect("Content-Type", "application/json; charset=utf-8")
+          .expect(200, '{"count":1}');
+      });
     });
 
     it("should override previous Content-Types with callback", async () => {

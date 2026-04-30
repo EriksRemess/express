@@ -3,6 +3,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import createError, { HttpError, isHttpError } from "#lib/utils/http-errors";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("http-errors", () => {
   it("should create an error with status and expose for 4xx", () => {
@@ -55,6 +56,21 @@ describe("http-errors", () => {
     const err = createError(404, props);
     assert.strictEqual(err.code, "X");
     assert.strictEqual("inherited" in err, false);
+  });
+
+  it("should ignore inherited status metadata on errors", async () => {
+    await withObjectPrototypeProperties({
+      expose: true,
+      status: 404,
+      statusCode: 404,
+    }, () => {
+      const err = createError(500, new Error("boom"));
+
+      assert.strictEqual(err.status, 500);
+      assert.strictEqual(err.statusCode, 500);
+      assert.strictEqual(err.expose, false);
+      assert.strictEqual(isHttpError(new Error("polluted")), false);
+    });
   });
 
   it("should validate unsupported argument types", () => {

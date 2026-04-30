@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import { EventEmitter } from "node:events";
 import finalhandler from "#lib/utils/finalhandler";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 function createReq(overrides) {
   return {
@@ -119,6 +120,25 @@ describe("finalhandler()", () => {
     assert.strictEqual(res.statusCode, 504);
     assert.strictEqual(headers.get("Retry-After"), undefined);
     assert.match(res.body, /gateway issue/);
+  });
+
+  it("should ignore inherited error status and headers", async () => {
+    await withObjectPrototypeProperties({
+      headers: {
+        "Set-Cookie": "polluted=yes",
+      },
+      status: 418,
+      statusCode: 418,
+    }, () => {
+      const req = createReq();
+      const { headers, res } = createRes();
+
+      finalhandler(req, res, { env: "production" })(new Error("boom"));
+
+      assert.strictEqual(res.statusCode, 500);
+      assert.strictEqual(headers.get("Set-Cookie"), undefined);
+      assert.match(res.body, /Internal Server Error/);
+    });
   });
 
   it("should call onerror asynchronously", async () => {

@@ -5,6 +5,7 @@ import after from "#test/support/after";
 import express from "#express";
 import request from "supertest";
 import assert from "node:assert";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 const app1 = express();
 app1.use((req, res, next) => {
   res.format({
@@ -151,6 +152,34 @@ describe("res", () => {
           .expect(200)
           .expect("x-default", "1")
           .expect("json");
+      });
+
+      it("should ignore inherited default formatter", async () => {
+        const app = express();
+
+        app.use((req, res, next) => {
+          res.format({
+            text: () => {
+              res.send("text");
+            },
+          });
+        });
+
+        app.use((err, req, res, next) => {
+          res.status(err.status);
+          res.send("Supports: " + err.types.join(", "));
+        });
+
+        await withObjectPrototypeProperties({
+          default: (req, res) => {
+            res.send("polluted");
+          },
+        }, async () => {
+          await request(app)
+            .get("/")
+            .set("Accept", "application/json")
+            .expect(406, "Supports: text/plain");
+        });
       });
     });
     describe("in router", () => {

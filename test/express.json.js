@@ -90,6 +90,22 @@ describe("express.json()", () => {
         .expect(200, '{"user":"tobi"}');
     });
   });
+  it("should ignore inherited verifier error metadata", async () => {
+    await withObjectPrototypeProperties({
+      status: 418,
+      type: "polluted",
+    }, async () => {
+      await request(createApp({
+        verify: () => {
+          throw new Error("blocked");
+        },
+      }))
+        .post("/")
+        .set("Content-Type", "application/json")
+        .send('{"user":"tobi"}')
+        .expect(403, "[entity.verify.failed] blocked");
+    });
+  });
   describe("when JSON is invalid", () => {
     before(() => {
       __testApp = createApp();

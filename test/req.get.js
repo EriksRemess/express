@@ -3,6 +3,7 @@ import {describe, it} from "node:test";
 import express from "#express";
 import request from "supertest";
 import assert from "node:assert";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("req", () => {
   describe(".get(field)", () => {
@@ -31,6 +32,19 @@ describe("req", () => {
         .post("/")
         .set("Referrer", "http://foobar.com")
         .expect("http://foobar.com");
+    });
+
+    it("should ignore inherited header field values", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        Object.setPrototypeOf(req.headers, Object.prototype);
+        res.end(req.get("X-Polluted") || "none");
+      });
+
+      await withObjectPrototypeProperties({ "x-polluted": "yes" }, async () => {
+        await request(app).get("/").expect("none");
+      });
     });
 
     it("should throw missing header name", async () => {
