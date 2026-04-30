@@ -47,16 +47,16 @@
   ],
   "dependencies": {
     "mime-types": "^3.0.2",
-    "path-to-regexp": "^8.4.0"
+    "path-to-regexp": "^8.4.2"
   },
   "devDependencies": {
     "connect-redis": "^9.0.0",
     "cookie-session": "^2.1.1",
-    "ejs": "^5.0.1",
-    "eslint": "^10.1.0",
+    "ejs": "^5.0.2",
+    "eslint": "^10.2.1",
     "express-session": "^1.19.0",
-    "hbs": "^4.2.0",
-    "marked": "^17.0.5",
+    "hbs": "^4.2.1",
+    "marked": "^18.0.2",
     "morgan": "^1.10.1",
     "supertest": "^7.2.2"
   },
