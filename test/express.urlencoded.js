@@ -95,6 +95,28 @@ describe("express.urlencoded()", () => {
           .send("user=Tobi&user=Loki")
           .expect(200, '{"user":["Tobi","Loki"]}');
       });
+      it("should ignore unsafe prototype keys", async () => {
+        const app = express();
+
+        app.use(express.urlencoded({
+          extended: false,
+        }));
+        app.post("/", (req, res) => {
+          const merged = Object.assign({}, req.body);
+
+          res.send({
+            keys: Object.keys(req.body).sort(),
+            polluted: {}.polluted,
+            prototype: Object.getPrototypeOf(merged) === Object.prototype,
+          });
+        });
+
+        await request(app)
+          .post("/")
+          .set("Content-Type", "application/x-www-form-urlencoded")
+          .send("__proto__=polluted&__proto__=again&constructor=bad&prototype=bad&safe=value")
+          .expect(200, '{"keys":["safe"],"prototype":true}');
+      });
     });
     describe("when true", () => {
       before(() => {

@@ -36,6 +36,17 @@ describe("query-string", () => {
         { "": "x", color: "black" },
       );
     });
+
+    it("should ignore unsafe prototype keys", () => {
+      const query = parseSimpleQueryString(
+        "__proto__=polluted&__proto__=again&constructor=bad&prototype=bad&safe=value",
+      );
+      const merged = Object.assign({}, query);
+
+      assert.deepEqual(query, { safe: "value" });
+      assert.strictEqual(Object.getPrototypeOf(merged), Object.prototype);
+      assert.strictEqual({}.polluted, undefined);
+    });
   });
 
   describe("parseExtendedQueryString()", () => {

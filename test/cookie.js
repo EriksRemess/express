@@ -7,6 +7,8 @@ import {
   parse,
   parseSetCookie,
   serialize,
+  sign,
+  signedCookies,
 } from "#lib/utils/cookies";
 
 describe("cookie utils", () => {
@@ -33,6 +35,15 @@ describe("cookie utils", () => {
 
       assert.strictEqual(Object.getPrototypeOf(cookies), null);
       assert.strictEqual(cookies["full+name"], "tj holowaychuk");
+    });
+
+    it("should ignore unsafe prototype names", () => {
+      const cookies = parse("__proto__=polluted; constructor=bad; prototype=bad; safe=value");
+      const merged = Object.assign({}, cookies);
+
+      assert.deepEqual(cookies, { safe: "value" });
+      assert.strictEqual(Object.getPrototypeOf(merged), Object.prototype);
+      assert.strictEqual({}.polluted, undefined);
     });
   });
 
@@ -122,6 +133,41 @@ describe("cookie utils", () => {
         empty: null,
         count: 0,
       });
+    });
+
+    it("should ignore unsafe prototype names", () => {
+      const cookies = Object.create(null);
+
+      cookies.__proto__ = 'j:{"polluted":true}';
+      cookies.constructor = 'j:{"polluted":true}';
+      cookies.prototype = 'j:{"polluted":true}';
+      cookies.safe = 'j:{"ok":true}';
+
+      const parsed = JSONCookies(cookies);
+      const merged = Object.assign({}, parsed);
+
+      assert.deepEqual(parsed, { safe: { ok: true } });
+      assert.strictEqual(Object.getPrototypeOf(merged), Object.prototype);
+      assert.strictEqual({}.polluted, undefined);
+    });
+  });
+
+  describe(".signedCookies()", () => {
+    it("should ignore unsafe prototype names", () => {
+      const cookies = Object.create(null);
+
+      cookies.__proto__ = `s:${sign('j:{"polluted":true}', "secret")}`;
+      cookies.constructor = `s:${sign('j:{"polluted":true}', "secret")}`;
+      cookies.prototype = `s:${sign('j:{"polluted":true}', "secret")}`;
+      cookies.safe = `s:${sign("value", "secret")}`;
+
+      const parsed = signedCookies(cookies, "secret");
+      const merged = Object.assign({}, parsed);
+
+      assert.deepEqual(parsed, { safe: "value" });
+      assert.deepEqual(cookies, {});
+      assert.strictEqual(Object.getPrototypeOf(merged), Object.prototype);
+      assert.strictEqual({}.polluted, undefined);
     });
   });
 });

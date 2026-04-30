@@ -140,6 +140,25 @@ describe("req", () => {
           .get("/?&&color=black&&")
           .expect(200, '{"color":"black"}');
       });
+
+      it("should ignore unsafe prototype keys", async () => {
+        const app = express();
+
+        app.set("query parser", "simple");
+        app.use((req, res) => {
+          const merged = Object.assign({}, req.query);
+
+          res.send({
+            keys: Object.keys(req.query).sort(),
+            polluted: {}.polluted,
+            prototype: Object.getPrototypeOf(merged) === Object.prototype,
+          });
+        });
+
+        await request(app)
+          .get("/?__proto__=polluted&__proto__=again&constructor=bad&prototype=bad&safe=value")
+          .expect(200, '{"keys":["safe"],"prototype":true}');
+      });
     });
 
     describe('when "query parser" is a function', () => {

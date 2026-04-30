@@ -5,6 +5,28 @@ import request from "supertest";
 import cookieParser from "#lib/utils/cookies";
 
 describe("req", () => {
+  describe(".cookies", () => {
+    it("should ignore unsafe JSON cookie names", async () => {
+      const app = express();
+
+      app.use(cookieParser());
+      app.use((req, res) => {
+        const merged = Object.assign({}, req.cookies);
+
+        res.send({
+          keys: Object.keys(req.cookies).sort(),
+          polluted: merged.polluted,
+          prototype: Object.getPrototypeOf(merged) === Object.prototype,
+        });
+      });
+
+      await request(app)
+        .get("/")
+        .set("Cookie", "__proto__=j%3A%7B%22polluted%22%3Atrue%7D; constructor=bad; prototype=bad; safe=value")
+        .expect(200, '{"keys":["safe"],"prototype":true}');
+    });
+  });
+
   describe(".signedCookies", () => {
     it("should return a signed JSON cookie", async () => {
       await new Promise((resolve, reject) => {
