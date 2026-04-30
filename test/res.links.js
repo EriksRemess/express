@@ -73,5 +73,24 @@ describe("res", () => {
         )
         .expect(200);
     });
+
+    it("should not allow link values to inject link parameters", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.links({
+          'next"; title="pwn': 'http://api.example.com/users?page=2>; rel="preload',
+        });
+        res.end();
+      });
+
+      await request(app)
+        .get("/")
+        .expect(
+          "Link",
+          '<http://api.example.com/users?page=2%3E;%20rel=%22preload>; rel="next\\"; title=\\"pwn"',
+        )
+        .expect(200);
+    });
   });
 });

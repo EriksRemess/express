@@ -6,6 +6,22 @@ import request from "supertest";
 import vhost from "#lib/utils/vhost";
 
 describe("vhost()", () => {
+  it("should not match malformed host port suffixes", async () => {
+    const app = express();
+
+    app.use(vhost("example.com", (req, res) => {
+      res.send("matched");
+    }));
+    app.use((req, res) => {
+      res.sendStatus(404);
+    });
+
+    await request(app)
+      .get("/")
+      .set("Host", "example.com:443@evil.test")
+      .expect(404);
+  });
+
   it('should match against req.hostname when "trust proxy" is enabled', async () => {
     const app = express();
 

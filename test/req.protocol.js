@@ -71,6 +71,21 @@ describe("req", () => {
         await request(app).get("/").expect("http");
       });
 
+      it("should ignore unknown X-Forwarded-Proto values", async () => {
+        const app = express();
+
+        app.enable("trust proxy");
+
+        app.use((req, res) => {
+          res.end(req.protocol);
+        });
+
+        await request(app)
+          .get("/")
+          .set("X-Forwarded-Proto", "javascript")
+          .expect("http");
+      });
+
       describe("when trusting hop count", () => {
         it("should respect X-Forwarded-Proto", async () => {
           const app = express();

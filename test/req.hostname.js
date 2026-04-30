@@ -31,6 +31,19 @@ describe("req", () => {
         .expect("example.com");
     });
 
+    it("should not strip malformed port suffixes", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.end(req.hostname);
+      });
+
+      await request(app)
+        .post("/")
+        .set("Host", "example.com:443@evil.test")
+        .expect("example.com:443@evil.test");
+    });
+
     it("should return undefined otherwise", async () => {
       const app = express();
 
