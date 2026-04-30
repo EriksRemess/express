@@ -3,6 +3,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import contentDisposition from "#lib/utils/content-disposition";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("content-disposition", () => {
   it("should return attachment when filename missing", () => {
@@ -28,6 +29,18 @@ describe("content-disposition", () => {
       contentDisposition("name.txt", { type: "INLINE" }),
       'inline; filename="name.txt"',
     );
+  });
+
+  it("should ignore inherited options", async () => {
+    await withObjectPrototypeProperties({
+      fallback: false,
+      type: "inline",
+    }, () => {
+      assert.strictEqual(
+        contentDisposition("name.txt", {}),
+        'attachment; filename="name.txt"',
+      );
+    });
   });
 
   it("should reject invalid types", () => {

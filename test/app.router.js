@@ -6,6 +6,7 @@ import request from "supertest";
 import assert from "node:assert";
 import { httpMethods } from "#lib/utils/methods";
 import {shouldSkipQuery} from "#test/support/utils";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("app.router", () => {
   it("should restore req.params after leaving router", async () => {
@@ -278,6 +279,23 @@ describe("app.router", () => {
       app.use("/user/:user", router);
 
       await request(app).get("/user/1/get").expect(200, '{"action":"get"}');
+    });
+
+    it("should ignore inherited router options", async () => {
+      await withObjectPrototypeProperties({
+        mergeParams: true,
+      }, async () => {
+        const app = express();
+        const router = new express.Router({});
+
+        router.get("/:action", (req, res) => {
+          res.send(req.params);
+        });
+
+        app.use("/user/:user", router);
+
+        await request(app).get("/user/1/get").expect(200, '{"action":"get"}');
+      });
     });
 
     it("should allow merging existing req.params", async () => {

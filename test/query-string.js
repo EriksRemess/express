@@ -6,6 +6,7 @@ import {
   parseExtendedQueryString,
   parseSimpleQueryString,
 } from "#lib/utils/query-string";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("query-string", () => {
   describe("parseSimpleQueryString()", () => {
@@ -138,6 +139,18 @@ describe("query-string", () => {
           },
         },
       );
+    });
+
+    it("should ignore inherited options", async () => {
+      await withObjectPrototypeProperties({
+        depth: 0,
+        throwOnDepthLimit: true,
+      }, () => {
+        assert.deepEqual(
+          parseExtendedQueryString("a[b]=c", {}),
+          { a: { b: "c" } },
+        );
+      });
     });
 
     it("should ignore unsafe __proto__ segments", () => {

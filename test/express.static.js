@@ -11,6 +11,7 @@ import path from "node:path";
 import {Buffer} from "node:buffer";
 import request from "supertest";
 import utils from "#test/support/utils";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 const fixtures = path.join(import.meta.dirname, "/fixtures");
 const relative = path.relative(process.cwd(), fixtures);
@@ -97,6 +98,19 @@ describe("express.static()", () => {
     });
     it("should ignore hidden files", async () => {
       await request(__testApp).get("/.name").expect(404, "Not Found");
+    });
+    it("should ignore inherited options", async () => {
+      await withObjectPrototypeProperties({
+        dotfiles: "allow",
+        setHeaders: res => {
+          res.setHeader("x-polluted", "yes");
+        },
+      }, async () => {
+        await request(createApp(fixtures, {}))
+          .get("/.name")
+          .expect(utils.shouldNotHaveHeader("x-polluted"))
+          .expect(404, "Not Found");
+      });
     });
   });
   describe("etag", () => {

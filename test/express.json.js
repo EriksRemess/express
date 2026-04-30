@@ -7,6 +7,7 @@ import {AsyncLocalStorage} from "node:async_hooks";
 import {Buffer} from "node:buffer";
 import express from "#express";
 import request from "supertest";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 describe("express.json()", () => {
   it("should parse JSON", async () => {
     await request(createApp())
@@ -73,6 +74,21 @@ describe("express.json()", () => {
       .set("Content-Type", "application/json")
       .send('{"user":"tobi"}')
       .expect(200, '{"user":"tobi"}');
+  });
+  it("should ignore inherited parser options", async () => {
+    await withObjectPrototypeProperties({
+      limit: "1b",
+      strict: false,
+      verify: () => {
+        throw new Error("polluted verify");
+      },
+    }, async () => {
+      await request(createApp({}))
+        .post("/")
+        .set("Content-Type", "application/json")
+        .send('{"user":"tobi"}')
+        .expect(200, '{"user":"tobi"}');
+    });
   });
   describe("when JSON is invalid", () => {
     before(() => {

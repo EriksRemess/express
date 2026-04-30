@@ -10,6 +10,7 @@ import {
   sign,
   signedCookies,
 } from "#lib/utils/cookies";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("cookie utils", () => {
   describe(".parse()", () => {
@@ -35,6 +36,16 @@ describe("cookie utils", () => {
 
       assert.strictEqual(Object.getPrototypeOf(cookies), null);
       assert.strictEqual(cookies["full+name"], "tj holowaychuk");
+    });
+
+    it("should ignore inherited options", async () => {
+      await withObjectPrototypeProperties({
+        decode: () => "polluted",
+      }, () => {
+        const cookies = parse("safe=value", {});
+
+        assert.strictEqual(cookies.safe, "value");
+      });
     });
 
     it("should ignore unsafe prototype names", () => {

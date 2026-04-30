@@ -7,6 +7,7 @@ import {AsyncLocalStorage} from "node:async_hooks";
 import {Buffer} from "node:buffer";
 import express from "#express";
 import request from "supertest";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 describe("express.urlencoded()", () => {
   before(() => {
     __testApp = createApp();
@@ -17,6 +18,21 @@ describe("express.urlencoded()", () => {
       .set("Content-Type", "application/x-www-form-urlencoded")
       .send("user=tobi")
       .expect(200, '{"user":"tobi"}');
+  });
+  it("should ignore inherited parser options", async () => {
+    await withObjectPrototypeProperties({
+      extended: true,
+      parameterLimit: 1,
+      verify: () => {
+        throw new Error("polluted verify");
+      },
+    }, async () => {
+      await request(createApp({}))
+        .post("/")
+        .set("Content-Type", "application/x-www-form-urlencoded")
+        .send("a%5Bb%5D=c&safe=value")
+        .expect(200, '{"a[b]":"c","safe":"value"}');
+    });
   });
   it("should 400 when invalid content-length", async () => {
     const app = express();

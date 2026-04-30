@@ -12,6 +12,7 @@ import request from "supertest";
 import onFinished from "#lib/utils/on-finished";
 import path from "node:path";
 import utils from "#test/support/utils";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 const fixtures = path.join(import.meta.dirname, "fixtures");
 describe("res", () => {
@@ -827,6 +828,21 @@ describe("res", () => {
       });
     });
     describe('with "root" option', () => {
+      it("should ignore inherited root option", async () => {
+        await withObjectPrototypeProperties({
+          root: fixtures,
+        }, async () => {
+          const app = express();
+
+          app.use((req, res) => {
+            res.sendFile("name.txt");
+          });
+
+          await request(app)
+            .get("/")
+            .expect(500, /path must be absolute or specify root/);
+        });
+      });
       it("should allow relative path", async () => {
         const app = express();
         app.use((req, res) => {

@@ -4,6 +4,7 @@ import {describe, it} from "node:test";
 import express from "#express";
 import request from "supertest";
 import cookieParser from "#lib/utils/cookies";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 describe("res", () => {
   describe(".cookie(name, object)", () => {
     it("should generate a JSON cookie", async () => {
@@ -50,6 +51,24 @@ describe("res", () => {
     });
   });
   describe(".cookie(name, string, options)", () => {
+    it("should ignore inherited options", async () => {
+      await withObjectPrototypeProperties({
+        httpOnly: true,
+        signed: true,
+      }, async () => {
+        const app = express();
+
+        app.use((req, res) => {
+          res.cookie("name", "tobi", {});
+          res.end();
+        });
+
+        await request(app)
+          .get("/")
+          .expect("Set-Cookie", "name=tobi; Path=/")
+          .expect(200);
+      });
+    });
     it("should set params", async () => {
       const app = express();
       app.use((req, res) => {
