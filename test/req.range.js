@@ -100,5 +100,41 @@ describe("req", () => {
           .expect(200, '[{"start":0,"end":100}]');
       });
     });
+
+    it("should ignore inherited combine option", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "combine");
+        let restored = false;
+
+        function restore() {
+          if (restored) {
+            return;
+          }
+
+          restored = true;
+          if (descriptor) {
+            Object.defineProperty(Object.prototype, "combine", descriptor);
+          } else {
+            delete Object.prototype.combine;
+          }
+        }
+
+        Object.defineProperty(Object.prototype, "combine", {
+          configurable: true,
+          value: true,
+          writable: true,
+        });
+        res.once("close", restore);
+        res.once("finish", restore);
+        res.json(req.range(120, {}));
+      });
+
+      await request(app)
+        .get("/")
+        .set("Range", "bytes=0-50,51-100")
+        .expect(200, '[{"start":0,"end":50},{"start":51,"end":100}]');
+    });
   });
 });

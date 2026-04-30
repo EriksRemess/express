@@ -9,6 +9,33 @@ import {shouldSkipQuery} from "#test/support/utils";
 import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("app.router", () => {
+  it("should ignore inherited routing URL state during request setup", async () => {
+    const app = express();
+
+    app.use((req, res) => {
+      res.send({
+        baseUrl: req.baseUrl,
+        originalUrl: req.originalUrl,
+        ownBaseUrl: Object.hasOwn(req, "baseUrl"),
+        ownOriginalUrl: Object.hasOwn(req, "originalUrl"),
+      });
+    });
+
+    await withObjectPrototypeProperties({
+      baseUrl: "/polluted-base",
+      originalUrl: "/polluted-original",
+    }, async () => {
+      await request(app)
+        .get("/safe?x=1")
+        .expect(200, {
+          baseUrl: "",
+          originalUrl: "/safe?x=1",
+          ownBaseUrl: true,
+          ownOriginalUrl: true,
+        });
+    });
+  });
+
   it("should restore req.params after leaving router", async () => {
     const app = express();
     const router = new express.Router();

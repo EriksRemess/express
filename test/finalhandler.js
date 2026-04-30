@@ -71,6 +71,43 @@ describe("finalhandler()", () => {
     ]);
   });
 
+  it("should ignore inherited original request URL state", async () => {
+    const req = createReq({ url: "/safe?x=1" });
+    const { res } = createRes();
+
+    delete req.originalUrl;
+
+    await withObjectPrototypeProperties({
+      _parsedOriginalUrl: {
+        _raw: "/polluted",
+        pathname: "/polluted",
+      },
+      originalUrl: "/polluted",
+    }, async () => {
+      finalhandler(req, res)();
+    });
+
+    assert.match(res.body, /Cannot GET \/safe/);
+    assert.doesNotMatch(res.body, /polluted/);
+  });
+
+  it("should ignore inherited original request URL cache", async () => {
+    const req = createReq({ originalUrl: "/safe?x=1" });
+    const { res } = createRes();
+
+    await withObjectPrototypeProperties({
+      _parsedOriginalUrl: {
+        _raw: "/safe?x=1",
+        pathname: "/polluted",
+      },
+    }, async () => {
+      finalhandler(req, res)();
+    });
+
+    assert.match(res.body, /Cannot GET \/safe/);
+    assert.doesNotMatch(res.body, /polluted/);
+  });
+
   it("should use production status text and copy error headers", () => {
     const req = createReq();
     const { headers, res } = createRes();

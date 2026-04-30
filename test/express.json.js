@@ -147,6 +147,19 @@ describe("express.json()", () => {
       .send('{"user":"tobi"}')
       .expect(200, '{"user":"tobi"}');
   });
+  it("should ignore inherited request body values when parsing is skipped", async () => {
+    await withObjectPrototypeProperties({
+      body: {
+        polluted: true,
+      },
+    }, async () => {
+      await request(createApp())
+        .post("/")
+        .set("Content-Type", "application/fizzbuzz")
+        .send("buzz")
+        .expect(200, "");
+    });
+  });
   describe("when JSON is invalid", () => {
     before(() => {
       __testApp = createApp();

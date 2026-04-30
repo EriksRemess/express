@@ -3,7 +3,8 @@ import {describe, it} from "node:test";
 import assert from "node:assert";
 import {Buffer} from "node:buffer";
 import { setCharset, normalizeType } from "#lib/utils/content-type";
-import { compileETag, strongEtag, weakEtag } from "#lib/utils/etag";
+import createEntityTag, { compileETag, strongEtag, weakEtag } from "#lib/utils/etag";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("strongEtag(body, encoding)", () => {
   it("should support strings", () => {
@@ -29,6 +30,31 @@ describe("strongEtag(body, encoding)", () => {
 
   it("should support empty string", () => {
     assert.strictEqual(strongEtag(""), '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"');
+  });
+});
+
+describe("createEntityTag(entity, options)", () => {
+  it("should ignore inherited weak option", async () => {
+    await withObjectPrototypeProperties({ weak: true }, async () => {
+      assert.strictEqual(
+        createEntityTag("express!", {}),
+        '"8-O2uVAFaQ1rZvlKLT14RnuvjPIdg"',
+      );
+    });
+  });
+
+  it("should not treat inherited stat fields as a Stats object", async () => {
+    await withObjectPrototypeProperties({
+      ctime: new Date(0),
+      ino: 1,
+      mtime: new Date(0),
+      size: 1,
+    }, async () => {
+      assert.throws(
+        () => createEntityTag({}),
+        /argument entity must be string, Buffer, or fs\.Stats/,
+      );
+    });
   });
 });
 

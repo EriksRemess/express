@@ -3,6 +3,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import fresh, { isFresh } from "#lib/utils/fresh";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("fresh()", () => {
   it("should use response etag and last-modified headers", () => {
@@ -15,6 +16,17 @@ describe("fresh()", () => {
     };
 
     assert.strictEqual(fresh(reqHeaders, resHeaders), true);
+  });
+
+  it("should ignore inherited response etag header values", async () => {
+    const reqHeaders = {
+      "if-none-match": '"12345"',
+    };
+    const resHeaders = {};
+
+    await withObjectPrototypeProperties({ etag: '"12345"' }, async () => {
+      assert.strictEqual(fresh(reqHeaders, resHeaders), false);
+    });
   });
 
   it('should treat "Cache-Control: no-cache" as stale', () => {

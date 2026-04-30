@@ -3,6 +3,7 @@ import {describe, it} from "node:test";
 import express from "#express";
 import request from "supertest";
 import cookieParser from "#lib/utils/cookies";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("req", () => {
   describe(".cookies", () => {
@@ -64,6 +65,75 @@ describe("req", () => {
       await request(app)
         .get("/")
         .expect(200, "{}");
+    });
+
+    it("should ignore inherited request cookies when deciding whether to parse", async () => {
+      const app = express();
+
+      app.use(cookieParser("secret"));
+      app.use((req, res) => {
+        res.send({
+          cookies: req.cookies,
+          signed: req.signedCookies,
+          ownCookies: Object.hasOwn(req, "cookies"),
+          ownSigned: Object.hasOwn(req, "signedCookies"),
+        });
+      });
+
+      await withObjectPrototypeProperties({
+        cookies: {
+          polluted: true,
+        },
+        signedCookies: {
+          polluted: true,
+        },
+      }, async () => {
+        await request(app)
+          .get("/")
+          .set("Cookie", "safe=value")
+          .expect(200, {
+            cookies: {
+              safe: "value",
+            },
+            signed: {},
+            ownCookies: true,
+            ownSigned: true,
+          });
+      });
+    });
+
+    it("should ignore inherited signed cookies when cookies were already parsed", async () => {
+      const app = express();
+
+      app.use((req, res, next) => {
+        req.cookies = Object.create(null);
+        next();
+      });
+      app.use(cookieParser("secret"));
+      app.use((req, res) => {
+        res.send({
+          signed: req.signedCookies,
+          ownSigned: Object.hasOwn(req, "signedCookies"),
+          secret: req.secret,
+          ownSecret: Object.hasOwn(req, "secret"),
+        });
+      });
+
+      await withObjectPrototypeProperties({
+        secret: "polluted",
+        signedCookies: {
+          polluted: true,
+        },
+      }, async () => {
+        await request(app)
+          .get("/")
+          .expect(200, {
+            signed: {},
+            ownSigned: true,
+            secret: "secret",
+            ownSecret: true,
+          });
+      });
     });
   });
 

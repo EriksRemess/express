@@ -69,6 +69,27 @@ describe("res", () => {
           .expect(200);
       });
     });
+    it("should ignore inherited request secret for signed cookies", async () => {
+      await withObjectPrototypeProperties({
+        secret: "polluted",
+      }, async () => {
+        const app = express();
+
+        app.use((req, res) => {
+          res.cookie("name", "tobi", { signed: true });
+          res.end();
+        });
+
+        await request(app)
+          .get("/")
+          .expect(500, /cookieParser/)
+          .expect(res => {
+            if (res.headers["set-cookie"] !== undefined) {
+              throw new Error("should not set signed cookie");
+            }
+          });
+      });
+    });
     it("should set params", async () => {
       const app = express();
       app.use((req, res) => {
