@@ -26,6 +26,20 @@ describe("app.listen()", () => {
       });
     });
   });
+  it("should remove startup error listener after listening", async () => {
+    await new Promise((resolve, reject) => {
+      const app = express();
+      const server = app.listen(0, err => {
+        try {
+          assert.ifError(err);
+          assert.strictEqual(server.listenerCount("error"), 0);
+          server.close(resolve);
+        } catch (error) {
+          server.close(() => reject(error));
+        }
+      });
+    });
+  });
   it("accepts port + hostname + backlog + callback", async () => {
     const app = express();
     const server = app.listen(0, "127.0.0.1", 5, () => {

@@ -6,6 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import tmpl from "#test/support/tmpl";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 
 describe("app", () => {
@@ -543,6 +544,42 @@ describe("app", () => {
               assert.strictEqual(count, 1);
               assert.strictEqual(str, "abstract engine");
               resolve();
+            });
+          });
+        });
+      });
+
+      it("should ignore inherited cache option", async () => {
+        await withObjectPrototypeProperties({ cache: true }, async () => {
+          await new Promise((resolve, reject) => {
+            const app = express();
+            let count = 0;
+
+            class View {
+              constructor(name, options) {
+                this.name = name;
+                this.path = "fake";
+                count++;
+              }
+
+              render(options, fn) {
+                fn(null, String(options.cache));
+              }
+            }
+
+            app.set("view cache", false);
+            app.set("view", View);
+
+            app.render("something", {}, (err, str) => {
+              if (err) return reject(err);
+              assert.strictEqual(count, 1);
+              assert.strictEqual(str, "false");
+              app.render("something", {}, (err, str) => {
+                if (err) return reject(err);
+                assert.strictEqual(count, 2);
+                assert.strictEqual(str, "false");
+                resolve();
+              });
             });
           });
         });
