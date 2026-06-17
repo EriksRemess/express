@@ -48,6 +48,17 @@ describe("query-string", () => {
       assert.strictEqual(Object.getPrototypeOf(merged), Object.prototype);
       assert.strictEqual({}.polluted, undefined);
     });
+
+    it("should ignore decoded unsafe prototype keys", () => {
+      const query = parseSimpleQueryString(
+        "%5f%5fproto%5f%5f=polluted&%63onstructor=bad&%70rototype=bad&safe=value",
+      );
+      const merged = Object.assign({}, query);
+
+      assert.deepEqual(query, { safe: "value" });
+      assert.strictEqual(Object.getPrototypeOf(merged), Object.prototype);
+      assert.strictEqual({}.polluted, undefined);
+    });
   });
 
   describe("parseExtendedQueryString()", () => {
@@ -166,6 +177,17 @@ describe("query-string", () => {
       const query = parseExtendedQueryString("safe=value&a[constructor][prototype][polluted]=yes");
 
       assert.deepEqual(query, { safe: "value" });
+      assert.equal({}.polluted, undefined);
+    });
+
+    it("should ignore decoded unsafe segments while preserving safe array values", () => {
+      const query = parseExtendedQueryString(
+        "a%5B0%5D=safe&a%5B%5F%5Fproto%5F%5F%5D%5Bpolluted%5D=yes&a%5B1%5D%5Bconstructor%5D%5Bprototype%5D%5Bpolluted%5D=yes&a%5B1%5D%5Bname%5D=tj",
+      );
+
+      assert.equal(Array.isArray(query.a), true);
+      assert.deepEqual(query.a, ["safe", { name: "tj" }]);
+      assert.strictEqual(query.a.polluted, undefined);
       assert.equal({}.polluted, undefined);
     });
   });

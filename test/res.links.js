@@ -74,6 +74,28 @@ describe("res", () => {
         .expect(200);
     });
 
+    it("should ignore inherited link relations", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        const links = Object.create({
+          preload: "http://evil.example/style.css",
+        });
+        links.next = "http://api.example.com/users?page=2";
+
+        res.links(links);
+        res.end();
+      });
+
+      await request(app)
+        .get("/")
+        .expect(
+          "Link",
+          '<http://api.example.com/users?page=2>; rel="next"',
+        )
+        .expect(200);
+    });
+
     it("should not allow link values to inject link parameters", async () => {
       const app = express();
 

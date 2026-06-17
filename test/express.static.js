@@ -624,6 +624,13 @@ describe("express.static()", () => {
         .expect("Location", "/users/?name=john")
         .expect(301);
     });
+    it("should not decode header-splitting bytes in redirect query strings", async () => {
+      await request(__testApp)
+        .get("/users?next=%0D%0ASet-Cookie:%20owned=1")
+        .expect("Location", "/users/?next=%0D%0ASet-Cookie:%20owned=1")
+        .expect(utils.shouldNotHaveHeader("Set-Cookie"))
+        .expect(301, /%0D%0ASet-Cookie:%20owned=1/);
+    });
     it("should not redirect to protocol-relative locations", async () => {
       await request(__testApp)
         .get("//users")
