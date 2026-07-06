@@ -17,7 +17,7 @@ describe("downloads", () => {
     it("should have a download header", async () => {
       await request(app)
         .get("/files/notes/groceries.txt")
-        .expect("Content-Disposition", 'attachment; filename="groceries.txt"')
+        .expect("Content-Disposition", "attachment; filename=groceries.txt")
         .expect(200);
     });
   });
@@ -26,7 +26,7 @@ describe("downloads", () => {
     it("should have a download header", async () => {
       await request(app)
         .get("/files/amazing.txt")
-        .expect("Content-Disposition", 'attachment; filename="amazing.txt"')
+        .expect("Content-Disposition", "attachment; filename=amazing.txt")
         .expect(200);
     });
   });

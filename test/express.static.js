@@ -276,6 +276,26 @@ describe("express.static()", () => {
         .get("/todo")
         .expect(200, "<li>groceries</li>");
     });
+    it("should not follow extension fallback symlinks outside the root", async () => {
+      const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));
+      const root = path.join(tempRoot, "root");
+      const outside = path.join(tempRoot, "outside");
+
+      try {
+        fs.mkdirSync(root);
+        fs.mkdirSync(outside);
+        fs.writeFileSync(path.join(outside, "escape.txt"), "PWN!");
+        fs.symlinkSync(path.join(outside, "escape.txt"), path.join(root, "escape.txt"));
+
+        await request(createApp(root, {
+          extensions: "txt",
+        }))
+          .get("/escape")
+          .expect(404);
+      } finally {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+      }
+    });
     it("should 404 if nothing found", async () => {
       await request(
         createApp(fixtures, {
@@ -284,6 +304,27 @@ describe("express.static()", () => {
       )
         .get("/bob")
         .expect(404);
+    });
+  });
+  describe("index", () => {
+    it("should not follow index fallback symlinks outside the root", async () => {
+      const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));
+      const root = path.join(tempRoot, "root");
+      const docs = path.join(root, "docs");
+      const outside = path.join(tempRoot, "outside");
+
+      try {
+        fs.mkdirSync(docs, { recursive: true });
+        fs.mkdirSync(outside);
+        fs.writeFileSync(path.join(outside, "index.html"), "PWN!");
+        fs.symlinkSync(path.join(outside, "index.html"), path.join(docs, "index.html"));
+
+        await request(createApp(root))
+          .get("/docs/")
+          .expect(404);
+      } finally {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+      }
     });
   });
   describe("fallthrough", () => {

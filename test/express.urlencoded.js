@@ -224,6 +224,63 @@ describe("express.urlencoded()", () => {
       });
     });
   });
+  describe("with depth option", () => {
+    it("should reject negative depth", () => {
+      assert.throws(
+        createApp.bind(null, {
+          depth: -1,
+          extended: true,
+        }),
+        /TypeError: option depth must be a zero or a positive number/,
+      );
+    });
+
+    it("should reject non-numeric depth", () => {
+      assert.throws(
+        createApp.bind(null, {
+          depth: "beep",
+          extended: true,
+        }),
+        /TypeError: option depth must be a zero or a positive number/,
+      );
+    });
+
+    it("should reject infinite depth", () => {
+      assert.throws(
+        createApp.bind(null, {
+          depth: Infinity,
+          extended: true,
+        }),
+        /TypeError: option depth must be a zero or a positive number/,
+      );
+    });
+
+    it("should accept input at the configured depth", async () => {
+      await request(
+        createApp({
+          depth: 1,
+          extended: true,
+        }),
+      )
+        .post("/")
+        .set("Content-Type", "application/x-www-form-urlencoded")
+        .send("foo[p]=bar")
+        .expect(200, '{"foo":{"p":"bar"}}');
+    });
+
+    it("should 400 when input exceeds configured depth", async () => {
+      await request(
+        createApp({
+          depth: 1,
+          extended: true,
+        }),
+      )
+        .post("/")
+        .set("Content-Type", "application/x-www-form-urlencoded")
+        .send("foo[p][q]=bar")
+        .expect(400, "[querystring.parse.rangeError] The input exceeded the depth");
+    });
+  });
   describe("with inflate option", () => {
     describe("when false", () => {
       before(() => {

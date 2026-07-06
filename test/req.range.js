@@ -1,6 +1,8 @@
 "use strict";
+import assert from "node:assert";
 import {describe, it} from "node:test";
 import express from "#express";
+import parseRange from "#lib/utils/range-parser";
 import request from "supertest";
 
 describe("req", () => {
@@ -138,3 +140,67 @@ describe("req", () => {
     });
   });
 });
+
+describe("range-parser", () => {
+  const corpus = [
+    {
+      expected: ranges("bytes", [0, 0], [9, 9], [5, 9]),
+      size: 10,
+      source: "bytes=0-0,-1,5-",
+    },
+    {
+      expected: ranges("bytes", [0, 2]),
+      size: 10,
+      source: "bytes=5-3, 0-2",
+    },
+    {
+      expected: ranges("bytes", [0, 4], [10, 12]),
+      options: { combine: true },
+      size: 20,
+      source: "bytes=0-2,2-4,10-12",
+    },
+    {
+      expected: ranges("items", [0, 1], [3, 3]),
+      size: 5,
+      source: "items=0-1, 3-3",
+    },
+  ];
+
+  for (const { expected, options, size, source } of corpus) {
+    it(`parses ${source}`, () => {
+      assert.deepStrictEqual(parseRange(size, source, options), expected);
+    });
+  }
+
+  const unsatisfiableCorpus = [
+    { size: 10, source: "bytes=999-" },
+    { size: 10, source: "bytes=-0" },
+    { size: 0, source: "bytes=0-" },
+  ];
+
+  for (const { size, source } of unsatisfiableCorpus) {
+    it(`returns -1 for unsatisfiable ${source}`, () => {
+      assert.strictEqual(parseRange(size, source), -1);
+    });
+  }
+
+  const invalidCorpus = [
+    "bytes",
+    "bytes=-",
+    "bytes=0-1-2",
+    "bytes=1x-2",
+  ];
+
+  for (const source of invalidCorpus) {
+    it(`returns -2 for malformed ${source}`, () => {
+      assert.strictEqual(parseRange(10, source), -2);
+    });
+  }
+});
+
+function ranges(type, ...pairs) {
+  const result = pairs.map(([start, end]) => ({ start, end }));
+
+  result.type = type;
+  return result;
+}

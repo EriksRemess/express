@@ -5,6 +5,7 @@ let __testApp;
 import assert from "node:assert";
 import {AsyncLocalStorage} from "node:async_hooks";
 import express from "#express";
+import net from "node:net";
 import request from "supertest";
 import {Buffer} from "node:buffer";
 describe("express.raw()", () => {
@@ -106,6 +107,19 @@ describe("express.raw()", () => {
         buf: "746865207573657220697320746f6269",
       });
   });
+  it("should 400 when request aborts before identity body is complete", { timeout: 5000 }, async () => {
+    await assertAbortedRequest({
+      "Content-Type": "application/octet-stream",
+    }, "partial body");
+  });
+
+  it("should 400 when request aborts before compressed body is complete", { timeout: 5000 }, async () => {
+    await assertAbortedRequest({
+      "Content-Encoding": "gzip",
+      "Content-Type": "application/octet-stream",
+    }, Buffer.from("1f8b080000000000000bcb4bcc4d", "hex"));
+  });
+
   describe("with limit option", () => {
     it("should 413 when over limit with Content-Length", async () => {
       const buf = Buffer.alloc(1028, ".");
@@ -590,4 +604,85 @@ function createApp(options) {
     }
   });
   return app;
+}
+
+async function assertAbortedRequest(headers, body) {
+  let routed = false;
+  const app = express();
+
+  const abort = new Promise((resolve, reject) => {
+    app.use(express.raw());
+    app.use((err, req, res, next) => {
+      try {
+        assert.strictEqual(err.status, 400);
+        assert.strictEqual(err.type, "request.aborted");
+        assert.strictEqual(routed, false);
+        resolve();
+      } catch (error) {
+        reject(error);
+      } finally {
+        res.destroy();
+      }
+    });
+    app.post("/", (req, res) => {
+      routed = true;
+      res.end("ok");
+    });
+  });
+
+  const server = await listen(app);
+
+  try {
+    await sendPartialRequest(server, headers, body);
+    await abort;
+  } finally {
+    await close(server);
+  }
+}
+
+function listen(app) {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(0, "127.0.0.1", () => {
+      resolve(server);
+    });
+
+    server.once("error", reject);
+  });
+}
+
+function sendPartialRequest(server, headers, body) {
+  return new Promise((resolve, reject) => {
+    const socket = net.connect(server.address().port, "127.0.0.1", () => {
+      const payload = Buffer.isBuffer(body) ? body : Buffer.from(body);
+      let header = [
+        "POST / HTTP/1.1",
+        "Host: 127.0.0.1",
+        "Connection: close",
+        `Content-Length: ${payload.length + 100}`,
+      ];
+
+      for (const [name, value] of Object.entries(headers)) {
+        header.push(`${name}: ${value}`);
+      }
+
+      header = header.join("\r\n") + "\r\n\r\n";
+      socket.end(Buffer.concat([Buffer.from(header), payload]));
+      resolve();
+    });
+
+    socket.once("error", reject);
+  });
+}
+
+function close(server) {
+  return new Promise((resolve, reject) => {
+    server.close(error => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
 }

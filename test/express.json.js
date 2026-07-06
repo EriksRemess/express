@@ -188,6 +188,17 @@ describe("express.json()", () => {
     });
   });
   describe("with limit option", () => {
+    it("should reject invalid numeric limits", () => {
+      for (const limit of [Number.NaN, Infinity, -1]) {
+        assert.throws(
+          createApp.bind(null, {
+            limit,
+          }),
+          /TypeError: invalid limit value/,
+        );
+      }
+    });
+
     it("should 413 when over limit with Content-Length", async () => {
       const buf = Buffer.alloc(1024, ".");
       await request(

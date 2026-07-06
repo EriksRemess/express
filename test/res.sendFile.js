@@ -853,6 +853,31 @@ describe("res", () => {
           .get("/")
           .expect(500, /extensions option must be array of strings or false/);
       });
+
+      it("should not follow extension fallback symlinks outside root", async () => {
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-sendfile-"));
+        const root = path.join(tempRoot, "root");
+        const outside = path.join(tempRoot, "outside");
+
+        try {
+          fs.mkdirSync(root);
+          fs.mkdirSync(outside);
+          fs.writeFileSync(path.join(outside, "escape.txt"), "PWN!");
+          fs.symlinkSync(path.join(outside, "escape.txt"), path.join(root, "escape.txt"));
+
+          const app = express();
+          app.use((req, res) => {
+            res.sendFile("escape", {
+              extensions: "txt",
+              root,
+            });
+          });
+
+          await request(app).get("/").expect(403);
+        } finally {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        }
+      });
     });
     describe('with "index" option', () => {
       it("should reject non-string entries", async () => {
@@ -865,6 +890,31 @@ describe("res", () => {
         await request(app)
           .get("/")
           .expect(500, /index option must be array of strings or false/);
+      });
+
+      it("should not follow index fallback symlinks outside root", async () => {
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-sendfile-"));
+        const root = path.join(tempRoot, "root");
+        const docs = path.join(root, "docs");
+        const outside = path.join(tempRoot, "outside");
+
+        try {
+          fs.mkdirSync(docs, { recursive: true });
+          fs.mkdirSync(outside);
+          fs.writeFileSync(path.join(outside, "index.html"), "PWN!");
+          fs.symlinkSync(path.join(outside, "index.html"), path.join(docs, "index.html"));
+
+          const app = express();
+          app.use((req, res) => {
+            res.sendFile("docs/", {
+              root,
+            });
+          });
+
+          await request(app).get("/").expect(403);
+        } finally {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        }
       });
     });
     describe('with "root" option', () => {

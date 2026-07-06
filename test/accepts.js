@@ -38,6 +38,49 @@ describe("accepts", () => {
     );
   });
 
+  it("should accept boundary quality values with trailing dots", () => {
+    const accept = accepts(makeReq({
+      accept: "text/html;q=1., application/json;q=.5",
+    }));
+
+    assert.strictEqual(
+      accept.types(["text/html", "application/json"]),
+      "text/html",
+    );
+  });
+
+  it("should ignore media ranges with malformed quality values", () => {
+    const accept = accepts(makeReq({
+      accept: "text/html;q=.5x, application/json;q=.4",
+    }));
+
+    assert.deepStrictEqual(accept.types(), ["application/json"]);
+    assert.strictEqual(
+      accept.types(["text/html", "application/json"]),
+      "application/json",
+    );
+  });
+
+  it("should ignore out-of-range quality values", () => {
+    const accept = accepts(makeReq({
+      accept: "text/html;q=2, application/json;q=.4",
+      "accept-charset": "utf-8;q=2, iso-8859-1;q=.4",
+      "accept-encoding": "gzip;q=.5x, br;q=.4",
+      "accept-language": "en;q=1.1, es;q=.4",
+    }));
+
+    assert.strictEqual(
+      accept.types(["text/html", "application/json"]),
+      "application/json",
+    );
+    assert.strictEqual(
+      accept.charsets(["utf-8", "iso-8859-1"]),
+      "iso-8859-1",
+    );
+    assert.strictEqual(accept.encodings(["gzip", "br"]), "br");
+    assert.strictEqual(accept.languages(["en", "es"]), "es");
+  });
+
   it("should map extension names and return original input", () => {
     const accept = accepts(makeReq({ accept: "application/json" }));
     assert.strictEqual(accept.types("json", "html"), "json");

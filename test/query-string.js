@@ -10,6 +10,35 @@ import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("query-string", () => {
   describe("parseSimpleQueryString()", () => {
+    const simpleCorpus = [
+      {
+        name: "repeated keys become arrays",
+        source: "a=1&a=2&a=3",
+        expected: { a: ["1", "2", "3"] },
+      },
+      {
+        name: "bare keys and empty keys are preserved as empty strings",
+        source: "empty=&bare&=root",
+        expected: { empty: "", bare: "", "": "root" },
+      },
+      {
+        name: "empty pairs around repeated keys are ignored",
+        source: "a=1&&a=2&",
+        expected: { a: ["1", "2"] },
+      },
+      {
+        name: "encoded names, plus signs, separators, and malformed escapes are decoded consistently",
+        source: "encoded%20key=value+one&semi=%3B&bad=%E0%A4%A",
+        expected: { "encoded key": "value one", semi: ";", bad: "�%A" },
+      },
+    ];
+
+    for (const { name, source, expected } of simpleCorpus) {
+      it(`should handle corpus case: ${name}`, () => {
+        assert.deepEqual(parseSimpleQueryString(source), expected);
+      });
+    }
+
     it("should ignore empty pairs from repeated separators", () => {
       assert.deepEqual(
         parseSimpleQueryString("&&color=black&&"),
@@ -62,6 +91,58 @@ describe("query-string", () => {
   });
 
   describe("parseExtendedQueryString()", () => {
+    const extendedCorpus = [
+      {
+        name: "array pushes with nested object values",
+        source: "a[][b]=1&a[][b]=2",
+        expected: { a: [{ b: "1" }, { b: "2" }] },
+      },
+      {
+        name: "duplicate indexed values become nested arrays",
+        source: "a[0]=x&a[0]=y&a[1][z]=w",
+        expected: { a: [["x", "y"], { z: "w" }] },
+      },
+      {
+        name: "sparse numeric indexes compact in numeric order",
+        source: "a[2]=c&a[0]=a&a[1]=b",
+        expected: { a: ["a", "b", "c"] },
+      },
+      {
+        name: "huge numeric indexes stay object keys",
+        source: "a[999999999999]=x&a[1]=y",
+        expected: { a: { 1: "y", 999999999999: "x" } },
+      },
+      {
+        name: "unsafe nested branches are skipped while safe array entries remain",
+        source: "a[][constructor][prototype][polluted]=yes&a[][safe]=ok",
+        expected: { a: [{ safe: "ok" }] },
+      },
+      {
+        name: "depth truncation is deterministic when not throwing",
+        source: "a[b][c][d]=e",
+        options: { depth: 2 },
+        expected: { a: { b: { c: "e" } } },
+      },
+    ];
+
+    for (const { name, source, options, expected } of extendedCorpus) {
+      it(`should handle corpus case: ${name}`, () => {
+        const query = parseExtendedQueryString(source, options);
+
+        assert.deepEqual(query, expected);
+        assert.strictEqual({}.polluted, undefined);
+      });
+    }
+
+    it("should throw on depth corpus case when configured", () => {
+      assert.throws(() => {
+        parseExtendedQueryString("a[b][c][d]=e", {
+          depth: 2,
+          throwOnDepthLimit: true,
+        });
+      }, /The input exceeded the depth/);
+    });
+
     it("should compact sparse indexed arrays while preserving order", () => {
       assert.deepEqual(
         parseExtendedQueryString("a[1]=b&a[15]=c"),

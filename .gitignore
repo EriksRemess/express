@@ -16,5 +16,9 @@ coverage
 # Benchmarking
 benchmarks
 
+# Local agent context
+Agents.md
+.agents
+
 # ignore additional files using core.excludesFile
 # https://git-scm.com/docs/gitignore

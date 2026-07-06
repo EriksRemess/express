@@ -80,6 +80,26 @@ describe("res", () => {
         .expect("Content-Type", "text/plain; charset=utf-8")
         .expect(200, "hey");
     });
+    it("should preserve existing parameters when adding charset", async () => {
+      const app = express();
+      app.use((req, res) => {
+        res.set("Content-Type", "text/plain; foo=bar").send("hey");
+      });
+      await request(app)
+        .get("/")
+        .expect("Content-Type", "text/plain; foo=bar; charset=utf-8")
+        .expect(200, "hey");
+    });
+    it("should not throw on a Content-Type that fails to parse", async () => {
+      const app = express();
+      app.use((req, res) => {
+        res.set("Content-Type", "text/plain; foo").send("hey");
+      });
+      await request(app)
+        .get("/")
+        .expect("Content-Type", "text/plain; charset=utf-8")
+        .expect(200, "hey");
+    });
     it("should override charset in Content-Type", async () => {
       const app = express();
       app.use((req, res) => {

@@ -3,12 +3,28 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
 import typeis, { hasBody, is, match, normalize } from "#lib/utils/type-is";
+import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("type-is", () => {
   it("should detect request body presence", () => {
     assert.strictEqual(hasBody({ headers: {} }), false);
     assert.strictEqual(hasBody({ headers: { "content-length": "0" } }), true);
     assert.strictEqual(hasBody({ headers: { "transfer-encoding": "chunked" } }), true);
+  });
+
+  it("should reject malformed content-length body markers", () => {
+    assert.strictEqual(hasBody({ headers: { "content-length": "" } }), false);
+    assert.strictEqual(hasBody({ headers: { "content-length": "nope" } }), false);
+    assert.strictEqual(hasBody({ headers: { "content-length": "-1" } }), false);
+  });
+
+  it("should ignore inherited body marker headers", async () => {
+    await withObjectPrototypeProperties({
+      "content-length": "1",
+      "transfer-encoding": "chunked",
+    }, () => {
+      assert.strictEqual(hasBody({ headers: {} }), false);
+    });
   });
 
   it("should match concrete media types", () => {

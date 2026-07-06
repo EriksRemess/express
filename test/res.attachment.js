@@ -28,7 +28,33 @@ describe("res", () => {
 
       await request(app)
         .get("/")
-        .expect("Content-Disposition", 'attachment; filename="image.png"');
+        .expect("Content-Disposition", "attachment; filename=image.png");
+    });
+
+    it("should quote file names that are not a valid token", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.attachment("/path/to/my report.png");
+        res.send("foo");
+      });
+
+      await request(app)
+        .get("/")
+        .expect("Content-Disposition", 'attachment; filename="my report.png"');
+    });
+
+    it("should handle an empty file name", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.attachment("");
+        res.send("foo");
+      });
+
+      await request(app)
+        .get("/")
+        .expect("Content-Disposition", 'attachment; filename=""');
     });
 
     it("should set the Content-Type", async () => {
@@ -57,6 +83,23 @@ describe("res", () => {
         .expect(
           "Content-Disposition",
           "attachment; filename=\"???.txt\"; filename*=UTF-8''%E6%97%A5%E6%9C%AC%E8%AA%9E.txt",
+        )
+        .expect(200);
+    });
+
+    it("should encode latin1 file names with an ASCII fallback and filename* param", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.attachment("/locales/café.txt");
+        res.send("coffee");
+      });
+
+      await request(app)
+        .get("/")
+        .expect(
+          "Content-Disposition",
+          "attachment; filename=\"caf?.txt\"; filename*=UTF-8''caf%C3%A9.txt",
         )
         .expect(200);
     });

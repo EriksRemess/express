@@ -59,6 +59,81 @@ describe("createEntityTag(entity, options)", () => {
 });
 
 describe("normalizeType acceptParams method", () => {
+  const normalizeTypeCorpus = [
+    {
+      name: "quality after ordinary parameters",
+      source: "text/html; charset=utf-8; q=0.7",
+      expected: {
+        value: "text/html",
+        quality: 0.7,
+        params: { charset: "utf-8" },
+      },
+    },
+    {
+      name: "quoted semicolons stay inside parameter values",
+      source: 'application/json; foo="a;b"; bar=baz; q=.8',
+      expected: {
+        value: "application/json",
+        quality: 0.8,
+        params: {
+          foo: '"a;b"',
+          bar: "baz",
+        },
+      },
+    },
+    {
+      name: "malformed parameter stops parsing later parameters",
+      source: "text/plain; broken; charset=utf-8",
+      expected: {
+        value: "text/plain",
+        quality: 1,
+        params: {},
+      },
+    },
+    {
+      name: "optional whitespace around keys and values is ignored",
+      source: " text/plain ; charset = utf-8 ; q = 0.5 ",
+      expected: {
+        value: "text/plain",
+        quality: 0.5,
+        params: { charset: "utf-8" },
+      },
+    },
+    {
+      name: "boundary quality with trailing dot is accepted",
+      source: "text/plain; q=1.",
+      expected: {
+        value: "text/plain",
+        quality: 1,
+        params: {},
+      },
+    },
+    {
+      name: "malformed quality is ignored instead of prefix-parsed",
+      source: "text/plain; charset=utf-8; q=.5x; foo=bar",
+      expected: {
+        value: "text/plain",
+        quality: 1,
+        params: { charset: "utf-8" },
+      },
+    },
+    {
+      name: "out-of-range quality is ignored",
+      source: "text/plain; q=2; charset=utf-8",
+      expected: {
+        value: "text/plain",
+        quality: 1,
+        params: {},
+      },
+    },
+  ];
+
+  for (const { name, source, expected } of normalizeTypeCorpus) {
+    it(`should handle corpus case: ${name}`, () => {
+      assert.deepEqual(normalizeType(source), expected);
+    });
+  }
+
   it("should handle a type with a malformed parameter and break the loop in acceptParams", () => {
     const result = normalizeType("text/plain;invalid");
     assert.deepEqual(result, {
@@ -116,6 +191,20 @@ describe("setCharset(type, charset)", () => {
     assert.strictEqual(
       setCharset("text/html; charset=iso-8859-1", "utf-8"),
       "text/html; charset=utf-8",
+    );
+  });
+
+  it("should preserve quoted semicolons while setting charset", () => {
+    assert.strictEqual(
+      setCharset('text/plain; foo="a;b"; charset=iso-8859-1; bar=baz', "utf-8"),
+      'text/plain; foo="a;b"; bar=baz; charset=utf-8',
+    );
+  });
+
+  it("should ignore malformed parameters while preserving valid parameters", () => {
+    assert.strictEqual(
+      setCharset("text/plain; broken; foo=bar", "utf-8"),
+      "text/plain; foo=bar; charset=utf-8",
     );
   });
 });

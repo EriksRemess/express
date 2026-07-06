@@ -23,7 +23,7 @@ describe("res", () => {
       await request(app)
         .get("/")
         .expect("Content-Type", "text/html; charset=utf-8")
-        .expect("Content-Disposition", 'attachment; filename="user.html"')
+        .expect("Content-Disposition", "attachment; filename=user.html")
         .expect(200, "<p>{{user.name}}</p>");
     });
     it("should accept range requests", async () => {
@@ -57,7 +57,7 @@ describe("res", () => {
       await request(app)
         .get("/")
         .expect("Content-Type", "text/html; charset=utf-8")
-        .expect("Content-Disposition", 'attachment; filename="document"')
+        .expect("Content-Disposition", "attachment; filename=document")
         .expect(200);
     });
   });
@@ -77,7 +77,7 @@ describe("res", () => {
         request(app)
           .get("/")
           .expect("Content-Type", "text/html; charset=utf-8")
-          .expect("Content-Disposition", 'attachment; filename="user.html"')
+          .expect("Content-Disposition", "attachment; filename=user.html")
           .expect(200, cb);
       });
     });
@@ -109,7 +109,7 @@ describe("res", () => {
           request(app)
             .get("/")
             .expect("Content-Type", "text/plain; charset=utf-8")
-            .expect("Content-Disposition", 'attachment; filename="name.txt"')
+            .expect("Content-Disposition", "attachment; filename=name.txt")
             .expect(200, "tobi", cb);
         });
       });
@@ -151,7 +151,7 @@ describe("res", () => {
       await request(app)
         .get("/")
         .expect(200)
-        .expect("Content-Disposition", 'attachment; filename=".name"')
+        .expect("Content-Disposition", "attachment; filename=.name")
         .expect("Cache-Control", "public, max-age=14400")
         .expect(utils.shouldHaveBody(Buffer.from("tobi")));
     });
@@ -225,7 +225,7 @@ describe("res", () => {
           await request(app)
             .get("/")
             .expect(200)
-            .expect("Content-Disposition", 'attachment; filename="user.html"');
+            .expect("Content-Disposition", "attachment; filename=user.html");
         });
         it("should be ignored case-insensitively", async () => {
           const app = express();
@@ -239,7 +239,7 @@ describe("res", () => {
           await request(app)
             .get("/")
             .expect(200)
-            .expect("Content-Disposition", 'attachment; filename="user.html"');
+            .expect("Content-Disposition", "attachment; filename=user.html");
         });
       });
     });
@@ -254,7 +254,7 @@ describe("res", () => {
         await request(app)
           .get("/")
           .expect(200)
-          .expect("Content-Disposition", 'attachment; filename="name.txt"')
+          .expect("Content-Disposition", "attachment; filename=name.txt")
           .expect(utils.shouldHaveBody(Buffer.from("tobi")));
       });
       it("should allow up within root", async () => {
@@ -267,7 +267,7 @@ describe("res", () => {
         await request(app)
           .get("/")
           .expect(200)
-          .expect("Content-Disposition", 'attachment; filename="name.txt"')
+          .expect("Content-Disposition", "attachment; filename=name.txt")
           .expect(utils.shouldHaveBody(Buffer.from("tobi")));
       });
       it("should reject up outside root", async () => {
@@ -362,7 +362,7 @@ describe("res", () => {
           await request(app)
             .get("/")
             .expect(200)
-            .expect("Content-Disposition", 'attachment; filename="file.txt"')
+            .expect("Content-Disposition", "attachment; filename=file.txt")
             .expect(utils.shouldHaveBody(Buffer.from("SAFE")));
         } finally {
           fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -387,7 +387,7 @@ describe("res", () => {
         request(app)
           .get("/")
           .expect("Content-Type", "text/html; charset=utf-8")
-          .expect("Content-Disposition", 'attachment; filename="document"')
+          .expect("Content-Disposition", "attachment; filename=document")
           .expect(200, cb);
       });
     });
@@ -410,7 +410,7 @@ describe("res", () => {
           .get("/")
           .expect(200)
           .expect("Content-Type", "text/html; charset=utf-8")
-          .expect("Content-Disposition", 'attachment; filename="document"')
+          .expect("Content-Disposition", "attachment; filename=document")
           .end(cb);
       });
     });
@@ -425,7 +425,7 @@ describe("res", () => {
       await request(app)
         .get("/")
         .expect(200)
-        .expect("Content-Disposition", 'attachment; filename="document"')
+        .expect("Content-Disposition", "attachment; filename=document")
         .expect("Cache-Control", "public, max-age=14400")
         .expect(utils.shouldHaveBody(Buffer.from("tobi")));
     });
@@ -444,7 +444,7 @@ describe("res", () => {
           .get("/")
           .expect(200)
           .expect("Content-Type", "text/x-custom")
-          .expect("Content-Disposition", 'attachment; filename="document"');
+          .expect("Content-Disposition", "attachment; filename=document");
       });
       it("should be ignored case-insensitively", async () => {
         const app = express();
@@ -460,7 +460,7 @@ describe("res", () => {
           .get("/")
           .expect(200)
           .expect("Content-Type", "text/x-custom")
-          .expect("Content-Disposition", 'attachment; filename="document"');
+          .expect("Content-Disposition", "attachment; filename=document");
       });
     });
   });
