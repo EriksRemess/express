@@ -8,11 +8,11 @@ import bodyParser, {
   raw,
   text,
   urlencoded,
-} from "express/bodyParser";
+} from "@eriksremess/express/bodyParser";
 import cookieModule, {
   parse,
   serialize,
-} from "express/cookie";
+} from "@eriksremess/express/cookie";
 
 describe("package exports", () => {
   it("should export bodyParser as a package subpath", () => {

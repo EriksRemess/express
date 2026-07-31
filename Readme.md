@@ -28,7 +28,7 @@ official Express package and documentation, see [expressjs/express](https://gith
 - [License](#license)
 
 ```js
-import express from 'express'
+import express from '@eriksremess/express'
 
 const app = express()
 
@@ -49,14 +49,12 @@ Node.js 26 or higher is required.
 If this is a brand new project, make sure to create a `package.json` first with
 the [`npm init` command](https://docs.npmjs.com/creating-a-package-json-file).
 
-Install this fork directly from its HTTPS Git repository:
+Configure npm to use GitHub Packages for the `@eriksremess` scope:
 
 ```bash
-npm install git+https://github.com/EriksRemess/express.git#eriks-esm
+npm config set @eriksremess:registry https://npm.pkg.github.com
+npm install @eriksremess/express
 ```
-
-The package uses the prerelease version `5.2.1-eriks-esm.0` so generated
-artifacts cannot be confused with the official Express 5.2.1 release.
 
 ## Features
 
