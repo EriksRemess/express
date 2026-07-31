@@ -71,6 +71,53 @@ describe("req", () => {
       await request(app).get("/").expect(200, "false");
     });
 
+    it("should return true for an unmodified QUERY response", async () => {
+      const app = express();
+      const etag = '"12345"';
+
+      app.use((req, res) => {
+        res.set("ETag", etag);
+        res.send(req.fresh);
+      });
+
+      await request(app)
+        .query("/")
+        .set("If-None-Match", etag)
+        .send({ ids: ["a", "b"] })
+        .expect(304);
+    });
+
+    it("should return false for a modified QUERY response", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res.set("ETag", '"123"');
+        res.send(req.fresh);
+      });
+
+      await request(app)
+        .query("/")
+        .set("If-None-Match", '"12345"')
+        .send({ ids: ["a", "b"] })
+        .expect(200, "false");
+    });
+
+    for (const method of ["post", "put", "patch", "delete"]) {
+      it(`should not revalidate an unsafe ${method.toUpperCase()} request`, async () => {
+        const app = express();
+        const etag = '"12345"';
+
+        app.use((req, res) => {
+          res.set("ETag", etag);
+          res.send(req.fresh);
+        });
+
+        await request(app)[method]("/")
+          .set("If-None-Match", etag)
+          .expect(200, "false");
+      });
+    }
+
     it('should ignore "If-Modified-Since" when "If-None-Match" is present', async () => {
       const app = express();
       const etag = '"FooBar"';

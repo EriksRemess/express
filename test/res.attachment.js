@@ -31,6 +31,24 @@ describe("res", () => {
         .expect("Content-Disposition", "attachment; filename=image.png");
     });
 
+    for (const filename of [
+      "/path/to/image.png///",
+      "C:\\path\\to\\image.png\\\\",
+    ]) {
+      it(`should ignore trailing path separators in ${JSON.stringify(filename)}`, async () => {
+        const app = express();
+
+        app.use((req, res) => {
+          res.attachment(filename);
+          res.send("foo");
+        });
+
+        await request(app)
+          .get("/")
+          .expect("Content-Disposition", "attachment; filename=image.png");
+      });
+    }
+
     it("should quote file names that are not a valid token", async () => {
       const app = express();
 

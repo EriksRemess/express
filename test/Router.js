@@ -10,10 +10,28 @@ describe("Router", () => {
   it("should return a function with router methods", () => {
     const router = new Router();
     assert(typeof router === "function");
+    assert(router instanceof Router);
+    assert.strictEqual(Object.getPrototypeOf(router), Router.prototype);
+    assert.strictEqual(router.constructor, Router);
 
     assert(typeof router.get === "function");
     assert(typeof router.handle === "function");
     assert(typeof router.use === "function");
+  });
+
+  it("should inherit extensions from Router.prototype", () => {
+    const extension = Symbol("extension");
+    const router = Router();
+
+    Router.prototype[extension] = function extendedRouter() {
+      return this;
+    };
+
+    try {
+      assert.strictEqual(router[extension](), router);
+    } finally {
+      delete Router.prototype[extension];
+    }
   });
 
   it("should support .use of other routers", async () => {

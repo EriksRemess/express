@@ -8,7 +8,7 @@
     "#test/*": "./test/*.js"
   },
   "description": "Fast, unopinionated, minimalist web framework",
-  "version": "5.2.1",
+  "version": "5.2.1-eriks-esm.0",
   "main": "./index.js",
   "exports": {
     ".": "./index.js",
@@ -27,8 +27,8 @@
     "Young Jae Sim <hanul@hanul.me>"
   ],
   "license": "MIT",
-  "repository": "expressjs/express",
-  "homepage": "https://expressjs.com/",
+  "repository": "github:EriksRemess/express",
+  "homepage": "https://github.com/EriksRemess/express/tree/eriks-esm",
   "funding": {
     "type": "opencollective",
     "url": "https://opencollective.com/express"
@@ -53,11 +53,11 @@
     "connect-redis": "^9.0.0",
     "cookie-session": "^2.1.1",
     "ejs": "^5.0.2",
-    "eslint": "^10.4.0",
+    "eslint": "^10.7.0",
     "express-session": "^1.19.0",
     "hbs": "^4.2.1",
-    "marked": "^18.0.3",
-    "morgan": "^1.10.1",
+    "marked": "^18.0.7",
+    "morgan": "^1.11.0",
     "supertest": "^7.2.2"
   },
   "engines": {

@@ -2,6 +2,10 @@
 
 **Fast, unopinionated, minimalist web framework for [Node.js](https://nodejs.org).**
 
+This is the `eriks-esm` fork of Express: an ESM-only build for Node.js 26 and
+newer with framework dependencies implemented locally where practical. For the
+official Express package and documentation, see [expressjs/express](https://github.com/expressjs/express).
+
 **This project has a [Code of Conduct].**
 
 ## Table of contents
@@ -23,14 +27,6 @@
     - [Emeritus Triagers](#emeritus-triagers)
 - [License](#license)
 
-
-[![NPM Version][npm-version-image]][npm-url]
-[![NPM Downloads][npm-downloads-image]][npm-downloads-url]
-[![Linux Build][github-actions-ci-image]][github-actions-ci-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
-[![OpenSSF Scorecard Badge][ossf-scorecard-badge]][ossf-scorecard-visualizer]
-
-
 ```js
 import express from 'express'
 
@@ -47,24 +43,20 @@ app.listen(3000, () => {
 
 ## Installation
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/).
-
 Before installing, [download and install Node.js](https://nodejs.org/en/download/).
-Node.js 18 or higher is required.
+Node.js 26 or higher is required.
 
 If this is a brand new project, make sure to create a `package.json` first with
 the [`npm init` command](https://docs.npmjs.com/creating-a-package-json-file).
 
-Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+Install this fork directly from its HTTPS Git repository:
 
 ```bash
-npm install express
+npm install git+https://github.com/EriksRemess/express.git#eriks-esm
 ```
 
-Follow [our installing guide](https://expressjs.com/en/starter/installing.html)
-for more information.
+The package uses the prerelease version `5.2.1-eriks-esm.0` so generated
+artifacts cannot be confused with the official Express 5.2.1 release.
 
 ## Features
 
@@ -126,10 +118,11 @@ npm start
 
 ## Examples
 
-  To view the examples, clone the Express repository:
+  To view the examples, clone this fork:
 
 ```bash
-git clone https://github.com/expressjs/express.git --depth 1 && cd express
+git clone --branch eriks-esm --single-branch https://github.com/EriksRemess/express.git
+cd express
 ```
 
   Then install the dependencies:
@@ -264,15 +257,5 @@ The original author of Express is [TJ Holowaychuk](https://github.com/tj)
 
   [MIT](LICENSE)
 
-[coveralls-image]: https://img.shields.io/coverallsCoverage/github/expressjs/express?branch=master
-[coveralls-url]: https://coveralls.io/r/expressjs/express?branch=master
-[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/expressjs/express/ci.yml?branch=master&label=ci
-[github-actions-ci-url]: https://github.com/expressjs/express/actions/workflows/ci.yml
-[npm-downloads-image]: https://img.shields.io/npm/dm/express
-[npm-downloads-url]: https://npmcharts.com/compare/express?minimal=true
-[npm-url]: https://npmjs.org/package/express
-[npm-version-image]: https://img.shields.io/npm/v/express
-[ossf-scorecard-badge]: https://api.scorecard.dev/projects/github.com/expressjs/express/badge
-[ossf-scorecard-visualizer]: https://ossf.github.io/scorecard-visualizer/#/projects/github.com/expressjs/express
 [Code of Conduct]: https://github.com/expressjs/.github/blob/HEAD/CODE_OF_CONDUCT.md
 [Contributing Guide]: https://github.com/expressjs/.github/blob/HEAD/CONTRIBUTING.md

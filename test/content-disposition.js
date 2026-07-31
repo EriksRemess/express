@@ -45,6 +45,14 @@ describe("content-disposition", () => {
       expected: "attachment; filename=c.txt",
       filename: "a/b\\c.txt",
     },
+    {
+      expected: "attachment; filename=report.pdf",
+      filename: "/path/to/report.pdf///",
+    },
+    {
+      expected: "attachment; filename=report.pdf",
+      filename: "C:\\path\\to\\report.pdf\\\\",
+    },
   ];
 
   for (const { expected, filename, options } of corpus) {
@@ -97,6 +105,26 @@ describe("content-disposition", () => {
     });
   });
 
+  it("should not invoke inherited option getters", () => {
+    let getterCalled = false;
+    const options = Object.create({
+      get fallback() {
+        getterCalled = true;
+        return false;
+      },
+      get type() {
+        getterCalled = true;
+        return "inline";
+      },
+    });
+
+    assert.strictEqual(
+      contentDisposition("name.txt", options),
+      "attachment; filename=name.txt",
+    );
+    assert.strictEqual(getterCalled, false);
+  });
+
   it("should reject invalid types", () => {
     assert.throws(() => {
       contentDisposition("name.txt", { type: "inline;" });
@@ -146,6 +174,26 @@ describe("content-disposition", () => {
       contentDisposition("bad\n日本語.txt"),
       'attachment; filename="bad????.txt"; filename*=UTF-8\'\'bad%0A%E6%97%A5%E6%9C%AC%E8%AA%9E.txt',
     );
+  });
+
+  it("should not emit raw control characters", () => {
+    const controlCodes = [
+      ...Array.from({ length: 32 }, (_, code) => code),
+      ...Array.from({ length: 33 }, (_, offset) => offset + 127),
+    ];
+
+    for (const code of controlCodes) {
+      const header = contentDisposition(`report${String.fromCharCode(code)}.txt`);
+
+      assert.doesNotMatch(header, /[\x00-\x1f\x7f-\x9f]/);
+      assert.match(header, /filename\*=/);
+    }
+  });
+
+  it("should reject malformed Unicode instead of emitting a malformed header", () => {
+    assert.throws(() => {
+      contentDisposition("report\ud800.txt");
+    }, URIError);
   });
 
   it("should escape quoted filename characters", () => {

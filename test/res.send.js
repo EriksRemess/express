@@ -253,6 +253,40 @@ describe("res", () => {
         .expect(304, "");
     });
   });
+  describe("when Transfer-Encoding is present", () => {
+    for (const encoding of ["chunked", "compress", "deflate", "gzip"]) {
+      it(`should not add Content-Length for ${encoding}`, async () => {
+        const app = express();
+
+        app.use((req, res) => {
+          res.set("Transfer-Encoding", encoding).send("");
+        });
+
+        await request(app)
+          .get("/")
+          .expect(utils.shouldNotHaveHeader("Content-Length"))
+          .expect("Transfer-Encoding", encoding)
+          .expect(200, "");
+      });
+    }
+
+    it("should remove an existing Content-Length", async () => {
+      const app = express();
+
+      app.use((req, res) => {
+        res
+          .set("Content-Length", "999")
+          .set("Transfer-Encoding", "chunked")
+          .send("hello");
+      });
+
+      await request(app)
+        .get("/")
+        .expect(utils.shouldNotHaveHeader("Content-Length"))
+        .expect("Transfer-Encoding", "chunked")
+        .expect(200, "hello");
+    });
+  });
   it("should always check regardless of length", async () => {
     const app = express();
     const etag = '"asdf"';

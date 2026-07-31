@@ -1,5 +1,20 @@
 # Unreleased Changes
 
+## Fork identity and compatibility
+
+* Identify distributable artifacts as `5.2.1-eriks-esm.0` and point package
+  metadata and installation instructions at the `EriksRemess/express` fork.
+* Require Node.js 26 and use ESM throughout the package.
+* Keep the callable router linked to `Router.prototype` for constructor and
+  extension compatibility.
+* Support conditional revalidation for `QUERY` requests.
+
+## Security
+
+* Remove `Content-Length` whenever `Transfer-Encoding` is present, including
+  application-supplied conflicting framing headers.
+* Preserve the final filename when POSIX or Windows paths end in separators.
+
 ## 🚀 Improvements
 
 * Improve HTML structure in `res.redirect()` responses when HTML format is accepted by adding `<!DOCTYPE html>`, `<title>`, and `<body>` tags for better browser compatibility - by [@Bernice55231](https://github.com/Bernice55231) in [#5167](https://github.com/expressjs/express/pull/5167)
