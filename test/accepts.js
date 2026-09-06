@@ -207,3 +207,17 @@ describe("accepts", () => {
     assert.strictEqual(accept.languages([" en-us "]), " en-us ");
   });
 });
+
+
+describe("escaped quoted Accept parameters", () => {
+  for (const note of [String.raw`a\"b`, String.raw`a\\`, String.raw`a\";b,c`]) {
+    it(`should retain the media type following ${note}`, () => {
+      assert.strictEqual(accepts(makeReq({ accept: `text/plain; note="${note}", application/json` })).types("json"), "json");
+    });
+  }
+
+  it("should interpret quoted pairs when comparing parameters", () => {
+    assert.strictEqual(accepts(makeReq({ accept: String.raw`text/plain; note="a\b"` }))
+      .types("text/plain; note=ab"), "text/plain; note=ab");
+  });
+});

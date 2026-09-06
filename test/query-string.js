@@ -273,3 +273,44 @@ describe("query-string", () => {
     });
   });
 });
+
+describe("mixed query container regressions", () => {
+  for (const [source, expected] of [
+    ["a[0][b]=x&a[0][]=y", { a: [{ 0: "y", b: "x" }] }],
+    ["a[0][b]=x&a[0][][c]=y", { a: [{ 0: { c: "y" }, b: "x" }] }],
+    ["a[b]=x&a[0]=first&a[]=second", { a: { 0: "first", 1: "second", b: "x" } }],
+    ["a[b]=x&a[][__proto__][polluted]=yes&a[]=safe", { a: { 0: "safe", b: "x" } }],
+  ]) {
+    it(`should preserve values in ${source}`, () => {
+      assert.deepStrictEqual(JSON.parse(JSON.stringify(parseExtendedQueryString(source))), expected);
+    });
+  }
+});
+
+
+describe("query key identity", () => {
+  for (const parse of [parseSimpleQueryString, parseExtendedQueryString]) {
+    it(`should preserve leading question marks with ${parse.name}`, () => {
+      for (const source of ["?a=1", "?a=%31", "%3Fa=1", "?a=1&b=+", "?a=1&b=%32"]) {
+        const parsed = parse(source);
+        assert.strictEqual(parsed["?a"], "1", source);
+        assert.strictEqual(Object.hasOwn(parsed, "a"), false, source);
+      }
+      assert.strictEqual(parse("??a=%31")["??a"], "1");
+    });
+  }
+
+  for (const source of ["a[01]=x&a[1]=y", "a[1]=y&a[01]=x"]) {
+    it(`should retain distinct numeric keys in ${source}`, () => {
+      assert.deepStrictEqual(JSON.parse(JSON.stringify(parseExtendedQueryString(source))), {
+        a: { "01": "x", "1": "y" },
+      });
+    });
+  }
+
+  it("should preserve nested leading-zero keys when promoting arrays", () => {
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(parseExtendedQueryString(
+      "a[0][b]=x&a[00][b]=y&a[]=z",
+    ))), { a: { "0": { b: "x" }, "00": { b: "y" }, "1": "z" } });
+  });
+});

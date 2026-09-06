@@ -290,9 +290,9 @@ describe("express.urlencoded()", () => {
       });
       it("should not accept content-encoding", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Encoding", "gzip");
-        await test.set("Content-Type", "application/x-www-form-urlencoded");
-        await test.write(
+        test.set("Content-Encoding", "gzip");
+        test.set("Content-Type", "application/x-www-form-urlencoded");
+        test.write(
           Buffer.from(
             "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
             "hex",
@@ -312,9 +312,9 @@ describe("express.urlencoded()", () => {
       });
       it("should accept content-encoding", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Encoding", "gzip");
-        await test.set("Content-Type", "application/x-www-form-urlencoded");
-        await test.write(
+        test.set("Content-Encoding", "gzip");
+        test.set("Content-Type", "application/x-www-form-urlencoded");
+        test.write(
           Buffer.from(
             "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
             "hex",
@@ -344,10 +344,10 @@ describe("express.urlencoded()", () => {
       });
       const buf = Buffer.alloc(1024, ".");
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.set("Transfer-Encoding", "chunked");
-      await test.write("str=");
-      await test.write(buf.toString());
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.set("Transfer-Encoding", "chunked");
+      test.write("str=");
+      test.write(buf.toString());
       await test.expect(413);
     });
     it("should 413 when inflated body over limit", async () => {
@@ -355,9 +355,9 @@ describe("express.urlencoded()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(
         Buffer.from(
           "1f8b080000000000000a2b2e29b2d51b05a360148c580000a0351f9204040000",
           "hex",
@@ -396,10 +396,10 @@ describe("express.urlencoded()", () => {
       });
       const buf = Buffer.alloc(10240, ".");
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(buf);
-      await test.write(buf);
-      await test.write(buf);
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(buf);
+      test.write(buf);
+      test.write(buf);
       await test.expect(413);
     });
     it("should not error when inflating", async () => {
@@ -407,9 +407,9 @@ describe("express.urlencoded()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(
         Buffer.from(
           "1f8b080000000000000a2b2e29b2d51b05a360148c580000a0351f92040400",
           "hex",
@@ -694,7 +694,7 @@ describe("express.urlencoded()", () => {
           return true;
         }
         const test = request(app).post("/");
-        await test.write("user=tobi");
+        test.write("user=tobi");
         await test.expect(200, '{"user":"tobi"}');
       });
       it("should not invoke without a body", async () => {
@@ -778,11 +778,11 @@ describe("express.urlencoded()", () => {
         },
       });
       const test = request(app).post("/");
-      await test.set(
+      test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=x-bogus",
       );
-      await test.write(Buffer.from("00000000", "hex"));
+      test.write(Buffer.from("00000000", "hex"));
       await test.expect(
         415,
         '[charset.unsupported] unsupported charset "X-BOGUS"',
@@ -839,30 +839,30 @@ describe("express.urlencoded()", () => {
     });
     it("should persist store when inflated", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
           "hex",
         ),
       );
-      await test.expect(200);
-      await test.expect("x-store-foo", "bar");
+      test.expect(200);
+      test.expect("x-store-foo", "bar");
       await test.expect('{"name":"论"}');
       await test;
     });
     it("should persist store when inflate error", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad6080000",
           "hex",
         ),
       );
-      await test.expect(400);
+      test.expect(400);
       await test.expect("x-store-foo", "bar");
       await test;
     });
@@ -881,36 +881,36 @@ describe("express.urlencoded()", () => {
     });
     it("should parse utf-8", async () => {
       const test = request(__testApp).post("/");
-      await test.set(
+      test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=utf-8",
       );
-      await test.write(Buffer.from("6e616d653de8aeba", "hex"));
+      test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should parse when content-length != char length", async () => {
       const test = request(__testApp).post("/");
-      await test.set(
+      test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=utf-8",
       );
-      await test.set("Content-Length", "7");
-      await test.write(Buffer.from("746573743dc3a5", "hex"));
+      test.set("Content-Length", "7");
+      test.write(Buffer.from("746573743dc3a5", "hex"));
       await test.expect(200, '{"test":"å"}');
     });
     it("should default to utf-8", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(Buffer.from("6e616d653de8aeba", "hex"));
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should fail on unknown charset", async () => {
       const test = request(__testApp).post("/");
-      await test.set(
+      test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=koi8-r",
       );
-      await test.write(Buffer.from("6e616d653dcec5d4", "hex"));
+      test.write(Buffer.from("6e616d653dcec5d4", "hex"));
       await test.expect(
         415,
         '[charset.unsupported] unsupported charset "KOI8-R"',
@@ -925,22 +925,22 @@ describe("express.urlencoded()", () => {
     });
     it("should parse without encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(Buffer.from("6e616d653de8aeba", "hex"));
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should support identity encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "identity");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(Buffer.from("6e616d653de8aeba", "hex"));
+      test.set("Content-Encoding", "identity");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should support gzip encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
           "hex",
@@ -950,16 +950,16 @@ describe("express.urlencoded()", () => {
     });
     it("should support deflate encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "deflate");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
+      test.set("Content-Encoding", "deflate");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should be case-insensitive", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "GZIP");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(
+      test.set("Content-Encoding", "GZIP");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
           "hex",
@@ -969,9 +969,9 @@ describe("express.urlencoded()", () => {
     });
     it("should 415 on unknown encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "nulls");
-      await test.set("Content-Type", "application/x-www-form-urlencoded");
-      await test.write(Buffer.from("000000000000", "hex"));
+      test.set("Content-Encoding", "nulls");
+      test.set("Content-Type", "application/x-www-form-urlencoded");
+      test.write(Buffer.from("000000000000", "hex"));
       await test.expect(
         415,
         '[encoding.unsupported] unsupported content encoding "nulls"',
@@ -1014,3 +1014,80 @@ function expectKeyCount(count) {
     assert.strictEqual(Object.keys(JSON.parse(res.text)).length, count);
   };
 }
+
+describe("URL-encoded charset regressions", () => {
+  for (const extended of [false, true]) {
+    for (const defaultCharset of [false, true]) {
+      it(`should decode Latin-1 keys and values (extended=${extended}, default=${defaultCharset})`, async () => {
+        const app = createApp({ extended, ...(defaultCharset ? { defaultCharset: "iso-8859-1" } : {}) });
+        await request(app).post("/")
+          .set("Content-Type", "application/x-www-form-urlencoded" + (defaultCharset ? "" : "; charset=iso-8859-1"))
+          .send("caf%E9=%E9+%26%3D%2B%25&bad=%ZZ&nested%5Bx%5D=%F1&caf%E9=%FC")
+          .expect(200, JSON.stringify({
+            "café": ["é &=+%", "ü"],
+            bad: "%ZZ",
+            ...(extended ? { nested: { x: "ñ" } } : { "nested[x]": "ñ" }),
+          }));
+      });
+    }
+  }
+
+  it("should preserve mixed nested object and array values", async () => {
+    await request(createApp({ extended: true })).post("/")
+      .type("form").send("a[0][b]=x&a[0][]=y&a[0][]=z")
+      .expect(200, '{"a":[{"0":"y","1":"z","b":"x"}]}');
+  });
+});
+
+
+describe("form key identity", () => {
+  it("should preserve distinct leading-zero and integer field names", async () => {
+    const app = express();
+    app.use(express.urlencoded({ extended: true }));
+    app.use((req, res) => res.json(req.body));
+    await request(app).post("/").type("form")
+      .send("a[01]=x&a[1]=y")
+      .expect(200, { a: { "01": "x", "1": "y" } });
+  });
+});
+
+
+describe("form charset options", () => {
+  for (const extended of [false, true]) {
+    const cases = [
+      ["UTF-8 sentinel", { charsetSentinel: true }, "iso-8859-1", "utf8=%E2%9C%93&name=%C3%B8", { name: "ø" }],
+      ["Latin-1 sentinel", { charsetSentinel: true }, "utf-8", "name=%F8&utf8=%26%2310003%3B", { name: "ø" }],
+      ["invalid sentinel", { charsetSentinel: true }, "iso-8859-1", "utf8=invalid&name=%F8", { name: "ø" }],
+      ["unescaped sentinel", { charsetSentinel: true }, "utf-8", "utf8=invalid&name=plain", { name: "plain" }],
+      ["default charset", { charsetSentinel: true, defaultCharset: "iso-8859-1" }, null, "utf8=%E2%9C%93&name=%C3%B8", { name: "ø" }],
+      ["numeric entities", { interpretNumericEntities: true }, "iso-8859-1", "name=%26%239786%3B&name=%26%239787%3B", { name: ["☺", "☻"] }],
+      ["UTF-8 entities", { interpretNumericEntities: true }, "utf-8", "name=%26%239786%3B", { name: "&#9786;" }],
+      ["disabled entities", {}, "iso-8859-1", "name=%26%239786%3B", { name: "&#9786;" }],
+      ["disabled sentinel", {}, "utf-8", "utf8=%E2%9C%93&name=%C3%B8", { utf8: "✓", name: "ø" }],
+      ["combined options", { charsetSentinel: true, interpretNumericEntities: true }, "utf-8", "utf8=%26%2310003%3B&name=%26%239786%3B", { name: "☺" }],
+      ["numeric key", { interpretNumericEntities: true }, "iso-8859-1", "%26%239786%3B=value", { "&#9786;": "value" }],
+    ];
+    for (const [name, options, charset, body, expected] of cases) {
+      it(`should support ${name}, extended=${extended}`, async () => {
+        const app = express();
+        app.use(express.urlencoded({ extended, ...options }));
+        app.use((req, res) => res.json(req.body));
+        await request(app).post("/")
+          .set("Content-Type", "application/x-www-form-urlencoded" + (charset ? `; charset=${charset}` : ""))
+          .send(body).expect(200, expected);
+      });
+    }
+  }
+});
+
+
+it("should ignore inherited charset options", async () => {
+  const options = Object.create({ charsetSentinel: true, interpretNumericEntities: true });
+  const app = express();
+  app.use(express.urlencoded(options));
+  app.use((req, res) => res.json(req.body));
+  await request(app).post("/")
+    .set("Content-Type", "application/x-www-form-urlencoded; charset=iso-8859-1")
+    .send("utf8=invalid&name=%26%239786%3B")
+    .expect(200, { utf8: "invalid", name: "&#9786;" });
+});

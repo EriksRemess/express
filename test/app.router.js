@@ -2,13 +2,79 @@
 import {describe, it} from "node:test";
 import after from "#test/support/after";
 import express from "#express";
+import Layer from "#lib/router/layer";
 import request from "supertest";
 import assert from "node:assert";
 import { httpMethods } from "#lib/utils/methods";
-import {shouldSkipQuery} from "#test/support/utils";
+import {rawRequest, shouldSkipQuery} from "#test/support/utils";
 import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("app.router", () => {
+  describe("raw request target routing", () => {
+    for (const [path, status] of [
+      ["/admin/secret", 401],
+      ["http://localhost/admin/secret", 401],
+      ["http://localhost/admin/secret?x=1#fragment", 401],
+      ["/public/../admin/secret", 404],
+      ["http://localhost/public/../admin/secret", 404],
+      ["/public/../admin/secret#fragment", 404],
+      ["http://localhost/public/%2e%2e/admin/secret", 404],
+      ["/public/%2e%2e/admin/secret#fragment", 404],
+      ["http://localhost/public/./../admin/secret", 404],
+      ["http://localhost/public\\..\\admin/secret", 404],
+    ]) {
+      it(`should not bypass mounted authorization with ${path}`, async () => {
+        const app = express();
+        const auth = express.Router();
+        let protectedCalls = 0;
+        auth.use("/secret", (req, res) => res.status(401).send("denied"));
+        app.use("/admin", auth);
+        app.get("/admin/secret", (req, res) => {
+          protectedCalls++;
+          res.send("sensitive");
+        });
+
+        const res = await new Promise((resolve, reject) => {
+          rawRequest(app, { path, headers: { host: "localhost" } }, (err, res) => {
+            if (err) return reject(err);
+            resolve(res);
+          });
+        });
+        assert.strictEqual(res.statusCode, status);
+        assert.strictEqual(protectedCalls, 0);
+      });
+    }
+
+    it("should preserve absolute URL query strings through nested mounts", async () => {
+      const app = express();
+      const outer = express.Router();
+      const inner = express.Router();
+      inner.get("/secret", (req, res) => res.json({
+        url: req.url,
+        baseUrl: req.baseUrl,
+        originalUrl: req.originalUrl,
+        query: req.query,
+      }));
+      outer.use("/area", inner);
+      app.use("/admin", outer);
+
+      const path = "http://localhost/admin/area/secret?next=/a/../b#fragment";
+      const res = await new Promise((resolve, reject) => {
+        rawRequest(app, { path, headers: { host: "localhost" } }, (err, res) => {
+          if (err) return reject(err);
+          resolve(res);
+        });
+      });
+      assert.strictEqual(res.statusCode, 200);
+      assert.deepStrictEqual(JSON.parse(res.text), {
+        url: "http://localhost/secret?next=/a/../b#fragment",
+        baseUrl: "/admin/area",
+        originalUrl: path,
+        query: { next: "/a/../b" },
+      });
+    });
+  });
+
   it("should ignore inherited routing URL state during request setup", async () => {
     const app = express();
 
@@ -1277,3 +1343,129 @@ function supportsRegexp(source) {
     return false;
   }
 }
+
+describe("routing regressions", () => {
+  it("should apply mounted authorization middleware regardless of URL case", async () => {
+    const app = express();
+    app.use("/admin", (req, res) => res.sendStatus(401));
+    app.get("/admin", (req, res) => res.send("protected"));
+    await request(app).get("/admin").expect(401);
+    await request(app).get("/ADMIN").expect(401);
+  });
+
+  it("should preserve the original mount spelling and restore the URL", async () => {
+    const app = express();
+    app.use("/API", (req, res, next) => {
+      assert.strictEqual(req.baseUrl, "/api");
+      assert.strictEqual(req.url, "/item?x=1");
+      next();
+    });
+    app.get("/api/item", (req, res) => res.json({ url: req.url, baseUrl: req.baseUrl }));
+    await request(app).get("/api/item?x=1").expect(200, { url: "/api/item?x=1", baseUrl: "" });
+  });
+
+  for (const strict of [false, true]) {
+    for (const asynchronous of [false, true]) {
+      it(`should resume URL rewrites in registration order (strict=${strict}, async=${asynchronous})`, async () => {
+        const app = express();
+        app.set("strict routing", strict);
+        app.get("/new", () => assert.fail("must not revisit earlier routes"));
+        app.get("/old", (req, res, next) => {
+          req.url = "/new?rewritten=1";
+          if (asynchronous) setImmediate(next, "route");
+          else next("route");
+        });
+        app.get("/old", () => assert.fail("must not dispatch the old URL"));
+        app.get("/new", (req, res) => res.json({ url: req.url, originalUrl: req.originalUrl }));
+        await request(app).get("/old").expect(200, { url: "/new?rewritten=1", originalUrl: "/old" });
+      });
+    }
+  }
+
+  for (const middleware of [false, true]) {
+    it(`should honor escaped route strings (middleware=${middleware})`, async () => {
+      const app = express();
+      if (middleware) app.use((req, res, next) => next());
+      app.get("/literal\\.txt", (req, res) => res.send("matched"));
+      await request(app).get("/literal.txt").expect(200, "matched");
+      await request(app).get("/literalXtxt").expect(404);
+    });
+  }
+
+  for (const pattern of [/[()](?<id>\d+)/, /\((?<id>\d+)/, /(?<=\/)[()](?<id>\d+)/, /[()](?<\u0069d>\d+)/u]) {
+    it(`should preserve named regex captures and parameter callbacks for ${pattern}`, async () => {
+      const app = express();
+      let calls = 0;
+      app.param("id", (req, res, next, id) => {
+        calls++;
+        assert.strictEqual(id, "42");
+        next();
+      });
+      app.get(pattern, (req, res) => res.json(req.params));
+      await request(app).get("/(42").expect(200, { id: "42" });
+      assert.strictEqual(calls, 1);
+    });
+  }
+});
+
+describe("stateful route expressions", () => {
+  for (const flags of ["g", "y"]) {
+    it(`should apply authorization on every request with ${flags} regexes`, async () => {
+      const app = express();
+      const pattern = new RegExp("^/admin", flags);
+      pattern.lastIndex = 3;
+      app.use(pattern, (req, res) => res.sendStatus(401));
+      app.get("/admin", (req, res) => res.send("protected"));
+      for (let i = 0; i < 3; i++) {
+        await request(app).get("/admin").expect(401);
+      }
+      assert.strictEqual(pattern.lastIndex, 3);
+    });
+
+    it(`should capture parameters on repeated requests with ${flags} regexes`, async () => {
+      const app = express();
+      app.get(new RegExp("^/users/(?<id>\\d+)$", flags), (req, res) => res.json(req.params));
+      for (const id of ["42", "43", "42"]) {
+        await request(app).get(`/users/${id}`).expect(200, { id });
+      }
+    });
+  }
+});
+
+
+describe("trailing slash matching consistency", () => {
+  for (const strict of [false, true]) {
+    for (const path of ["", "/", "//", "/admin", "/admin/", "/admin//"]) {
+      it(`should match string and array routes equally for ${JSON.stringify(path)}, strict=${strict}`, () => {
+        const direct = new Layer(path, { end: true, strict }, () => {});
+        const array = new Layer([path], { end: true, strict }, () => {});
+        for (const candidate of ["", "/", "//", "///", "/admin", "/admin/", "/admin//", "/admin///"]) {
+          assert.strictEqual(direct.match(candidate), array.match(candidate), candidate);
+        }
+      });
+    }
+
+    for (const middleware of [false, true]) {
+      it(`should preserve route guards with strict=${strict}, middleware=${middleware}`, async () => {
+        const app = express();
+        app.set("strict routing", strict);
+        if (middleware) app.use((req, res, next) => next());
+        app.get(["/admin", "/settings"], (req, res) => res.sendStatus(401));
+        app.get("/admin", (req, res) => res.send("PRIVATE DATA"));
+        await request(app).get("/admin").expect(401);
+        await request(app).get("/admin/").expect(strict ? 404 : 401);
+        await request(app).get("/admin//").expect(404);
+      });
+
+      it(`should agree on root routes with strict=${strict}, middleware=${middleware}`, async () => {
+        const app = express();
+        app.set("strict routing", strict);
+        if (middleware) app.use((req, res, next) => next());
+        app.get("/", (req, res) => res.send("root"));
+        await request(app).get("/").expect(200, "root");
+        await request(app).get("//").expect(strict ? 404 : 200);
+        await request(app).get("///").expect(404);
+      });
+    }
+  }
+});

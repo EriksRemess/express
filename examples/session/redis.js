@@ -8,13 +8,12 @@ import express from "#express";
 
 import logger from 'morgan';
 import session from 'express-session';
-import { createRequire } from 'node:module';
+import { RedisStore } from 'connect-redis';
+import { createClient } from 'redis';
 
-const require = createRequire(import.meta.url);
-
-// pass the express to the connect redis module
-// allowing it to inherit from session.Store
-const RedisStore = require('connect-redis')(session);
+const client = createClient({ url: process.env.REDIS_URL });
+client.on('error', console.error);
+await client.connect();
 
 const app = express();
 
@@ -25,7 +24,7 @@ app.use(session({
   resave: false, // don't save session if unmodified
   saveUninitialized: false, // don't create session until something stored
   secret: 'keyboard cat',
-  store: new RedisStore
+  store: new RedisStore({ client })
 }));
 
 app.get('/', (req, res) => {
@@ -39,5 +38,6 @@ app.get('/', (req, res) => {
   res.send(body + '<p>viewed <strong>' + req.session.views + '</strong> times.</p>');
 });
 
-app.listen(3000);
-console.log('Express app started on port 3000');
+const server = app.listen(Number(process.env.PORT ?? 3000), () => {
+  console.log('Express app started on port ' + server.address().port);
+});

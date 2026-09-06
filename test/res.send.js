@@ -2,6 +2,7 @@
 
 import {describe, it} from "node:test";
 import assert from "node:assert";
+import { MIMEType } from "node:util";
 import {Buffer} from "node:buffer";
 import express from "#express";
 import { httpMethods } from "#lib/utils/methods";
@@ -493,4 +494,21 @@ describe("res", () => {
       });
     });
   });
+});
+
+
+describe("quoted response parameters", () => {
+  for (const note of [String.raw`a\"b`, String.raw`a\\`, String.raw`a\";b,c`]) {
+    it(`should replace the charset after ${note}`, async () => {
+      const app = express();
+      app.get("/", (req, res) => {
+        res.set("Content-Type", `text/plain; note="${note}"; charset=iso-8859-1`).send("café");
+      });
+      await request(app).get("/").expect(200, "café").expect(res => {
+        const type = new MIMEType(res.headers["content-type"]);
+        assert.strictEqual(type.params.get("charset"), "utf-8");
+        assert.strictEqual(res.headers["content-type"].match(/charset=/g).length, 1);
+      });
+    });
+  }
 });

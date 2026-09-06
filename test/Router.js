@@ -5,8 +5,26 @@ import express from "#express";
 const Router = express.Router;
 import { httpMethods } from "#lib/utils/methods";
 import assert from "node:assert";
+import request from "supertest";
+import methodOverride from "#lib/utils/method-override";
 
 describe("Router", () => {
+  it("should bound dispatch caches for arbitrary overridden methods", async () => {
+    const app = express();
+    const router = Router();
+
+    app.use(methodOverride());
+    router.all("/", (req, res) => res.send(req.method));
+    app.use(router);
+
+    for (let index = 0; index < 100; index++) {
+      const method = `METHOD${index}`;
+      await request(app).post(`/?_method=${method}`).expect(200, method);
+    }
+
+    assert.strictEqual(Reflect.ownKeys(router.stack[0].route._dispatchPlans).length, 1);
+  });
+
   it("should return a function with router methods", () => {
     const router = new Router();
     assert(typeof router === "function");

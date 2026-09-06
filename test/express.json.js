@@ -222,10 +222,10 @@ describe("express.json()", () => {
       });
       const buf = Buffer.alloc(1024, ".");
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/json");
-      await test.set("Transfer-Encoding", "chunked");
-      await test.write('{"str":');
-      await test.write('"' + buf.toString() + '"}');
+      test.set("Content-Type", "application/json");
+      test.set("Transfer-Encoding", "chunked");
+      test.write('{"str":');
+      test.write('"' + buf.toString() + '"}');
       await test.expect(413);
     });
     it("should 413 when inflated body over limit", async () => {
@@ -233,9 +233,9 @@ describe("express.json()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000aab562a2e2952b252d21b05a360148c58a0540b0066f7ce1e0a040000",
           "hex",
@@ -282,10 +282,10 @@ describe("express.json()", () => {
         limit: "8kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/json");
-      await test.write(buf);
-      await test.write(buf);
-      await test.write(buf);
+      test.set("Content-Type", "application/json");
+      test.write(buf);
+      test.write(buf);
+      test.write(buf);
       await test.expect(413);
     });
     it("should not error when inflating", async () => {
@@ -293,9 +293,9 @@ describe("express.json()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000aab562a2e2952b252d21b05a360148c58a0540b0066f7ce1e0a0400",
           "hex",
@@ -313,9 +313,9 @@ describe("express.json()", () => {
       });
       it("should not accept content-encoding", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Encoding", "gzip");
-        await test.set("Content-Type", "application/json");
-        await test.write(
+        test.set("Content-Encoding", "gzip");
+        test.set("Content-Type", "application/json");
+        test.write(
           Buffer.from(
             "1f8b080000000000000bab56ca4bcc4d55b2527ab16e97522d00515be1cc0e000000",
             "hex",
@@ -335,9 +335,9 @@ describe("express.json()", () => {
       });
       it("should accept content-encoding", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Encoding", "gzip");
-        await test.set("Content-Type", "application/json");
-        await test.write(
+        test.set("Content-Encoding", "gzip");
+        test.set("Content-Type", "application/json");
+        test.write(
           Buffer.from(
             "1f8b080000000000000bab56ca4bcc4d55b2527ab16e97522d00515be1cc0e000000",
             "hex",
@@ -494,7 +494,7 @@ describe("express.json()", () => {
           return true;
         }
         const test = request(app).post("/");
-        await test.write('{"user":"tobi"}');
+        test.write('{"user":"tobi"}');
         await test.expect(200, '{"user":"tobi"}');
       });
       it("should not invoke without a body", async () => {
@@ -591,8 +591,8 @@ describe("express.json()", () => {
         },
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/json; charset=utf-16");
-      await test.write(
+      test.set("Content-Type", "application/json; charset=utf-16");
+      test.write(
         Buffer.from(
           "feff007b0022006e0061006d00650022003a00228bba0022007d",
           "hex",
@@ -607,8 +607,8 @@ describe("express.json()", () => {
         },
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/json; charset=x-bogus");
-      await test.write(Buffer.from("00000000", "hex"));
+      test.set("Content-Type", "application/json; charset=x-bogus");
+      test.write(Buffer.from("00000000", "hex"));
       await test.expect(
         415,
         '[charset.unsupported] unsupported charset "X-BOGUS"',
@@ -666,30 +666,30 @@ describe("express.json()", () => {
     });
     it("should persist store when inflated", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bab56ca4bcc4d55b2527ab16e97522d00515be1cc0e000000",
           "hex",
         ),
       );
-      await test.expect(200);
-      await test.expect("x-store-foo", "bar");
+      test.expect(200);
+      test.expect("x-store-foo", "bar");
       await test.expect('{"name":"论"}');
       await test;
     });
     it("should persist store when inflate error", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bab56cc4d55b2527ab16e97522d00515be1cc0e000000",
           "hex",
         ),
       );
-      await test.expect(400);
+      test.expect(400);
       await test.expect("x-store-foo", "bar");
       await test;
     });
@@ -716,14 +716,14 @@ describe("express.json()", () => {
     });
     it("should parse utf-8", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/json; charset=utf-8");
-      await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
+      test.set("Content-Type", "application/json; charset=utf-8");
+      test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should parse utf-16", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/json; charset=utf-16");
-      await test.write(
+      test.set("Content-Type", "application/json; charset=utf-16");
+      test.write(
         Buffer.from(
           "feff007b0022006e0061006d00650022003a00228bba0022007d",
           "hex",
@@ -733,21 +733,21 @@ describe("express.json()", () => {
     });
     it("should parse when content-length != char length", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/json; charset=utf-8");
-      await test.set("Content-Length", "13");
-      await test.write(Buffer.from("7b2274657374223a22c3a5227d", "hex"));
+      test.set("Content-Type", "application/json; charset=utf-8");
+      test.set("Content-Length", "13");
+      test.write(Buffer.from("7b2274657374223a22c3a5227d", "hex"));
       await test.expect(200, '{"test":"å"}');
     });
     it("should default to utf-8", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/json");
-      await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
+      test.set("Content-Type", "application/json");
+      test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should fail on unknown charset", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/json; charset=koi8-r");
-      await test.write(Buffer.from("7b226e616d65223a22cec5d4227d", "hex"));
+      test.set("Content-Type", "application/json; charset=koi8-r");
+      test.write(Buffer.from("7b226e616d65223a22cec5d4227d", "hex"));
       await test.expect(
         415,
         '[charset.unsupported] unsupported charset "KOI8-R"',
@@ -762,22 +762,22 @@ describe("express.json()", () => {
     });
     it("should parse without encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/json");
-      await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
+      test.set("Content-Type", "application/json");
+      test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should support identity encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "identity");
-      await test.set("Content-Type", "application/json");
-      await test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
+      test.set("Content-Encoding", "identity");
+      test.set("Content-Type", "application/json");
+      test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
     it("should support gzip encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bab56ca4bcc4d55b2527ab16e97522d00515be1cc0e000000",
           "hex",
@@ -787,18 +787,18 @@ describe("express.json()", () => {
     });
     it("should support deflate encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "deflate");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "deflate");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from("789cab56ca4bcc4d55b2527ab16e97522d00274505ac", "hex"),
       );
       await test.expect(200, '{"name":"论"}');
     });
     it("should be case-insensitive", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "GZIP");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "GZIP");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bab56ca4bcc4d55b2527ab16e97522d00515be1cc0e000000",
           "hex",
@@ -808,9 +808,9 @@ describe("express.json()", () => {
     });
     it("should 415 on unknown encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "nulls");
-      await test.set("Content-Type", "application/json");
-      await test.write(Buffer.from("000000000000", "hex"));
+      test.set("Content-Encoding", "nulls");
+      test.set("Content-Type", "application/json");
+      test.write(Buffer.from("000000000000", "hex"));
       await test.expect(
         415,
         '[encoding.unsupported] unsupported content encoding "nulls"',
@@ -818,9 +818,9 @@ describe("express.json()", () => {
     });
     it("should 400 on malformed encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bab56cc4d55b2527ab16e97522d00515be1cc0e000000",
           "hex",
@@ -831,21 +831,21 @@ describe("express.json()", () => {
     it("should 413 when inflated value exceeds limit", async () => {
       // gzip'd data exceeds 1kb, but deflated below 1kb
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/json");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/json");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bedc1010d000000c2a0f74f6d0f071400000000000000",
           "hex",
         ),
       );
-      await test.write(
+      test.write(
         Buffer.from(
           "0000000000000000000000000000000000000000000000000000000000000000",
           "hex",
         ),
       );
-      await test.write(
+      test.write(
         Buffer.from("0000000000000000004f0625b3b71650c30000", "hex"),
       );
       await test.expect(413);
@@ -887,3 +887,56 @@ function shouldContainInBody(str) {
     );
   };
 }
+
+describe("JSON parsing error identity", () => {
+  for (const body of ["{", "true"]) {
+    it(`should preserve SyntaxError for ${body}`, async () => {
+      const app = express();
+      app.use(express.json());
+      app.use((err, req, res, next) => {
+        assert.ok(err instanceof SyntaxError);
+        res.status(err.status).json({ name: err.name, type: err.type });
+      });
+      await request(app).post("/").type("json").send(body)
+        .expect(400, { name: "SyntaxError", type: "entity.parse.failed" });
+    });
+  }
+});
+
+
+describe("UTF-16 byte order", () => {
+  for (const [charset, hex] of [
+    ["utf-16", "feff007b002200610022003a0031007d"],
+    ["utf-16", "fffe7b002200610022003a0031007d00"],
+    ["utf-16", "7b002200610022003a0031007d00"],
+    ["utf-16be", "007b002200610022003a0031007d"],
+    ["utf-16le", "7b002200610022003a0031007d00"],
+  ]) {
+    it(`should decode ${charset} bytes ${hex}`, async () => {
+      const app = express();
+      const bytes = Buffer.from(hex, "hex");
+      let verified = false;
+      app.use(express.json({ verify(req, res, body, encoding) {
+        assert.deepStrictEqual(body, bytes);
+        assert.strictEqual(encoding, charset);
+        verified = true;
+      } }));
+      app.use((req, res) => res.json(req.body));
+      await request(app).post("/")
+        .set("Content-Type", `application/json; charset=${charset}`)
+        .serialize(body => body).send(bytes)
+        .expect(200, { a: 1 });
+      assert.strictEqual(verified, true);
+    });
+  }
+
+  it("should decode verification error bodies using the BOM", async () => {
+    const app = express();
+    app.use(express.json({ verify() { throw new Error("invalid signature"); } }));
+    app.use((err, req, res, next) => res.status(err.status).json({ body: err.body, type: err.type }));
+    await request(app).post("/")
+      .set("Content-Type", "application/json; charset=utf-16")
+      .serialize(body => body).send(Buffer.from("feff007b007d", "hex"))
+      .expect(403, { body: "{}", type: "entity.verify.failed" });
+  });
+});

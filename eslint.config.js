@@ -1,5 +1,14 @@
 export default [
   {
+    files: ['test/express.{json,raw,text,urlencoded}.js'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: 'AwaitExpression > CallExpression[callee.object.name="test"][callee.property.name=/^(set|write)$/]',
+        message: 'Configure headers and write the body before awaiting the final request assertion.'
+      }]
+    }
+  },
+  {
     ignores: ['coverage/**', 'node_modules/**', 'reference/**']
   },
   {

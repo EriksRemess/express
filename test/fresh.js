@@ -70,3 +70,15 @@ describe("fresh()", () => {
     assert.strictEqual(isFresh(reqHeaders), false);
   });
 });
+
+describe("quoted ETag lists", () => {
+  for (const header of ['"v1,revision2"', '"other",\tW/"v1,revision2"\t, "last"']) {
+    it(`should recognize ${header}`, () => {
+      assert.strictEqual(isFresh({ "if-none-match": header }, '"v1,revision2"'), true);
+    });
+  }
+
+  it("should not treat a comma inside an unrelated tag as a separator", () => {
+    assert.strictEqual(isFresh({ "if-none-match": '"v1,revision2"' }, '"revision2"'), false);
+  });
+});

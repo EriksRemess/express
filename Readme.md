@@ -64,7 +64,6 @@ npm install @eriksremess/express
   * HTTP helpers (redirection, caching, etc)
   * View system supporting 14+ template engines
   * Content negotiation
-  * Executable for generating applications quickly
 
 ## Docs & Community
 
@@ -76,33 +75,37 @@ npm install @eriksremess/express
 
 ## Quick Start
 
-  The quickest way to get started with express is to utilize the executable [`express(1)`](https://github.com/expressjs/generator) to generate an application as shown below:
-
-  Install the executable. The executable's major version will match Express's:
+Create a project and install this fork using Node.js 26 or newer:
 
 ```bash
-npm install -g express-generator@4
+mkdir my-app
+cd my-app
+npm init -y
+npm config set @eriksremess:registry https://npm.pkg.github.com
+npm install @eriksremess/express
 ```
 
-  Create the app:
+Save the following as `app.mjs`:
+
+```js
+import express from '@eriksremess/express'
+
+const app = express()
+
+app.get('/', (req, res) => {
+  res.send('Hello World')
+})
+
+app.listen(3000)
+```
+
+Start the server:
 
 ```bash
-express /tmp/foo && cd /tmp/foo
+node app.mjs
 ```
 
-  Install dependencies:
-
-```bash
-npm install
-```
-
-  Start the server:
-
-```bash
-npm start
-```
-
-  View the website at: http://localhost:3000
+Open http://localhost:3000 in your browser.
 
 ## Philosophy
 

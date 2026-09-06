@@ -60,9 +60,9 @@ describe("express.raw()", () => {
       }
     });
     const test = request(app).post("/");
-    await test.set("Content-Type", "application/octet-stream");
-    await test.set("Transfer-Encoding", "chunked");
-    await test.write("stuff");
+    test.set("Content-Type", "application/octet-stream");
+    test.set("Transfer-Encoding", "chunked");
+    test.write("stuff");
     await test.expect(200, {
       buf: "7374756666",
     });
@@ -127,9 +127,9 @@ describe("express.raw()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.set("Content-Length", "1028");
-      await test.write(buf);
+      test.set("Content-Type", "application/octet-stream");
+      test.set("Content-Length", "1028");
+      test.write(buf);
       await test.expect(413);
     });
     it("should 413 when over limit with chunked encoding", async () => {
@@ -138,9 +138,9 @@ describe("express.raw()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.set("Transfer-Encoding", "chunked");
-      await test.write(buf);
+      test.set("Content-Type", "application/octet-stream");
+      test.set("Transfer-Encoding", "chunked");
+      test.write(buf);
       await test.expect(413);
     });
     it("should 413 when inflated body over limit", async () => {
@@ -148,9 +148,9 @@ describe("express.raw()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(
         Buffer.from(
           "1f8b080000000000000ad3d31b05a360148c64000087e5a14704040000",
           "hex",
@@ -164,8 +164,8 @@ describe("express.raw()", () => {
         limit: 1024,
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(buf);
+      test.set("Content-Type", "application/octet-stream");
+      test.write(buf);
       await test.expect(413);
     });
     it("should not change when options altered", async () => {
@@ -176,8 +176,8 @@ describe("express.raw()", () => {
       const app = createApp(options);
       options.limit = "100kb";
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(buf);
+      test.set("Content-Type", "application/octet-stream");
+      test.write(buf);
       await test.expect(413);
     });
     it("should not hang response", async () => {
@@ -186,10 +186,10 @@ describe("express.raw()", () => {
         limit: "8kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(buf);
-      await test.write(buf);
-      await test.write(buf);
+      test.set("Content-Type", "application/octet-stream");
+      test.write(buf);
+      test.write(buf);
+      test.write(buf);
       await test.expect(413);
     });
     it("should not error when inflating", async () => {
@@ -197,9 +197,9 @@ describe("express.raw()", () => {
         limit: "1kb",
       });
       const test = request(app).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(
         Buffer.from(
           "1f8b080000000000000ad3d31b05a360148c64000087e5a147040400",
           "hex",
@@ -217,9 +217,9 @@ describe("express.raw()", () => {
       });
       it("should not accept content-encoding", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Encoding", "gzip");
-        await test.set("Content-Type", "application/octet-stream");
-        await test.write(
+        test.set("Content-Encoding", "gzip");
+        test.set("Content-Type", "application/octet-stream");
+        test.write(
           Buffer.from(
             "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
             "hex",
@@ -239,9 +239,9 @@ describe("express.raw()", () => {
       });
       it("should accept content-encoding", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Encoding", "gzip");
-        await test.set("Content-Type", "application/octet-stream");
-        await test.write(
+        test.set("Content-Encoding", "gzip");
+        test.set("Content-Type", "application/octet-stream");
+        test.write(
           Buffer.from(
             "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
             "hex",
@@ -262,16 +262,16 @@ describe("express.raw()", () => {
       });
       it("should parse for custom type", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Type", "application/vnd+octets");
-        await test.write(Buffer.from("000102", "hex"));
+        test.set("Content-Type", "application/vnd+octets");
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
       it("should ignore standard type", async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Type", "application/octet-stream");
-        await test.write(Buffer.from("000102", "hex"));
+        test.set("Content-Type", "application/octet-stream");
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, "");
       });
     });
@@ -283,24 +283,24 @@ describe("express.raw()", () => {
       });
       it('should parse "application/octet-stream"', async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Type", "application/octet-stream");
-        await test.write(Buffer.from("000102", "hex"));
+        test.set("Content-Type", "application/octet-stream");
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
       it('should parse "application/vnd+octets"', async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Type", "application/vnd+octets");
-        await test.write(Buffer.from("000102", "hex"));
+        test.set("Content-Type", "application/vnd+octets");
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
       it('should ignore "application/x-foo"', async () => {
         const test = request(__testApp).post("/");
-        await test.set("Content-Type", "application/x-foo");
-        await test.write(Buffer.from("000102", "hex"));
+        test.set("Content-Type", "application/x-foo");
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, "");
       });
     });
@@ -313,8 +313,8 @@ describe("express.raw()", () => {
           return req.headers["content-type"] === "application/vnd.octet";
         }
         const test = request(app).post("/");
-        await test.set("Content-Type", "application/vnd.octet");
-        await test.write(Buffer.from("000102", "hex"));
+        test.set("Content-Type", "application/vnd.octet");
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
@@ -327,7 +327,7 @@ describe("express.raw()", () => {
           return true;
         }
         const test = request(app).post("/");
-        await test.write(Buffer.from("000102", "hex"));
+        test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
@@ -359,8 +359,8 @@ describe("express.raw()", () => {
         },
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("000102", "hex"));
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("000102", "hex"));
       await test.expect(403, "[entity.verify.failed] no leading null");
     });
     it("should allow custom codes", async () => {
@@ -373,8 +373,8 @@ describe("express.raw()", () => {
         },
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("000102", "hex"));
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("000102", "hex"));
       await test.expect(400, "[entity.verify.failed] no leading null");
     });
     it("should allow pass-through", async () => {
@@ -384,8 +384,8 @@ describe("express.raw()", () => {
         },
       });
       const test = request(app).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("0102", "hex"));
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("0102", "hex"));
       await test.expect(200, {
         buf: "0102",
       });
@@ -449,16 +449,16 @@ describe("express.raw()", () => {
     });
     it("should persist store when inflated", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
           "hex",
         ),
       );
-      await test.expect(200);
-      await test.expect("x-store-foo", "bar");
+      test.expect(200);
+      test.expect("x-store-foo", "bar");
       await test.expect({
         buf: "6e616d653de8aeba",
       });
@@ -466,15 +466,15 @@ describe("express.raw()", () => {
     });
     it("should persist store when inflate error", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad6080000",
           "hex",
         ),
       );
-      await test.expect(400);
+      test.expect(400);
       await test.expect("x-store-foo", "bar");
       await test;
     });
@@ -493,8 +493,8 @@ describe("express.raw()", () => {
     });
     it("should ignore charset", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/octet-stream; charset=utf-8");
-      await test.write(Buffer.from("6e616d6520697320e8aeba", "hex"));
+      test.set("Content-Type", "application/octet-stream; charset=utf-8");
+      test.write(Buffer.from("6e616d6520697320e8aeba", "hex"));
       await test.expect(200, {
         buf: "6e616d6520697320e8aeba",
       });
@@ -508,26 +508,26 @@ describe("express.raw()", () => {
     });
     it("should parse without encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("6e616d653de8aeba", "hex"));
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, {
         buf: "6e616d653de8aeba",
       });
     });
     it("should support identity encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "identity");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("6e616d653de8aeba", "hex"));
+      test.set("Content-Encoding", "identity");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, {
         buf: "6e616d653de8aeba",
       });
     });
     it("should support gzip encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "gzip");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(
+      test.set("Content-Encoding", "gzip");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
           "hex",
@@ -539,27 +539,27 @@ describe("express.raw()", () => {
     });
     it("should support deflate encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "deflate");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
+      test.set("Content-Encoding", "deflate");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
       await test.expect(200, {
         buf: "6e616d653de8aeba",
       });
     });
     it("should support brotli encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "br");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("8b06806e616d653d25453825414525424103", "hex"));
+      test.set("Content-Encoding", "br");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("8b06806e616d653d25453825414525424103", "hex"));
       await test.expect(200, {
         buf: "6e616d653d254538254145254241",
       });
     });
     it("should be case-insensitive", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "GZIP");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(
+      test.set("Content-Encoding", "GZIP");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(
         Buffer.from(
           "1f8b080000000000000bcb4bcc4db57db16e170099a4bad608000000",
           "hex",
@@ -571,9 +571,9 @@ describe("express.raw()", () => {
     });
     it("should 415 on unknown encoding", async () => {
       const test = request(__testApp).post("/");
-      await test.set("Content-Encoding", "nulls");
-      await test.set("Content-Type", "application/octet-stream");
-      await test.write(Buffer.from("000000000000", "hex"));
+      test.set("Content-Encoding", "nulls");
+      test.set("Content-Type", "application/octet-stream");
+      test.write(Buffer.from("000000000000", "hex"));
       await test.expect(
         415,
         '[encoding.unsupported] unsupported content encoding "nulls"',
@@ -686,3 +686,25 @@ function close(server) {
     });
   });
 }
+
+describe("body stream encoding validation", () => {
+  for (const [parser, type, body] of [
+    [express.raw, "application/octet-stream", Buffer.from([255, 0])],
+    [express.json, "application/json", Buffer.from('{"name":"test"}')],
+    [express.text, "text/plain", Buffer.from("hello")],
+    [express.urlencoded, "application/x-www-form-urlencoded", Buffer.from("name=test")],
+  ]) {
+    it(`should reject pre-decoded ${type} streams before verification`, async () => {
+      const app = express();
+      let verified = false;
+      app.use((req, res, next) => { req.setEncoding("utf8"); next(); });
+      app.use(parser({ verify() { verified = true; } }));
+      app.post("/", (req, res) => res.sendStatus(200));
+      app.use((err, req, res, next) => res.status(err.status).send(err.type));
+      const test = request(app).post("/").set("Content-Type", type).set("Transfer-Encoding", "chunked");
+      test.write(body);
+      await test.expect(500, "stream.encoding.set");
+      assert.strictEqual(verified, false);
+    });
+  }
+});

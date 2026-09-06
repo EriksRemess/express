@@ -173,3 +173,26 @@ describe("proxyaddr()", () => {
     }, /trust argument is required/);
   });
 });
+
+
+describe("IPv4-mapped address normalization", () => {
+  for (const address of ["::ffff:127.0.0.1", "::ffff:7f00:1", "0:0:0:0:0:ffff:127.0.0.1", "0:0:0:0:0:FFFF:7F00:1"]) {
+    it(`should trust ${address} as loopback in a proxy chain`, () => {
+      assert.strictEqual(proxyaddr(makeReq(`203.0.113.9, ${address}`, "127.0.0.1"), "loopback"), "203.0.113.9");
+      assert.strictEqual(proxyaddr(makeReq("203.0.113.9", address), "loopback"), "203.0.113.9");
+    });
+  }
+
+  it("should match IPv4 clients against mapped IPv6 subnets", () => {
+    const trust = proxyaddr.compile("::ffff:7f00:0/104");
+    assert.strictEqual(trust("127.0.0.1"), true);
+    assert.strictEqual(trust("128.0.0.1"), false);
+  });
+
+  it("should keep non-loopback and non-mapped IPv6 addresses untrusted", () => {
+    const trust = proxyaddr.compile("loopback");
+    for (const address of ["::ffff:cb00:7109", "::7f00:1", "2001:db8::7f00:1", "not-an-ip"]) {
+      assert.strictEqual(trust(address), false, address);
+    }
+  });
+});

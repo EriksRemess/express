@@ -215,3 +215,14 @@ function createApp(setting) {
 
   return app;
 }
+
+
+describe("encoded query key identity", () => {
+  for (const parser of ["simple", "extended"]) {
+    it(`should preserve leading question marks using ${parser} parsing`, async () => {
+      const app = createApp(parser);
+      await request(app).get("/??a=1").expect(200, { "?a": "1" });
+      await request(app).get("/??a=%31").expect(200, { "?a": "1" });
+    });
+  }
+});

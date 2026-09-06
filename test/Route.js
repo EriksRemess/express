@@ -54,6 +54,41 @@ describe("Route", () => {
   );
 
   describe(".all", () => {
+    it("should preserve dispatch behavior when methods share a cached plan", async () => {
+      const route = new Route("/");
+      const record = name => (req, res, next) => {
+        req.order.push(name);
+        next();
+      };
+      const dispatch = async (method, expected) => {
+        const req = { method, order: [], url: "/" };
+        await new Promise((resolve, reject) => {
+          route.dispatch(req, {}, err => err ? reject(err) : resolve());
+        });
+        assert.deepStrictEqual(req.order, expected);
+      };
+
+      route.all(record("all"));
+      for (const method of [undefined, "CUSTOM", "GET", "HEAD", "POST", "_ALL", "__PROTO__"]) {
+        await dispatch(method, ["all"]);
+      }
+      assert.strictEqual(Reflect.ownKeys(route._dispatchPlans).length, 1);
+
+      route.get(record("get"));
+      await dispatch("CUSTOM", ["all"]);
+      await dispatch("GET", ["all", "get"]);
+      await dispatch("HEAD", ["all", "get"]);
+      await dispatch("POST", ["all"]);
+
+      route.head(record("head"));
+      route.all(record("last"));
+      await dispatch("CUSTOM", ["all", "last"]);
+      await dispatch("GET", ["all", "get", "last"]);
+      await dispatch("HEAD", ["all", "head", "last"]);
+      await dispatch("POST", ["all", "last"]);
+      assert.strictEqual(Reflect.ownKeys(route._dispatchPlans).length, 3);
+    });
+
     it("should add handler", async () => {
       await new Promise((resolve, reject) => {
         const req = { method: "GET", url: "/" };

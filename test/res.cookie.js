@@ -322,6 +322,25 @@ describe("res", () => {
       });
     });
     describe("signed", () => {
+      for (const childSecret of [undefined, "different secret"]) {
+        it(`should preserve signing through a mounted parser with secret ${childSecret}`, async () => {
+          const app = express();
+          const child = express();
+          app.use(cookieParser("foo bar baz"));
+          child.use(cookieParser(childSecret));
+          child.get("/", (req, res) => {
+            res.cookie("name", "tobi", { signed: true }).json(req.signedCookies);
+          });
+          app.use("/child", child);
+
+          await request(app)
+            .get("/child")
+            .set("Cookie", "name=s%3Atobi.xJjV2iZ6EI7C8E5kzwbfA9PVLl1ZR07UTnuTgQQ4EnQ")
+            .expect("Set-Cookie", "name=s%3Atobi.xJjV2iZ6EI7C8E5kzwbfA9PVLl1ZR07UTnuTgQQ4EnQ; Path=/")
+            .expect(200, { name: "tobi" });
+        });
+      }
+
       it("should generate a signed JSON cookie", async () => {
         const app = express();
         app.use(cookieParser("foo bar baz"));

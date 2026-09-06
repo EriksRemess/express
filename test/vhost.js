@@ -6,6 +6,40 @@ import request from "supertest";
 import vhost from "#lib/utils/vhost";
 
 describe("vhost()", () => {
+  for (const hostname of [
+    /example\.com|admin\.local/,
+    /^example\.com|admin\.local/,
+    /example\.com|admin\.local$/,
+    /^example\.com|admin\.local$/,
+  ]) {
+    it(`should match the entire hostname for every alternative in ${hostname}`, async () => {
+      const app = express();
+      app.use(vhost(hostname, (req, res) => res.send("matched")));
+
+      for (const host of ["example.com", "admin.local", "EXAMPLE.COM"]) {
+        await request(app).get("/").set("Host", host).expect(200, "matched");
+      }
+      for (const host of ["example.com.evil.test", "evil-admin.local", "evil-example.com", "admin.local.evil.test"]) {
+        await request(app).get("/").set("Host", host).expect(404);
+      }
+    });
+  }
+
+  it("should preserve capture indexes when anchoring regex alternatives", async () => {
+    const app = express();
+    app.use(vhost(/(www|admin)\.(example\.com|example\.org)/g, (req, res) => {
+      res.json({ count: req.vhost.length, prefix: req.vhost[0], domain: req.vhost[1] });
+    }));
+
+    for (const host of ["www.example.com", "www.example.com", "admin.example.org"]) {
+      await request(app).get("/").set("Host", host).expect(200, {
+        count: 2,
+        prefix: host.split(".")[0],
+        domain: host.slice(host.indexOf(".") + 1),
+      });
+    }
+  });
+
   it("should not match malformed host port suffixes", async () => {
     const app = express();
 

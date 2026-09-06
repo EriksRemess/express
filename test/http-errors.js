@@ -90,3 +90,23 @@ describe("http-errors", () => {
     assert.strictEqual(isHttpError(null), false);
   });
 });
+
+describe("decorated error identity", () => {
+  class ValidationError extends Error {
+    describe() { return "validation failed"; }
+  }
+
+  for (const ErrorType of [SyntaxError, TypeError, ValidationError]) {
+    it(`should preserve ${ErrorType.name} prototypes`, () => {
+      const input = new ErrorType("invalid");
+      const originalStack = input.stack;
+      const result = createError(400, input);
+      assert.strictEqual(result, input);
+      assert.strictEqual(Object.getPrototypeOf(result), ErrorType.prototype);
+      assert.strictEqual(result.stack, originalStack);
+      assert.strictEqual(isHttpError(result), true);
+      assert.strictEqual(result.status, 400);
+      if (result instanceof ValidationError) assert.strictEqual(result.describe(), "validation failed");
+    });
+  }
+});

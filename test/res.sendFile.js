@@ -122,7 +122,9 @@ describe("res", () => {
     });
     it("should support comma-separated If-Match validators", async () => {
       await new Promise((resolve, reject) => {
-        const app = createApp(path.resolve(fixtures, "name.txt"));
+        const app = createApp(path.resolve(fixtures, "name.txt"), {
+          headers: { ETag: '"strong"' },
+        });
 
         request(app)
           .get("/")
@@ -1077,3 +1079,142 @@ function createApp(path, options, fn) {
   });
   return app;
 }
+
+describe("file range and precondition regressions", () => {
+  for (const staticMiddleware of [false, true]) {
+    function fileApp(headers) {
+      const app = express();
+      if (headers) app.use((req, res, next) => { res.set(headers); next(); });
+      if (staticMiddleware) app.use(express.static(fixtures));
+      else app.use((req, res) => res.sendFile(path.join(fixtures, "name.txt")));
+      return app;
+    }
+
+    it(`should return the whole file for an oversized suffix range (static=${staticMiddleware})`, async () => {
+      await request(fileApp()).get("/name.txt").set("Range", "bytes=-1000")
+        .expect(206, "tobi").expect("Content-Range", "bytes 0-3/4");
+      await request(fileApp()).get("/name.txt").set("Range", "bytes=-0").expect(416);
+    });
+
+    it(`should reject weak If-Match validators (static=${staticMiddleware})`, async () => {
+      const app = fileApp();
+      const response = await request(app).get("/name.txt").expect(200);
+      for (const etag of [response.headers.etag, response.headers.etag.slice(2)]) {
+        await request(app).get("/name.txt").set("If-Match", etag).expect(412);
+      }
+      await request(app).get("/name.txt").set("If-None-Match", response.headers.etag).expect(304);
+    });
+
+    it(`should accept strong If-Match lists (static=${staticMiddleware})`, async () => {
+      const app = fileApp({ ETag: '"strong"' });
+      await request(app).get("/name.txt").set("If-Match", '"stale", "strong"').expect(200, "tobi");
+      await request(app).get("/name.txt").set("If-Match", 'W/"strong"').expect(412);
+    });
+
+    it(`should accept If-Match wildcard when ETags are disabled (static=${staticMiddleware})`, async () => {
+      await request(fileApp().disable("etag")).get("/name.txt").set("If-Match", "*").expect(200, "tobi");
+    });
+
+    it(`should ignore ranges with weak If-Range validators (static=${staticMiddleware})`, async () => {
+      const app = fileApp();
+      const response = await request(app).get("/name.txt").expect(200);
+      await request(app).get("/name.txt").set("Range", "bytes=0-1")
+        .set("If-Range", response.headers.etag).expect(200, "tobi");
+    });
+
+    it(`should require an exact strong If-Range match (static=${staticMiddleware})`, async () => {
+      const app = fileApp({ ETag: '"strong"' });
+      await request(app).get("/name.txt").set("Range", "bytes=0-1")
+        .set("If-Range", '"strong"').expect(206, "to");
+      for (const etag of ['W/"strong"', '"stale", "strong"']) {
+        await request(app).get("/name.txt").set("Range", "bytes=0-1")
+          .set("If-Range", etag).expect(200, "tobi");
+      }
+    });
+  }
+});
+
+describe("file conditional method and validator handling", () => {
+  const modified = "Tue, 01 Jan 2019 00:00:00 GMT";
+  const later = "Wed, 02 Jan 2019 00:00:00 GMT";
+  const etag = '"v1,revision2"';
+
+  for (const customHeaders of [false, true]) {
+    function appForFile() {
+      const app = express();
+      app.use((req, res) => {
+        const headers = { ETag: etag, "Last-Modified": modified };
+        if (!customHeaders) res.set(headers);
+        res.sendFile(path.join(fixtures, "name.txt"), customHeaders ? { headers } : undefined);
+      });
+      return app;
+    }
+
+    it(`should compare quoted comma-containing ETags (headers=${customHeaders})`, async () => {
+      const app = appForFile();
+      await request(app).get("/").set("If-Match", `"stale", ${etag}`).expect(200, "tobi");
+      await request(app).get("/").set("If-None-Match", etag).expect(304);
+    });
+
+    for (const method of ["post", "put", "patch", "delete"]) {
+      it(`should return 412 for matching ${method} If-None-Match (headers=${customHeaders})`, async () => {
+        const app = appForFile();
+        for (const noneMatch of ["*", etag, `W/${etag}`]) {
+          await request(app)[method]("/").set("If-None-Match", noneMatch)
+            .set("Cache-Control", "no-cache").expect(412);
+        }
+        await request(app)[method]("/").set("If-Match", etag).set("If-None-Match", etag).expect(412);
+        await request(app)[method]("/").set("If-Match", "*").set("If-None-Match", "*").expect(412);
+        await request(app)[method]("/").set("If-None-Match", '"stale"').expect(200, "tobi");
+      });
+
+      it(`should ignore ${method} ranges and If-Modified-Since (headers=${customHeaders})`, async () => {
+        await request(appForFile())[method]("/").set("Range", "bytes=0-1")
+          .set("If-Modified-Since", later).expect(200, "tobi")
+          .expect("Content-Length", "4").expect(utils.shouldNotHaveHeader("Content-Range"));
+      });
+    }
+
+    it(`should retain HEAD revalidation and ignore HEAD ranges (headers=${customHeaders})`, async () => {
+      const app = appForFile();
+      await request(app).head("/").set("If-None-Match", etag).expect(304);
+      await request(app).head("/").set("Range", "bytes=0-1").expect(200)
+        .expect("Content-Length", "4").expect(utils.shouldNotHaveHeader("Content-Range"));
+    });
+
+    it(`should retain QUERY revalidation (headers=${customHeaders})`, async () => {
+      const result = await new Promise((resolve, reject) => {
+        utils.rawRequest(appForFile(), { method: "QUERY", path: "/", headers: { "If-None-Match": etag } },
+          (err, res) => err ? reject(err) : resolve(res));
+      });
+      assert.strictEqual(result.statusCode, 304);
+    });
+
+    it(`should require exact If-Range dates (headers=${customHeaders})`, async () => {
+      const app = appForFile();
+      await request(app).get("/").set("Range", "bytes=0-1").set("If-Range", modified).expect(206, "to");
+      for (const date of [later, "invalid", "Mon, 31 Dec 2018 00:00:00 GMT"]) {
+        await request(app).get("/").set("Range", "bytes=0-1").set("If-Range", date).expect(200, "tobi");
+      }
+    });
+  }
+});
+
+
+describe("file preconditions without Last-Modified", () => {
+  for (const headersListener of [false, true]) {
+    it(`should check the file date with headersListener=${headersListener}`, async () => {
+      const app = express();
+      const options = { lastModified: false };
+      if (headersListener) options.headers = { "X-Test": "custom headers" };
+      app.get("/", (req, res) => res.sendFile(path.join(fixtures, "name.txt"), options));
+      await request(app).get("/")
+        .set("If-Unmodified-Since", "Wed, 01 Jan 2031 00:00:00 GMT")
+        .expect(200, "tobi")
+        .expect(res => assert.strictEqual(res.headers["last-modified"], undefined));
+      await request(app).get("/")
+        .set("If-Unmodified-Since", "Thu, 01 Jan 1970 00:00:00 GMT").expect(412);
+      await request(app).get("/").set("If-Unmodified-Since", "invalid").expect(200, "tobi");
+    });
+  }
+});

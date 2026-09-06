@@ -210,3 +210,16 @@ describe("content-disposition", () => {
     );
   });
 });
+
+
+describe("fallback validation repeatability", () => {
+  it("should reject invalid fallback names on every call", () => {
+    for (const fallback of ["é.txt", "日本語.txt", "bad\nname.txt"]) {
+      for (let i = 0; i < 4; i++) {
+        assert.throws(() => contentDisposition("report.txt", { fallback }), /US-ASCII/);
+      }
+      assert.match(contentDisposition("日本語.txt"), /filename\*=/);
+      assert.strictEqual(contentDisposition("report.txt", { fallback: "report.txt" }), "attachment; filename=report.txt");
+    }
+  });
+});

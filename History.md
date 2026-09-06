@@ -11,9 +11,50 @@
 
 ## Security
 
+* Preserve raw URL paths during routing and mount trimming so dot-segment
+  normalization cannot bypass nested authorization middleware.
+* Bound route dispatch caches when clients supply arbitrary overridden methods.
+* Match every regular-expression virtual host alternative against the full hostname.
+* Match optional trailing slashes consistently across route implementations so
+  repeated slashes cannot bypass array-based authorization routes.
+* Apply mounted middleware to matching URLs regardless of letter case, preventing
+  case changes from bypassing authorization middleware.
+* Reset stateful route expressions for every match so global and sticky regexes
+  cannot skip authorization middleware on subsequent requests.
+* Require strong ETag comparisons for file `If-Match` and `If-Range` checks.
+* Refresh development dependencies and their affected transitive packages.
 * Remove `Content-Length` whenever `Transfer-Encoding` is present, including
   application-supplied conflicting framing headers.
 * Preserve the final filename when POSIX or Windows paths end in separators.
+
+## Fixes
+
+* Safely encode consecutive unpaired Unicode surrogates and incomplete percent
+  escapes in redirect targets without changing valid escape sequences.
+* Preserve the existing signing secret when cookie parsers run more than once.
+* Correct body-parser tests to await complete requests with all assertions
+  registered, and prevent premature header awaits with lint.
+* Avoid conflicting response framing in file transfers, redirects, and errors.
+* Handle escaped quotes in media-type parameters and Accept negotiation.
+* Support form charset sentinels and Latin-1 numeric entity decoding.
+* Evaluate file date preconditions even when Last-Modified headers are disabled.
+* Normalize equivalent IPv4-mapped IPv6 addresses when evaluating proxy trust.
+* Preserve leading question marks and distinct leading-zero query and form keys.
+* Honor big-endian byte order marks for bodies declared as UTF-16.
+* Validate filename fallback strings consistently across repeated calls.
+* Resume routing in registration order after handlers rewrite the request URL.
+* Honor escaped route strings and correctly identify regular-expression captures.
+* Decode Latin-1 form keys and values using the declared charset, and preserve
+  values when nested query strings mix object and array notation.
+* Serve the full file when a requested suffix range exceeds its size.
+* Preserve error subclasses and reject body streams with a preconfigured encoding.
+* Parse commas within quoted ETags, require exact dates for `If-Range`, and apply
+  conditional and range response semantics according to the request method.
+* Replace the upstream generator quick start with an ESM example for this fork.
+* Update development dependencies to their latest stable releases and migrate the
+  Redis session example to the current store and client APIs.
+* Disable the npm release cooldown so fresh installs can resolve the latest
+  dependency versions required by the manifest.
 
 ## 🚀 Improvements
 

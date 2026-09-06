@@ -6,6 +6,22 @@ import request from "supertest";
 import utils from "#test/support/utils";
 describe("res", () => {
   describe(".redirect(url)", () => {
+    for (const [target, location] of [
+      ["/\uD800\uD800", "/%EF%BF%BD%EF%BF%BD"],
+      ["/\uDC00\uDC00", "/%EF%BF%BD%EF%BF%BD"],
+      ["/%a", "/%25a"],
+      ["/%0", "/%250"],
+    ]) {
+      it(`should safely encode a JSON redirect target ${JSON.stringify(target)}`, async () => {
+        const app = express();
+        app.use(express.json());
+        app.post("/", (req, res) => res.redirect(req.body.target));
+
+        await request(app).post("/").send({ target })
+          .expect(302).expect("Location", location);
+      });
+    }
+
     it("should default to a 302 redirect", async () => {
       const app = express();
       app.use((req, res) => {
