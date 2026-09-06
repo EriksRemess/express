@@ -11,6 +11,8 @@
 
 ## Security
 
+* Escape control characters and Unicode line separators in debug logs so decoded
+  request paths cannot inject log records when debug logging is enabled.
 * Apply root-mounted middleware consistently in path arrays, preserving
   authorization coverage and the order of matching alternatives.
 * Preserve raw URL paths during routing and mount trimming so dot-segment
