@@ -9,6 +9,57 @@ import request from "supertest";
 import methodOverride from "#lib/utils/method-override";
 
 describe("Router", () => {
+  describe("root mounts in path arrays", () => {
+    for (const strict of [false, true]) {
+      for (const mount of ["/", ["/"], ["/other", "/"], ["/", "/other"]]) {
+        it(`should protect child paths with strict=${strict} and mount=${JSON.stringify(mount)}`, async () => {
+          const app = express();
+          const router = Router({ strict });
+          router.use(mount, (req, res) => res.status(401).send("denied"));
+          router.get("/admin", (req, res) => res.send("protected"));
+          app.use("/api", router);
+
+          for (const target of ["/api/", "/api/admin", "/api/admin/child"]) {
+            await request(app).get(target).expect(401, "denied");
+          }
+        });
+      }
+    }
+
+    for (const rootFirst of [false, true]) {
+      it(`should preserve alternative order and params with rootFirst=${rootFirst}`, async () => {
+        const app = express();
+        const paths = rootFirst ? ["/", "/group/:id"] : ["/group/:id", "/"];
+        app.use(paths, (req, res) => res.json({
+          url: req.url, baseUrl: req.baseUrl, params: req.params,
+        }));
+
+        await request(app).get("/group/one/child").expect(200, rootFirst ? {
+          url: "/group/one/child", baseUrl: "", params: {},
+        } : {
+          url: "/child", baseUrl: "/group/one", params: { id: "one" },
+        });
+        await request(app).get("/other").expect(200, {
+          url: "/other", baseUrl: "", params: {},
+        });
+      });
+    }
+
+    it("should keep root routes in arrays limited to the root path", async () => {
+      const app = express();
+      app.get(["/"], (req, res) => res.send("root"));
+      await request(app).get("/").expect(200, "root");
+      await request(app).get("/child").expect(404);
+    });
+
+    it("should run root error middleware in arrays for child paths", async () => {
+      const app = express();
+      app.get("/child", (req, res, next) => next(new Error("failure")));
+      app.use(["/"], (err, req, res, next) => res.status(503).send(err.message));
+      await request(app).get("/child").expect(503, "failure");
+    });
+  });
+
   it("should bound dispatch caches for arbitrary overridden methods", async () => {
     const app = express();
     const router = Router();

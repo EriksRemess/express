@@ -13,6 +13,8 @@ import { pathToFileURL } from "node:url";
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 const app = express();
 
+export default app;
+
 app.set('views', path.join(import.meta.dirname, 'views'));
 app.set('view engine', 'ejs');
 

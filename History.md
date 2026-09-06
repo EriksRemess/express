@@ -11,6 +11,8 @@
 
 ## Security
 
+* Apply root-mounted middleware consistently in path arrays, preserving
+  authorization coverage and the order of matching alternatives.
 * Preserve raw URL paths during routing and mount trimming so dot-segment
   normalization cannot bypass nested authorization middleware.
 * Bound route dispatch caches when clients supply arbitrary overridden methods.
@@ -29,6 +31,7 @@
 
 ## Fixes
 
+* Fix class initialization in the view-locals and view-constructor examples.
 * Safely encode consecutive unpaired Unicode surrogates and incomplete percent
   escapes in redirect targets without changing valid escape sequences.
 * Preserve the existing signing secret when cookie parsers run more than once.

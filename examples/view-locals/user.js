@@ -1,10 +1,8 @@
 'use strict'
 
-export default User;
-
 // faux model
 
-class User {
+export default class User {
   constructor(name, age, species) {
     this.name = name;
     this.age = age;
