@@ -6,6 +6,7 @@
 import assert from "node:assert";
 
 import http from "node:http";
+import {once} from "node:events";
 import {Buffer} from "node:buffer";
 
 /**
@@ -20,6 +21,18 @@ export {shouldNotHaveBody};
 export {shouldNotHaveHeader};
 export {rawRequest};
 export {shouldSkipQuery};
+
+// Streaming writes start the client before Supertest's end() can wait for listen.
+export async function createListeningServer(t, app) {
+  const server = http.createServer(app);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(async () => {
+    server.closeAllConnections();
+    await server[Symbol.asyncDispose]();
+  });
+  return server;
+}
 
 /**
  * Assert that a supertest response has a specific body.

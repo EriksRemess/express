@@ -7,6 +7,7 @@ import {AsyncLocalStorage} from "node:async_hooks";
 import express from "#express";
 import net from "node:net";
 import request from "supertest";
+import {createListeningServer} from "#test/support/utils";
 import {Buffer} from "node:buffer";
 describe("express.raw()", () => {
   before(() => {
@@ -43,7 +44,7 @@ describe("express.raw()", () => {
       .send("stuff")
       .expect(400, /content length/);
   });
-  it("should ignore non-numeric content-length when body is chunked", async () => {
+  it("should ignore non-numeric content-length when body is chunked", async (t) => {
     const app = express();
     app.use((req, res, next) => {
       req.headers["content-length"] = "nope";
@@ -59,7 +60,7 @@ describe("express.raw()", () => {
         res.json(req.body);
       }
     });
-    const test = request(app).post("/");
+    const test = request(await createListeningServer(t, app)).post("/");
     test.set("Content-Type", "application/octet-stream");
     test.set("Transfer-Encoding", "chunked");
     test.write("stuff");
@@ -121,33 +122,33 @@ describe("express.raw()", () => {
   });
 
   describe("with limit option", () => {
-    it("should 413 when over limit with Content-Length", async () => {
+    it("should 413 when over limit with Content-Length", async (t) => {
       const buf = Buffer.alloc(1028, ".");
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.set("Content-Length", "1028");
       test.write(buf);
       await test.expect(413);
     });
-    it("should 413 when over limit with chunked encoding", async () => {
+    it("should 413 when over limit with chunked encoding", async (t) => {
       const buf = Buffer.alloc(1028, ".");
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.set("Transfer-Encoding", "chunked");
       test.write(buf);
       await test.expect(413);
     });
-    it("should 413 when inflated body over limit", async () => {
+    it("should 413 when inflated body over limit", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/octet-stream");
       test.write(
@@ -158,45 +159,45 @@ describe("express.raw()", () => {
       );
       await test.expect(413);
     });
-    it("should accept number of bytes", async () => {
+    it("should accept number of bytes", async (t) => {
       const buf = Buffer.alloc(1028, ".");
       const app = createApp({
         limit: 1024,
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(buf);
       await test.expect(413);
     });
-    it("should not change when options altered", async () => {
+    it("should not change when options altered", async (t) => {
       const buf = Buffer.alloc(1028, ".");
       const options = {
         limit: "1kb",
       };
       const app = createApp(options);
       options.limit = "100kb";
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(buf);
       await test.expect(413);
     });
-    it("should not hang response", async () => {
+    it("should not hang response", async (t) => {
       const buf = Buffer.alloc(10240, ".");
       const app = createApp({
         limit: "8kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(buf);
       test.write(buf);
       test.write(buf);
       await test.expect(413);
     });
-    it("should not error when inflating", async () => {
+    it("should not error when inflating", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/octet-stream");
       test.write(
@@ -215,8 +216,8 @@ describe("express.raw()", () => {
           inflate: false,
         });
       });
-      it("should not accept content-encoding", async () => {
-        const test = request(__testApp).post("/");
+      it("should not accept content-encoding", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Encoding", "gzip");
         test.set("Content-Type", "application/octet-stream");
         test.write(
@@ -237,8 +238,8 @@ describe("express.raw()", () => {
           inflate: true,
         });
       });
-      it("should accept content-encoding", async () => {
-        const test = request(__testApp).post("/");
+      it("should accept content-encoding", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Encoding", "gzip");
         test.set("Content-Type", "application/octet-stream");
         test.write(
@@ -260,16 +261,16 @@ describe("express.raw()", () => {
           type: "application/vnd+octets",
         });
       });
-      it("should parse for custom type", async () => {
-        const test = request(__testApp).post("/");
+      it("should parse for custom type", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Type", "application/vnd+octets");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
-      it("should ignore standard type", async () => {
-        const test = request(__testApp).post("/");
+      it("should ignore standard type", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Type", "application/octet-stream");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, "");
@@ -281,52 +282,52 @@ describe("express.raw()", () => {
           type: ["application/octet-stream", "application/vnd+octets"],
         });
       });
-      it('should parse "application/octet-stream"', async () => {
-        const test = request(__testApp).post("/");
+      it('should parse "application/octet-stream"', async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Type", "application/octet-stream");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
-      it('should parse "application/vnd+octets"', async () => {
-        const test = request(__testApp).post("/");
+      it('should parse "application/vnd+octets"', async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Type", "application/vnd+octets");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
-      it('should ignore "application/x-foo"', async () => {
-        const test = request(__testApp).post("/");
+      it('should ignore "application/x-foo"', async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Type", "application/x-foo");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, "");
       });
     });
     describe("when a function", () => {
-      it("should parse when truthy value returned", async () => {
+      it("should parse when truthy value returned", async (t) => {
         const app = createApp({
           type: accept,
         });
         function accept(req) {
           return req.headers["content-type"] === "application/vnd.octet";
         }
-        const test = request(app).post("/");
+        const test = request(await createListeningServer(t, app)).post("/");
         test.set("Content-Type", "application/vnd.octet");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
         });
       });
-      it("should work without content-type", async () => {
+      it("should work without content-type", async (t) => {
         const app = createApp({
           type: accept,
         });
         function accept(req) {
           return true;
         }
-        const test = request(app).post("/");
+        const test = request(await createListeningServer(t, app)).post("/");
         test.write(Buffer.from("000102", "hex"));
         await test.expect(200, {
           buf: "000102",
@@ -352,18 +353,18 @@ describe("express.raw()", () => {
         /TypeError: option verify must be function/,
       );
     });
-    it("should error from verify", async () => {
+    it("should error from verify", async (t) => {
       const app = createApp({
         verify: (req, res, buf) => {
           if (buf[0] === 0x00) throw new Error("no leading null");
         },
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("000102", "hex"));
       await test.expect(403, "[entity.verify.failed] no leading null");
     });
-    it("should allow custom codes", async () => {
+    it("should allow custom codes", async (t) => {
       const app = createApp({
         verify: (req, res, buf) => {
           if (buf[0] !== 0x00) return;
@@ -372,18 +373,18 @@ describe("express.raw()", () => {
           throw err;
         },
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("000102", "hex"));
       await test.expect(400, "[entity.verify.failed] no leading null");
     });
-    it("should allow pass-through", async () => {
+    it("should allow pass-through", async (t) => {
       const app = createApp({
         verify: (req, res, buf) => {
           if (buf[0] === 0x00) throw new Error("no leading null");
         },
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("0102", "hex"));
       await test.expect(200, {
@@ -447,8 +448,8 @@ describe("express.raw()", () => {
         .expect(200)
         .expect("x-store-foo", "bar");
     });
-    it("should persist store when inflated", async () => {
-      const test = request(__testApp).post("/");
+    it("should persist store when inflated", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/octet-stream");
       test.write(
@@ -464,8 +465,8 @@ describe("express.raw()", () => {
       });
       await test;
     });
-    it("should persist store when inflate error", async () => {
-      const test = request(__testApp).post("/");
+    it("should persist store when inflate error", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/octet-stream");
       test.write(
@@ -491,8 +492,8 @@ describe("express.raw()", () => {
     before(() => {
       __testApp = createApp();
     });
-    it("should ignore charset", async () => {
-      const test = request(__testApp).post("/");
+    it("should ignore charset", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/octet-stream; charset=utf-8");
       test.write(Buffer.from("6e616d6520697320e8aeba", "hex"));
       await test.expect(200, {
@@ -506,16 +507,16 @@ describe("express.raw()", () => {
         limit: "10kb",
       });
     });
-    it("should parse without encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse without encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, {
         buf: "6e616d653de8aeba",
       });
     });
-    it("should support identity encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support identity encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "identity");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("6e616d653de8aeba", "hex"));
@@ -523,8 +524,8 @@ describe("express.raw()", () => {
         buf: "6e616d653de8aeba",
       });
     });
-    it("should support gzip encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support gzip encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/octet-stream");
       test.write(
@@ -537,8 +538,8 @@ describe("express.raw()", () => {
         buf: "6e616d653de8aeba",
       });
     });
-    it("should support deflate encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support deflate encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "deflate");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
@@ -546,8 +547,8 @@ describe("express.raw()", () => {
         buf: "6e616d653de8aeba",
       });
     });
-    it("should support brotli encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support brotli encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "br");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("8b06806e616d653d25453825414525424103", "hex"));
@@ -555,8 +556,8 @@ describe("express.raw()", () => {
         buf: "6e616d653d254538254145254241",
       });
     });
-    it("should be case-insensitive", async () => {
-      const test = request(__testApp).post("/");
+    it("should be case-insensitive", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "GZIP");
       test.set("Content-Type", "application/octet-stream");
       test.write(
@@ -569,8 +570,8 @@ describe("express.raw()", () => {
         buf: "6e616d653de8aeba",
       });
     });
-    it("should 415 on unknown encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should 415 on unknown encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "nulls");
       test.set("Content-Type", "application/octet-stream");
       test.write(Buffer.from("000000000000", "hex"));
@@ -694,14 +695,14 @@ describe("body stream encoding validation", () => {
     [express.text, "text/plain", Buffer.from("hello")],
     [express.urlencoded, "application/x-www-form-urlencoded", Buffer.from("name=test")],
   ]) {
-    it(`should reject pre-decoded ${type} streams before verification`, async () => {
+    it(`should reject pre-decoded ${type} streams before verification`, async (t) => {
       const app = express();
       let verified = false;
       app.use((req, res, next) => { req.setEncoding("utf8"); next(); });
       app.use(parser({ verify() { verified = true; } }));
       app.post("/", (req, res) => res.sendStatus(200));
       app.use((err, req, res, next) => res.status(err.status).send(err.type));
-      const test = request(app).post("/").set("Content-Type", type).set("Transfer-Encoding", "chunked");
+      const test = request(await createListeningServer(t, app)).post("/").set("Content-Type", type).set("Transfer-Encoding", "chunked");
       test.write(body);
       await test.expect(500, "stream.encoding.set");
       assert.strictEqual(verified, false);

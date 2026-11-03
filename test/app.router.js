@@ -1446,6 +1446,17 @@ describe("trailing slash matching consistency", () => {
     }
 
     for (const middleware of [false, true]) {
+      it(`should preserve array root guards with strict=${strict}, middleware=${middleware}`, async () => {
+        const app = express();
+        app.set("strict routing", strict);
+        if (middleware) app.use((req, res, next) => next());
+        app.get(["/"], (req, res) => res.sendStatus(401));
+        app.get("/", (req, res) => res.send("PRIVATE DATA"));
+        await request(app).get("/").expect(401);
+        await request(app).get("//").expect(strict ? 404 : 401);
+        await request(app).get("///").expect(404);
+      });
+
       it(`should preserve route guards with strict=${strict}, middleware=${middleware}`, async () => {
         const app = express();
         app.set("strict routing", strict);
@@ -1468,4 +1479,15 @@ describe("trailing slash matching consistency", () => {
       });
     }
   }
+});
+
+describe("parameters in the same path segment", () => {
+  it("should assign ambiguous delimiters to the last parameter", async () => {
+    const app = express();
+    app.get("/:file.:ext", (req, res) => res.json(req.params));
+    await request(app).get("/foo.json.html").expect(200, {
+      file: "foo",
+      ext: "json.html",
+    });
+  });
 });

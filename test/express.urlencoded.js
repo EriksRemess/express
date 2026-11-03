@@ -7,6 +7,7 @@ import {AsyncLocalStorage} from "node:async_hooks";
 import {Buffer} from "node:buffer";
 import express from "#express";
 import request from "supertest";
+import {createListeningServer} from "#test/support/utils";
 import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 describe("express.urlencoded()", () => {
   before(() => {
@@ -288,8 +289,8 @@ describe("express.urlencoded()", () => {
           inflate: false,
         });
       });
-      it("should not accept content-encoding", async () => {
-        const test = request(__testApp).post("/");
+      it("should not accept content-encoding", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Encoding", "gzip");
         test.set("Content-Type", "application/x-www-form-urlencoded");
         test.write(
@@ -310,8 +311,8 @@ describe("express.urlencoded()", () => {
           inflate: true,
         });
       });
-      it("should accept content-encoding", async () => {
-        const test = request(__testApp).post("/");
+      it("should accept content-encoding", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Encoding", "gzip");
         test.set("Content-Type", "application/x-www-form-urlencoded");
         test.write(
@@ -338,23 +339,23 @@ describe("express.urlencoded()", () => {
         .send("str=" + buf.toString())
         .expect(413);
     });
-    it("should 413 when over limit with chunked encoding", async () => {
+    it("should 413 when over limit with chunked encoding", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
       const buf = Buffer.alloc(1024, ".");
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.set("Transfer-Encoding", "chunked");
       test.write("str=");
       test.write(buf.toString());
       await test.expect(413);
     });
-    it("should 413 when inflated body over limit", async () => {
+    it("should 413 when inflated body over limit", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(
@@ -390,23 +391,23 @@ describe("express.urlencoded()", () => {
         .send("str=" + buf.toString())
         .expect(413);
     });
-    it("should not hang response", async () => {
+    it("should not hang response", async (t) => {
       const app = createApp({
         limit: "8kb",
       });
       const buf = Buffer.alloc(10240, ".");
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(buf);
       test.write(buf);
       test.write(buf);
       await test.expect(413);
     });
-    it("should not error when inflating", async () => {
+    it("should not error when inflating", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(
@@ -686,14 +687,14 @@ describe("express.urlencoded()", () => {
           .send("user=tobi")
           .expect(200, '{"user":"tobi"}');
       });
-      it("should work without content-type", async () => {
+      it("should work without content-type", async (t) => {
         const app = createApp({
           type: accept,
         });
         function accept(req) {
           return true;
         }
-        const test = request(app).post("/");
+        const test = request(await createListeningServer(t, app)).post("/");
         test.write("user=tobi");
         await test.expect(200, '{"user":"tobi"}');
       });
@@ -771,13 +772,13 @@ describe("express.urlencoded()", () => {
         .send("user=tobi")
         .expect(200, '{"user":"tobi"}');
     });
-    it("should 415 on unknown charset prior to verify", async () => {
+    it("should 415 on unknown charset prior to verify", async (t) => {
       const app = createApp({
         verify: (req, res, buf) => {
           throw new Error("unexpected verify call");
         },
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=x-bogus",
@@ -837,8 +838,8 @@ describe("express.urlencoded()", () => {
         .expect(200)
         .expect("x-store-foo", "bar");
     });
-    it("should persist store when inflated", async () => {
-      const test = request(__testApp).post("/");
+    it("should persist store when inflated", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(
@@ -852,8 +853,8 @@ describe("express.urlencoded()", () => {
       await test.expect('{"name":"论"}');
       await test;
     });
-    it("should persist store when inflate error", async () => {
-      const test = request(__testApp).post("/");
+    it("should persist store when inflate error", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(
@@ -879,8 +880,8 @@ describe("express.urlencoded()", () => {
     before(() => {
       __testApp = createApp();
     });
-    it("should parse utf-8", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse utf-8", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=utf-8",
@@ -888,8 +889,8 @@ describe("express.urlencoded()", () => {
       test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should parse when content-length != char length", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse when content-length != char length", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=utf-8",
@@ -898,14 +899,14 @@ describe("express.urlencoded()", () => {
       test.write(Buffer.from("746573743dc3a5", "hex"));
       await test.expect(200, '{"test":"å"}');
     });
-    it("should default to utf-8", async () => {
-      const test = request(__testApp).post("/");
+    it("should default to utf-8", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should fail on unknown charset", async () => {
-      const test = request(__testApp).post("/");
+    it("should fail on unknown charset", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set(
         "Content-Type",
         "application/x-www-form-urlencoded; charset=koi8-r",
@@ -923,21 +924,21 @@ describe("express.urlencoded()", () => {
         limit: "10kb",
       });
     });
-    it("should parse without encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse without encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support identity encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support identity encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "identity");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(Buffer.from("6e616d653de8aeba", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support gzip encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support gzip encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(
@@ -948,15 +949,15 @@ describe("express.urlencoded()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support deflate encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support deflate encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "deflate");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(Buffer.from("789ccb4bcc4db57db16e17001068042f", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should be case-insensitive", async () => {
-      const test = request(__testApp).post("/");
+    it("should be case-insensitive", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "GZIP");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(
@@ -967,8 +968,8 @@ describe("express.urlencoded()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should 415 on unknown encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should 415 on unknown encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "nulls");
       test.set("Content-Type", "application/x-www-form-urlencoded");
       test.write(Buffer.from("000000000000", "hex"));

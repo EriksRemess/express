@@ -7,6 +7,7 @@ import {AsyncLocalStorage} from "node:async_hooks";
 import {Buffer} from "node:buffer";
 import express from "#express";
 import request from "supertest";
+import {createListeningServer} from "#test/support/utils";
 import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 describe("express.json()", () => {
   it("should parse JSON", async () => {
@@ -216,23 +217,23 @@ describe("express.json()", () => {
         )
         .expect(413, "[entity.too.large] request entity too large");
     });
-    it("should 413 when over limit with chunked encoding", async () => {
+    it("should 413 when over limit with chunked encoding", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
       const buf = Buffer.alloc(1024, ".");
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/json");
       test.set("Transfer-Encoding", "chunked");
       test.write('{"str":');
       test.write('"' + buf.toString() + '"}');
       await test.expect(413);
     });
-    it("should 413 when inflated body over limit", async () => {
+    it("should 413 when inflated body over limit", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(
@@ -276,23 +277,23 @@ describe("express.json()", () => {
         )
         .expect(413);
     });
-    it("should not hang response", async () => {
+    it("should not hang response", async (t) => {
       const buf = Buffer.alloc(10240, ".");
       const app = createApp({
         limit: "8kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/json");
       test.write(buf);
       test.write(buf);
       test.write(buf);
       await test.expect(413);
     });
-    it("should not error when inflating", async () => {
+    it("should not error when inflating", async (t) => {
       const app = createApp({
         limit: "1kb",
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(
@@ -311,8 +312,8 @@ describe("express.json()", () => {
           inflate: false,
         });
       });
-      it("should not accept content-encoding", async () => {
-        const test = request(__testApp).post("/");
+      it("should not accept content-encoding", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Encoding", "gzip");
         test.set("Content-Type", "application/json");
         test.write(
@@ -333,8 +334,8 @@ describe("express.json()", () => {
           inflate: true,
         });
       });
-      it("should accept content-encoding", async () => {
-        const test = request(__testApp).post("/");
+      it("should accept content-encoding", async (t) => {
+        const test = request(await createListeningServer(t, __testApp)).post("/");
         test.set("Content-Encoding", "gzip");
         test.set("Content-Type", "application/json");
         test.write(
@@ -486,14 +487,14 @@ describe("express.json()", () => {
           .send('{"user":"tobi"}')
           .expect(200, '{"user":"tobi"}');
       });
-      it("should work without content-type", async () => {
+      it("should work without content-type", async (t) => {
         const app = createApp({
           type: accept,
         });
         function accept(req) {
           return true;
         }
-        const test = request(app).post("/");
+        const test = request(await createListeningServer(t, app)).post("/");
         test.write('{"user":"tobi"}');
         await test.expect(200, '{"user":"tobi"}');
       });
@@ -584,13 +585,13 @@ describe("express.json()", () => {
         .send('{"user":"tobi"}')
         .expect(200, '{"user":"tobi"}');
     });
-    it("should work with different charsets", async () => {
+    it("should work with different charsets", async (t) => {
       const app = createApp({
         verify: (req, res, buf) => {
           if (buf[0] === 0x5b) throw new Error("no arrays");
         },
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/json; charset=utf-16");
       test.write(
         Buffer.from(
@@ -600,13 +601,13 @@ describe("express.json()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should 415 on unknown charset prior to verify", async () => {
+    it("should 415 on unknown charset prior to verify", async (t) => {
       const app = createApp({
         verify: (req, res, buf) => {
           throw new Error("unexpected verify call");
         },
       });
-      const test = request(app).post("/");
+      const test = request(await createListeningServer(t, app)).post("/");
       test.set("Content-Type", "application/json; charset=x-bogus");
       test.write(Buffer.from("00000000", "hex"));
       await test.expect(
@@ -664,8 +665,8 @@ describe("express.json()", () => {
         .expect("x-store-foo", "bar")
         .expect("");
     });
-    it("should persist store when inflated", async () => {
-      const test = request(__testApp).post("/");
+    it("should persist store when inflated", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(
@@ -679,8 +680,8 @@ describe("express.json()", () => {
       await test.expect('{"name":"论"}');
       await test;
     });
-    it("should persist store when inflate error", async () => {
-      const test = request(__testApp).post("/");
+    it("should persist store when inflate error", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(
@@ -714,14 +715,14 @@ describe("express.json()", () => {
     before(() => {
       __testApp = createApp();
     });
-    it("should parse utf-8", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse utf-8", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/json; charset=utf-8");
       test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should parse utf-16", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse utf-16", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/json; charset=utf-16");
       test.write(
         Buffer.from(
@@ -731,21 +732,21 @@ describe("express.json()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should parse when content-length != char length", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse when content-length != char length", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/json; charset=utf-8");
       test.set("Content-Length", "13");
       test.write(Buffer.from("7b2274657374223a22c3a5227d", "hex"));
       await test.expect(200, '{"test":"å"}');
     });
-    it("should default to utf-8", async () => {
-      const test = request(__testApp).post("/");
+    it("should default to utf-8", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/json");
       test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should fail on unknown charset", async () => {
-      const test = request(__testApp).post("/");
+    it("should fail on unknown charset", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/json; charset=koi8-r");
       test.write(Buffer.from("7b226e616d65223a22cec5d4227d", "hex"));
       await test.expect(
@@ -760,21 +761,21 @@ describe("express.json()", () => {
         limit: "1kb",
       });
     });
-    it("should parse without encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should parse without encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "application/json");
       test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support identity encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support identity encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "identity");
       test.set("Content-Type", "application/json");
       test.write(Buffer.from("7b226e616d65223a22e8aeba227d", "hex"));
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support gzip encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support gzip encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(
@@ -785,8 +786,8 @@ describe("express.json()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should support deflate encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should support deflate encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "deflate");
       test.set("Content-Type", "application/json");
       test.write(
@@ -794,8 +795,8 @@ describe("express.json()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should be case-insensitive", async () => {
-      const test = request(__testApp).post("/");
+    it("should be case-insensitive", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "GZIP");
       test.set("Content-Type", "application/json");
       test.write(
@@ -806,8 +807,8 @@ describe("express.json()", () => {
       );
       await test.expect(200, '{"name":"论"}');
     });
-    it("should 415 on unknown encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should 415 on unknown encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "nulls");
       test.set("Content-Type", "application/json");
       test.write(Buffer.from("000000000000", "hex"));
@@ -816,8 +817,8 @@ describe("express.json()", () => {
         '[encoding.unsupported] unsupported content encoding "nulls"',
       );
     });
-    it("should 400 on malformed encoding", async () => {
-      const test = request(__testApp).post("/");
+    it("should 400 on malformed encoding", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(
@@ -828,9 +829,9 @@ describe("express.json()", () => {
       );
       await test.expect(400);
     });
-    it("should 413 when inflated value exceeds limit", async () => {
+    it("should 413 when inflated value exceeds limit", async (t) => {
       // gzip'd data exceeds 1kb, but deflated below 1kb
-      const test = request(__testApp).post("/");
+      const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Encoding", "gzip");
       test.set("Content-Type", "application/json");
       test.write(

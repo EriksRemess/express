@@ -1,6 +1,7 @@
 "use strict";
 
 import {describe, it} from "node:test";
+import assert from "node:assert/strict";
 import express from "#express";
 import request from "supertest";
 describe("req", () => {
@@ -57,30 +58,36 @@ describe("req", () => {
       describe('when "trust proxy" is disabled', () => {
         it("should return the remote address", async () => {
           const app = express();
+          let remoteAddress;
           app.use((req, res, next) => {
+            remoteAddress = req.socket.remoteAddress;
             res.send(req.ip);
           });
           const test = request(app).get("/");
           test.set("X-Forwarded-For", "client, p1, p2");
-          await test.expect(200, getExpectedClientAddress(test._server));
+          await test.expect(200).expect(res => assert.equal(res.text, remoteAddress));
         });
       });
     });
     describe("when X-Forwarded-For is not present", () => {
       it("should return the remote address", async () => {
         const app = express();
+        let remoteAddress;
         app.enable("trust proxy");
         app.use((req, res, next) => {
+          remoteAddress = req.socket.remoteAddress;
           res.send(req.ip);
         });
         const test = request(app).get("/");
-        await test.expect(200, getExpectedClientAddress(test._server));
+        await test.expect(200).expect(res => assert.equal(res.text, remoteAddress));
       });
 
       it("should ignore inherited X-Forwarded-For header values", async () => {
         const app = express();
+        let remoteAddress;
         app.enable("trust proxy");
         app.use((req, res) => {
+          remoteAddress = req.socket.remoteAddress;
           const descriptor = Object.getOwnPropertyDescriptor(Object.prototype, "x-forwarded-for");
           let restored = false;
 
@@ -110,16 +117,8 @@ describe("req", () => {
         });
 
         const test = request(app).get("/");
-        await test.expect(200, getExpectedClientAddress(test._server));
+        await test.expect(200).expect(res => assert.equal(res.text, remoteAddress));
       });
     });
   });
 });
-
-/**
- * Get the local client address depending on AF_NET of server
- */
-
-function getExpectedClientAddress(server) {
-  return server.address().address === "::" ? "::ffff:127.0.0.1" : "127.0.0.1";
-}

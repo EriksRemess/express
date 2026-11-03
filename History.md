@@ -8,6 +8,10 @@
 * Keep the callable router linked to `Router.prototype` for constructor and
   extension compatibility.
 * Support conditional revalidation for `QUERY` requests.
+* Update to `path-to-regexp` 9. Ambiguous parameters within a segment now
+  assign delimiters to the last parameter: `/:file.:ext` matches
+  `/foo.json.html` as `file=foo`, `ext=json.html`. Preserve optional trailing
+  slashes on root routes, including array-based route guards.
 
 ## Security
 
@@ -33,6 +37,8 @@
 
 ## Fixes
 
+* Wait for test servers to listen before streaming request bodies, and assert
+  client IP addresses without relying on Supertest's server startup timing.
 * Fix class initialization in the view-locals and view-constructor examples.
 * Safely encode consecutive unpaired Unicode surrogates and incomplete percent
   escapes in redirect targets without changing valid escape sequences.
