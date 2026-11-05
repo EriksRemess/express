@@ -13,7 +13,7 @@ export const listUsers = (req, res) => {
 
 export const load = (req, res, next) => {
   const id = req.params.id;
-  req.user = users[id];
+  req.user = users.find((user, index) => String(index) === id);
   if (req.user) {
     next();
   } else {
@@ -43,5 +43,5 @@ export const update = (req, res) => {
   const user = req.body.user;
   req.user.name = user.name;
   req.user.email = user.email;
-  res.redirect(req.get('Referrer') || '/');
+  res.redirect('/user/' + req.params.id);
 };

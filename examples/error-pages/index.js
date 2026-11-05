@@ -11,9 +11,8 @@ const app = express();
 
 export default app;
 import logger from 'morgan';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 const silent = process.env.NODE_ENV === 'test';
 
 // general config

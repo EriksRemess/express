@@ -10,9 +10,8 @@ import express from "#express";
 import fs from 'node:fs';
 import { marked } from 'marked';
 import path from 'node:path';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 

@@ -125,6 +125,7 @@ describe("auth", () => {
     it("should succeed with proper credentials", async () => {
       await request(app)
         .post("/login")
+        .set("Referer", "https://example.invalid/")
         .type("urlencoded")
         .send("username=tj&password=foobar")
         .expect("Location", "/")

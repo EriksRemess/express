@@ -14,9 +14,8 @@ import methodOverride from '#lib/utils/method-override';
 import { index } from "#examples/route-separation/site";
 import { listPosts } from "#examples/route-separation/post";
 import { listUsers, load, view, edit, update } from "#examples/route-separation/user";
-import { pathToFileURL } from 'node:url';
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 export default app;
 
 // Config

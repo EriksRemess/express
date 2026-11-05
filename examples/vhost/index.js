@@ -8,9 +8,8 @@ import express from "#express";
 
 import logger from 'morgan';
 import vhost from '#lib/utils/vhost';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 /*
 edit /etc/hosts:
@@ -31,7 +30,7 @@ main.get('/', (req, res) => {
 });
 
 main.get('/:sub', (req, res) => {
-  res.send('requested ' + req.params.sub);
+  res.type('text').send('requested ' + req.params.sub);
 });
 
 // Redirect app

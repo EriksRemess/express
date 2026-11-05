@@ -10,9 +10,8 @@ import { pbkdf2 as pbkdf2Callback, randomBytes, timingSafeEqual } from 'node:cry
 import path from 'node:path';
 import session from 'express-session';
 import { promisify } from 'node:util';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 const pbkdf2 = promisify(pbkdf2Callback);
@@ -74,8 +73,7 @@ const initUsers = (async () => {
 
 async function authenticate(name, pass) {
   await initUsers;
-  if (isMain) console.log('authenticating %s:%s', name, pass);
-  const user = users[name];
+  const user = Object.hasOwn(users, name) ? users[name] : undefined;
   // query the db for the given username
   if (!user) return null;
   // apply the same algorithm to the POSTed password, applying
@@ -139,7 +137,7 @@ app.post('/login', async (req, res, next) => {
       req.session.success = 'Authenticated as ' + user.name
         + ' click to <a href="/logout">logout</a>. '
         + ' You may now access <a href="/restricted">/restricted</a>.';
-      return res.redirect(req.get('Referrer') || '/');
+      return res.redirect('/');
     }
 
     req.session.error = 'Authentication failed, please check your '

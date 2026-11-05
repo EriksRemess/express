@@ -54,8 +54,10 @@ describe("route-separation", () => {
       await new Promise((resolve, reject) => {
         request(app)
           .put("/user/0/edit")
+          .set("Referer", "https://example.invalid/")
           .set("Content-Type", "application/x-www-form-urlencoded")
           .send({ user: { name: "TJ", email: "tj-invalid@vision-media.ca" } })
+          .expect("Location", "/user/0")
           .expect(302, err => {
             if (err) return reject(err);
             request(app)

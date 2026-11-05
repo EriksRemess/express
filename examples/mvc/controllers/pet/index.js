@@ -9,7 +9,7 @@ import db from "#examples/mvc/db";
 export const engine = 'ejs';
 
 export function before(req, res, next) {
-  const pet = db.pets[req.params.pet_id];
+  const pet = db.pets.find(pet => String(pet.id) === req.params.pet_id);
   if (!pet) return next('route');
   req.pet = pet;
   next();

@@ -77,6 +77,12 @@ describe("web-service", () => {
       it("should 404 with unknown user", async () => {
         await request(app).get("/api/user/bob/repos?api-key=foo").expect(404);
       });
+
+      it("should 404 for inherited property names", async () => {
+        for (const name of ["__proto__", "constructor", "toString"]) {
+          await request(app).get(`/api/user/${name}/repos?api-key=foo`).expect(404);
+        }
+      });
     });
   });
 

@@ -29,14 +29,35 @@ describe("fresh()", () => {
     });
   });
 
-  it('should treat "Cache-Control: no-cache" as stale', () => {
-    const reqHeaders = {
-      "cache-control": "max-age=0, no-cache",
-      "if-none-match": '"12345"',
-    };
+  for (const cacheControl of ["no-cache", "No-Cache", "NO-CACHE", "max-age=0, No-CaChE, max-stale=0"]) {
+    it(`should treat Cache-Control: ${cacheControl} as stale`, () => {
+      assert.strictEqual(isFresh({
+        "cache-control": cacheControl,
+        "if-none-match": '"12345"',
+      }, '"12345"'), false);
 
-    assert.strictEqual(isFresh(reqHeaders, '"12345"'), false);
-  });
+      const modified = new Date(0).toUTCString();
+      assert.strictEqual(isFresh({
+        "cache-control": cacheControl,
+        "if-modified-since": modified,
+      }, undefined, modified), false);
+    });
+  }
+
+  for (const cacheControl of [
+    'extension="one, no-cache, two"',
+    'extension="one, No-Cache, two", max-age=0',
+    'extension="one\\\", no-cache, two"',
+    ['extension="one, no-cache, two"', 'max-age=0'],
+  ]) {
+    it(`should ignore no-cache inside quoted values: ${JSON.stringify(cacheControl)}`, () => {
+      const headers = { "cache-control": cacheControl, "if-none-match": '"12345"' };
+      assert.strictEqual(isFresh(headers, '"12345"'), true);
+
+      headers["cache-control"] = `${cacheControl}, No-Cache`;
+      assert.strictEqual(isFresh(headers, '"12345"'), false);
+    });
+  }
 
   it('should treat "If-None-Match: *" as fresh', () => {
     const reqHeaders = {

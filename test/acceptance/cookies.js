@@ -50,8 +50,10 @@ describe("cookies", () => {
             if (err) return reject(err);
             request(app)
               .get("/forget")
+              .set("Referer", "https://example.invalid/")
               .set("Cookie", res.headers["set-cookie"][0])
               .expect("Set-Cookie", /remember=;/)
+              .expect("Location", "/")
               .expect(302, (err) => {
                 if (err != null) {
                   reject(err);
@@ -68,9 +70,11 @@ describe("cookies", () => {
     it("should set a cookie", async () => {
       await request(app)
         .post("/")
+        .set("Referer", "https://example.invalid/")
         .type("urlencoded")
         .send({ remember: 1 })
         .expect("Set-Cookie", /remember=1/)
+        .expect("Location", "/")
         .expect(302);
     });
 

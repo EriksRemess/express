@@ -31,6 +31,38 @@ describe("express.static()", () => {
     it("should serve static files", async () => {
       await request(__testApp).get("/todo.txt").expect(200, "- groceries");
     });
+
+    for (const replaceParent of [false, true]) {
+      it(`should resolve the current root after replacing ${replaceParent ? "its parent" : "the root"} with a symlink`, async () => {
+        const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));
+        const original = path.join(tempRoot, "original");
+        const replacement = path.join(tempRoot, "replacement");
+        const root = replaceParent ? path.join(original, "public") : original;
+        const replacementRoot = replaceParent ? path.join(replacement, "public") : replacement;
+        const outside = path.join(tempRoot, "outside");
+
+        try {
+          fs.mkdirSync(root, { recursive: true });
+          fs.mkdirSync(replacementRoot, { recursive: true });
+          fs.mkdirSync(outside);
+          fs.writeFileSync(path.join(root, "file.txt"), "BEFORE");
+          fs.writeFileSync(path.join(replacementRoot, "file.txt"), "AFTER");
+          fs.writeFileSync(path.join(outside, "file.txt"), "PWN!");
+          fs.symlinkSync(outside, path.join(replacementRoot, "escape"));
+
+          const app = createApp(root, { fallthrough: false });
+          await request(app).get("/file.txt").expect(200, "BEFORE");
+
+          fs.renameSync(original, path.join(tempRoot, "previous"));
+          fs.symlinkSync(replacement, original);
+
+          await request(app).get("/file.txt").expect(200, "AFTER");
+          await request(app).get("/escape/file.txt").expect(403);
+        } finally {
+          fs.rmSync(tempRoot, { recursive: true, force: true });
+        }
+      });
+    }
     it("should support nesting", async () => {
       await request(__testApp).get("/users/tobi.txt").expect(200, "ferret");
     });
@@ -614,6 +646,15 @@ describe("express.static()", () => {
     });
   });
   describe("maxAge", () => {
+    for (const [maxAge, seconds] of [["1 day", 86400], ["2 hours", 7200], [".5h", 1800]]) {
+      it(`should accept duration ${JSON.stringify(maxAge)}`, async () => {
+        await request(createApp(fixtures, { maxAge }))
+          .get("/todo.txt")
+          .expect("Cache-Control", `public, max-age=${seconds}`)
+          .expect(200);
+      });
+    }
+
     it("should accept string", async () => {
       await request(
         createApp(fixtures, {

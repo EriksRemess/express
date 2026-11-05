@@ -20,6 +20,22 @@ const cases = [
 ];
 
 describe('response transfer framing', () => {
+  for (const middleware of [false, true]) {
+    it(`should use valid framing for automatic OPTIONS with middleware=${middleware}`, async () => {
+      const app = express();
+      if (middleware) app.use((req, res, next) => next());
+      app.get('/resource', (req, res) => res.send('ok'));
+
+      await request((req, res) => {
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('Content-Length', '999');
+        app(req, res);
+      }).options('/resource').expect(200, 'GET, HEAD').expect('Allow', 'GET, HEAD')
+        .expect('Transfer-Encoding', 'chunked')
+        .expect(res => assert.strictEqual(res.headers['content-length'], undefined));
+    });
+  }
+
   for (const [name, url, status, setup] of cases) {
     it(`should avoid conflicting framing for ${name}`, async () => {
       const app = express();

@@ -780,6 +780,37 @@ describe("res", () => {
         });
       });
       describe("when string", () => {
+        for (const [maxAge, seconds] of [
+          ["2000 milliseconds", 2],
+          ["2000 msecs", 2],
+          ["2 seconds", 2],
+          ["2 secs", 2],
+          ["2 minutes", 120],
+          ["2 mins", 120],
+          ["2 hours", 7200],
+          ["2 hrs", 7200],
+          ["2 days", 172800],
+          ["2 weeks", 1209600],
+          ["0.5 years", 15778800],
+          ["0.5 yrs", 15778800],
+          ["1 day", 86400],
+          ["1 HoUr", 3600],
+          [".5h", 1800],
+          ["-.5h", 0],
+        ]) {
+          it(`should accept duration ${JSON.stringify(maxAge)}`, async () => {
+            const app = express();
+            app.use((req, res) => {
+              res.sendFile(path.resolve(fixtures, "user.html"), { maxAge });
+            });
+
+            await request(app)
+              .get("/")
+              .expect(200)
+              .expect("Cache-Control", `public, max-age=${seconds}`);
+          });
+        }
+
         it("should accept plain number as milliseconds", async () => {
           const app = express();
           app.use((req, res) => {
@@ -1000,30 +1031,35 @@ describe("res", () => {
         }
       });
 
-      it("should reject outside files after root is replaced with a symlink", async () => {
+      it("should resolve the current root after replacement with a symlink", async () => {
         const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-sendfile-"));
         const root = path.join(tempRoot, "root");
+        const replacement = path.join(tempRoot, "replacement");
         const outside = path.join(tempRoot, "outside");
 
         try {
           fs.mkdirSync(root);
+          fs.mkdirSync(replacement);
           fs.mkdirSync(outside);
-          fs.writeFileSync(path.join(root, "file.txt"), "SAFE");
+          fs.writeFileSync(path.join(root, "file.txt"), "BEFORE");
+          fs.writeFileSync(path.join(replacement, "file.txt"), "AFTER");
           fs.writeFileSync(path.join(outside, "file.txt"), "PWN!");
+          fs.symlinkSync(outside, path.join(replacement, "escape"));
 
           const app = express();
           app.use((req, res) => {
-            res.sendFile("file.txt", {
+            res.sendFile(req.path, {
               root,
             });
           });
 
-          await request(app).get("/").expect(200, "SAFE");
+          await request(app).get("/file.txt").expect(200, "BEFORE");
 
           fs.rmSync(root, { recursive: true, force: true });
-          fs.symlinkSync(outside, root);
+          fs.symlinkSync(replacement, root);
 
-          await request(app).get("/").expect(403);
+          await request(app).get("/file.txt").expect(200, "AFTER");
+          await request(app).get("/escape/file.txt").expect(403);
         } finally {
           fs.rmSync(tempRoot, { recursive: true, force: true });
         }

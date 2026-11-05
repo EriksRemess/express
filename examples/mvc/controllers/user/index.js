@@ -13,7 +13,7 @@ export function before(req, res, next) {
   if (!id) return next();
   // pretend to query a database...
   process.nextTick(() => {
-    req.user = db.users[id];
+    req.user = db.users.find(user => String(user.id) === id);
     // cant find that user
     if (!req.user) return next('route');
     // found it, move on to the routes

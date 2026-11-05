@@ -46,6 +46,13 @@ describe("resource", () => {
   });
 
   describe("DELETE /users/1", () => {
+    it("should reject malformed IDs without deleting another user", async () => {
+      for (const id of ['2garbage', '2.5', '2e0', '02', '-1', '9007199254740992']) {
+        await request(app).del('/users/' + id).expect(400, 'Invalid user ID');
+      }
+      await request(app).get('/users/2').expect(200, { name: 'aaron' });
+    });
+
     it("should delete user 1", async () => {
       await request(app)
         .del("/users/1")
@@ -60,6 +67,12 @@ describe("resource", () => {
   });
 
   describe("GET /users/1..3.json", () => {
+    it("should reject malformed and reversed ranges", async () => {
+      for (const range of ['1junk..3', '1..3junk', '3..1', '1..9007199254740992']) {
+        await request(app).get('/users/' + range).expect(400, 'Invalid range');
+      }
+    });
+
     it("should respond with users 2 and 3 as json", async () => {
       await request(app)
         .get("/users/1..3.json")

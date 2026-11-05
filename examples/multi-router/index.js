@@ -3,9 +3,8 @@
 import express from "#express";
 import apiv1 from "#examples/multi-router/controllers/api_v1";
 import apiv2 from "#examples/multi-router/controllers/api_v2";
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 

@@ -7,6 +7,53 @@ const Route = express.Route;
 import { httpMethods } from "#lib/utils/methods";
 
 describe("Route", () => {
+  it("should preserve subclass HTTP method overrides", async () => {
+    class CustomRoute extends Route {
+      get(...handlers) {
+        return super.get((req, res, next) => {
+          req.customRoute = true;
+          next();
+        }, ...handlers);
+      }
+    }
+
+    const route = new CustomRoute("/");
+    route.get((req, res, next) => {
+      req.called = true;
+      next();
+    });
+
+    const req = { method: "GET", url: "/" };
+    await new Promise((resolve, reject) => {
+      route.dispatch(req, {}, err => err ? reject(err) : resolve());
+    });
+    assert.strictEqual(req.customRoute, true);
+    assert.strictEqual(req.called, true);
+  });
+
+  it("should honor HTTP method prototype overrides on existing routes", async () => {
+    const route = new Route("/");
+    const original = Route.prototype.get;
+
+    Route.prototype.get = function customGet(...handlers) {
+      return original.call(this, (req, res, next) => {
+        req.customRoute = true;
+        next();
+      }, ...handlers);
+    };
+
+    try {
+      route.get((req, res, next) => next());
+      const req = { method: "GET", url: "/" };
+      await new Promise((resolve, reject) => {
+        route.dispatch(req, {}, err => err ? reject(err) : resolve());
+      });
+      assert.strictEqual(req.customRoute, true);
+    } finally {
+      Route.prototype.get = original;
+    }
+  });
+
   it("should work without handlers", async () => {
     const req = { method: "GET", url: "/" };
     const route = new Route("/foo");

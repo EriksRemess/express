@@ -5,9 +5,8 @@
  */
 
 import express from "#express";
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 
@@ -18,17 +17,27 @@ export default app;
 app.resource = function(path, obj) {
   this.get(path, obj.index);
   this.get(path + '/:a..:b{.:format}', (req, res) => {
-    const a = parseInt(req.params.a, 10);
-    const b = parseInt(req.params.b, 10);
+    const a = parseIndex(req.params.a);
+    const b = parseIndex(req.params.b);
+    if (a === undefined || b === undefined || a > b) {
+      return res.status(400).send('Invalid range');
+    }
     const format = req.params.format;
     obj.range(req, res, a, b, format);
   });
   this.get(path + '/:id', obj.show);
   this.delete(path + '/:id', (req, res) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseIndex(req.params.id);
+    if (id === undefined) return res.status(400).send('Invalid user ID');
     obj.destroy(req, res, id);
   });
 };
+
+function parseIndex(value) {
+  const index = Number(value);
+  return Number.isSafeInteger(index) && index >= 0 && String(index) === value
+    ? index : undefined;
+}
 
 // Fake records
 
@@ -48,7 +57,8 @@ const User = {
     res.send(users);
   },
   show: (req, res) =>{
-    res.send(users[req.params.id] || { error: 'Cannot find user' });
+    const user = users.find((user, index) => String(index) === req.params.id);
+    res.send(user || { error: 'Cannot find user' });
   },
   destroy: (req, res, id) =>{
     const destroyed = id in users;
@@ -74,7 +84,7 @@ const User = {
 
 // curl http://localhost:3000/users     -- responds with all users
 // curl http://localhost:3000/users/1   -- responds with user 1
-// curl http://localhost:3000/users/4   -- responds with error
+// curl http://localhost:3000/users/9   -- responds with error
 // curl http://localhost:3000/users/1..3 -- responds with several users
 // curl -X DELETE http://localhost:3000/users/1  -- deletes the user
 

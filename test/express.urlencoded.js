@@ -1018,6 +1018,21 @@ function expectKeyCount(count) {
 
 describe("URL-encoded charset regressions", () => {
   for (const extended of [false, true]) {
+    it(`should decode raw and escaped Latin-1 bytes equally (extended=${extended})`, async (t) => {
+      const app = createApp({ extended });
+      const test = request(await createListeningServer(t, app)).post("/");
+      test.set("Content-Type", "application/x-www-form-urlencoded; charset=iso-8859-1");
+      test.write(Buffer.concat([
+        Buffer.from("raw="),
+        Buffer.from([0x80, 0x91, 0x9f]),
+        Buffer.from("&escaped=%80%91%9F"),
+      ]));
+      await test.expect(200, JSON.stringify({
+        raw: "\u0080\u0091\u009f",
+        escaped: "\u0080\u0091\u009f",
+      }));
+    });
+
     for (const defaultCharset of [false, true]) {
       it(`should decode Latin-1 keys and values (extended=${extended}, default=${defaultCharset})`, async () => {
         const app = createApp({ extended, ...(defaultCharset ? { defaultCharset: "iso-8859-1" } : {}) });

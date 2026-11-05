@@ -20,6 +20,15 @@ describe("vhost", () => {
           .set("Host", "example.com")
           .expect(200, "requested foo");
       });
+
+      it("should return URL text as plain text", async () => {
+        const text = '<img src=x onerror=alert(1)>';
+        await request(app)
+          .get('/' + encodeURIComponent(text))
+          .set("Host", "example.com")
+          .expect("Content-Type", "text/plain; charset=utf-8")
+          .expect(200, 'requested ' + text);
+      });
     });
   });
 

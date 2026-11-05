@@ -1481,6 +1481,54 @@ describe("trailing slash matching consistency", () => {
   }
 });
 
+describe("case-insensitive route matching consistency", () => {
+  const cases = [
+    ["/K", "/k", true],
+    ["/K", "/\u212a", false],
+    ["/\u212a", "/k", false],
+    ["/\u212a", "/\u212a", true],
+    ["/S", "/\u017f", false],
+    ["/\u017f", "/s", false],
+    ["/\u03a3", "/\u03c2", true],
+    ["/\u03a3", "/\u03c3", true],
+    ["/\u0130", "/i\u0307", false],
+    ["/\u00df", "/SS", false],
+    ["/\u1e9e", "/\u00df", false],
+    ["/\u00b5", "/\u039c", true],
+    ["/\u00c0", "/\u00e0", true],
+    ["/\u{10400}", "/\u{10428}", false],
+  ];
+
+  for (const end of [false, true]) {
+    for (const sensitive of [false, true]) {
+      it(`should use RegExp case semantics for routes and mounts, end=${end}, sensitive=${sensitive}`, () => {
+        for (const [pattern, path, insensitiveMatch] of cases) {
+          const expected = sensitive ? pattern === path : insensitiveMatch;
+          const candidate = end ? path : `${path}/child`;
+
+          for (const route of [pattern, [pattern]]) {
+            const layer = new Layer(route, { end, sensitive }, () => {});
+            assert.strictEqual(layer.match(candidate), expected, `${JSON.stringify(route)} vs ${candidate}`);
+            if (expected) assert.strictEqual(layer.path, path);
+          }
+        }
+      });
+    }
+  }
+
+  for (const middleware of [false, true]) {
+    for (const [pattern, candidate, status] of [["/K", "/k", 401], ["/\u212a", "/k", 404]]) {
+      it(`should preserve route guards for ${pattern} with middleware=${middleware}`, async () => {
+        const app = express();
+        if (middleware) app.use((req, res, next) => next());
+        app.get([pattern], (req, res) => res.sendStatus(401));
+        app.get(pattern, (req, res) => res.send("PRIVATE DATA"));
+        await request(app).get(candidate).expect(status);
+      });
+    }
+  }
+});
+
 describe("parameters in the same path segment", () => {
   it("should assign ambiguous delimiters to the last parameter", async () => {
     const app = express();

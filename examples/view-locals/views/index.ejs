@@ -13,8 +13,10 @@
   </head>
   <body>
     <h2><%= title %></h2>
-    <% users.forEach(function(user) { %>
-      <li><strong><%= user.name %></strong> is a <% user.age %> year old <%= user.species %></li>
-    <% }); %>
+    <ul>
+      <% users.forEach(function(user) { %>
+        <li><strong><%= user.name %></strong> is a <%= user.age %> year old <%= user.species %></li>
+      <% }); %>
+    </ul>
   </body>
 </html>

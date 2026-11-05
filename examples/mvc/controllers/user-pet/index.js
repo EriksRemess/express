@@ -11,7 +11,7 @@ export const prefix = '/user/:user_id';
 
 export function create(req, res, next) {
   const id = req.params.user_id;
-  const user = db.users[id];
+  const user = db.users.find(user => String(user.id) === id);
   const body = req.body;
   if (!user) return next('route');
   const pet = { name: body.pet.name };

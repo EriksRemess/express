@@ -7,9 +7,8 @@
 import createError from '#lib/utils/http-errors';
 
 import express from "#express";
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 const app = express();
 
 export default app;
@@ -38,7 +37,7 @@ app.param(['to', 'from'], (req, res, next, num, name) => {
 // Load user by id
 
 app.param('user', (req, res, next, id) => {
-  req.user = users[id]
+  req.user = users.find((user, index) => String(index) === id);
   if (req.user) {
     next();
   } else {

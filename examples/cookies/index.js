@@ -11,9 +11,8 @@ const app = express();
 export default app;
 import logger from 'morgan';
 import cookieParser from '#lib/utils/cookies';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 // custom log format
 if (process.env.NODE_ENV !== 'test') app.use(logger(':method :url'))
@@ -39,7 +38,7 @@ app.get('/', (req, res) => {
 
 app.get('/forget', (req, res) => {
   res.clearCookie('remember');
-  res.redirect(req.get('Referrer') || '/');
+  res.redirect('/');
 });
 
 app.post('/', (req, res) => {
@@ -49,7 +48,7 @@ app.post('/', (req, res) => {
     res.cookie('remember', 1, { maxAge: minute })
   }
 
-  res.redirect(req.get('Referrer') || '/');
+  res.redirect('/');
 });
 
 /* istanbul ignore next */

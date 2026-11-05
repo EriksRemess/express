@@ -1,85 +1,35 @@
 # Unreleased Changes
 
-## Fork identity and compatibility
+## Compatibility
 
-* Identify distributable artifacts as `5.2.1-eriks-esm.0` and point package
-  metadata and installation instructions at the `EriksRemess/express` fork.
 * Require Node.js 26 and use ESM throughout the package.
-* Keep the callable router linked to `Router.prototype` for constructor and
-  extension compatibility.
-* Support conditional revalidation for `QUERY` requests.
 * Update to `path-to-regexp` 9. Ambiguous parameters within a segment now
   assign delimiters to the last parameter: `/:file.:ext` matches
-  `/foo.json.html` as `file=foo`, `ext=json.html`. Preserve optional trailing
-  slashes on root routes, including array-based route guards.
+  `/foo.json.html` as `file=foo`, `ext=json.html`.
 
 ## Security
 
-* Escape control characters and Unicode line separators in debug logs so decoded
-  request paths cannot inject log records when debug logging is enabled.
-* Apply root-mounted middleware consistently in path arrays, preserving
-  authorization coverage and the order of matching alternatives.
-* Preserve raw URL paths during routing and mount trimming so dot-segment
-  normalization cannot bypass nested authorization middleware.
-* Bound route dispatch caches when clients supply arbitrary overridden methods.
-* Match every regular-expression virtual host alternative against the full hostname.
-* Match optional trailing slashes consistently across route implementations so
-  repeated slashes cannot bypass array-based authorization routes.
-* Apply mounted middleware to matching URLs regardless of letter case, preventing
-  case changes from bypassing authorization middleware.
-* Reset stateful route expressions for every match so global and sticky regexes
-  cannot skip authorization middleware on subsequent requests.
-* Require strong ETag comparisons for file `If-Match` and `If-Range` checks.
-* Refresh development dependencies and their affected transitive packages.
-* Remove `Content-Length` whenever `Transfer-Encoding` is present, including
-  application-supplied conflicting framing headers.
-* Preserve the final filename when POSIX or Windows paths end in separators.
+* Prevent authorization bypasses caused by inconsistent case, trailing-slash,
+  path-array, and stateful regular-expression matching.
+* Preserve raw paths during routing and mount traversal, and match virtual
+  hosts against the complete hostname.
+* Prevent conflicting `Content-Length` and `Transfer-Encoding` response headers.
+* Escape control characters in debug logs to prevent injected log records.
 
 ## Fixes
 
-* Wait for test servers to listen before streaming request bodies, and assert
-  client IP addresses without relying on Supertest's server startup timing.
-* Fix class initialization in the view-locals and view-constructor examples.
-* Safely encode consecutive unpaired Unicode surrogates and incomplete percent
-  escapes in redirect targets without changing valid escape sequences.
-* Preserve the existing signing secret when cookie parsers run more than once.
-* Correct body-parser tests to await complete requests with all assertions
-  registered, and prevent premature header awaits with lint.
-* Avoid conflicting response framing in file transfers, redirects, and errors.
-* Handle escaped quotes in media-type parameters and Accept negotiation.
-* Support form charset sentinels and Latin-1 numeric entity decoding.
-* Evaluate file date preconditions even when Last-Modified headers are disabled.
-* Normalize equivalent IPv4-mapped IPv6 addresses when evaluating proxy trust.
-* Preserve leading question marks and distinct leading-zero query and form keys.
-* Honor big-endian byte order marks for bodies declared as UTF-16.
-* Validate filename fallback strings consistently across repeated calls.
-* Resume routing in registration order after handlers rewrite the request URL.
-* Honor escaped route strings and correctly identify regular-expression captures.
-* Decode Latin-1 form keys and values using the declared charset, and preserve
-  values when nested query strings mix object and array notation.
-* Serve the full file when a requested suffix range exceeds its size.
-* Preserve error subclasses and reject body streams with a preconfigured encoding.
-* Parse commas within quoted ETags, require exact dates for `If-Range`, and apply
-  conditional and range response semantics according to the request method.
-* Replace the upstream generator quick start with an ESM example for this fork.
-* Update development dependencies to their latest stable releases and migrate the
-  Redis session example to the current store and client APIs.
-* Disable the npm release cooldown so fresh installs can resolve the latest
-  dependency versions required by the manifest.
-
-## 🚀 Improvements
-
-* Improve HTML structure in `res.redirect()` responses when HTML format is accepted by adding `<!DOCTYPE html>`, `<title>`, and `<body>` tags for better browser compatibility - by [@Bernice55231](https://github.com/Bernice55231) in [#5167](https://github.com/expressjs/express/pull/5167)
-
-* When calling `app.render` with options set to null, the locals object is handled correctly, preventing unexpected errors and making the method behave the same as when options is omitted or an empty object is passed - by [AkaHarshit](https://github.com/AkaHarshit) in [#6903](https://github.com/expressjs/express/pull/6903)
-
-    ```js
-    app.render('index', null, callback); // now works as expected
-    ```
-
-## ⚡ Performance
-
-* Avoid duplicate Content-Type header processing in `res.send()` when sending string responses without an explicit Content-Type header - by [@bjohansebas](https://github.com/bjohansebas) in [#6991](https://github.com/expressjs/express/pull/6991)
+* Restore `Router` and `Route` subclass and prototype overrides, including
+  function methods such as `call()` and `apply()` on routers.
+* Correct file revalidation, range handling, and cache-lifetime parsing. Refresh
+  replaced file roots and preserve request async context during file serving.
+* Correct Latin-1 and UTF-16 body decoding and query/form parsing edge cases.
+* Handle IPv4-mapped IPv6 addresses consistently in proxy trust and subdomains.
+* Correct parsing of quoted cache directives, ETags, and media-type parameters.
+* Preserve cookie signing secrets when cookie parsers run more than once.
+* Safely encode malformed Unicode and percent escapes in redirect targets.
+* Handle null options in `app.render()` ([#6903](https://github.com/expressjs/express/pull/6903)).
+* Return complete HTML documents from `res.redirect()` ([#5167](https://github.com/expressjs/express/pull/5167)).
+* Avoid duplicate Content-Type processing in `res.send()` ([#6991](https://github.com/expressjs/express/pull/6991)).
 
 5.2.1 / 2025-12-01
 =======================

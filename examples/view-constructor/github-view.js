@@ -4,8 +4,6 @@
  * Module dependencies.
  */
 
-import https from 'node:https';
-
 import path from 'node:path';
 const extname = path.extname;
 
@@ -29,22 +27,26 @@ export default class GithubView {
    * Render the view.
    */
 
-  render(options, fn) {
-    const self = this;
-    const opts = {
-      host: 'raw.githubusercontent.com',
-      port: 443,
-      path: this.path,
-      method: 'GET'
-    };
-
-    https.request(opts, res => {
-      let buf = '';
-      res.setEncoding('utf8');
-      res.on('data', str => { buf += str });
-      res.on('end', () => {
-        self.engine(buf, options, fn);
+  async render(options, fn) {
+    let html;
+    try {
+      const response = await fetch('https://raw.githubusercontent.com' + this.path, {
+        signal: AbortSignal.timeout(5000)
       });
-    }).end();
+      if (!response.ok) {
+        throw new Error('Failed to fetch view (HTTP ' + response.status + ')');
+      }
+      const source = await response.text();
+      html = await new Promise((resolve, reject) => {
+        this.engine(source, options, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+    } catch (err) {
+      fn(err);
+      return;
+    }
+    fn(null, html);
   }
 }

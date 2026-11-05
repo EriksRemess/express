@@ -80,13 +80,37 @@ describe("Router", () => {
     const router = new Router();
     assert(typeof router === "function");
     assert(router instanceof Router);
-    assert.strictEqual(Object.getPrototypeOf(router), Router.prototype);
+    assert(router instanceof Function);
+    assert(Router.prototype.isPrototypeOf(router));
     assert.strictEqual(router.constructor, Router);
 
     assert(typeof router.get === "function");
     assert(typeof router.handle === "function");
     assert(typeof router.use === "function");
   });
+
+  for (const method of ["call", "apply"]) {
+    it(`should dispatch through Function.prototype.${method}`, async () => {
+      const router = Router();
+      router.get("/", (req, res) => res.end("ok"));
+
+      const body = await new Promise((resolve, reject) => {
+        const args = [
+          { url: "/", method: "GET" },
+          { end: resolve },
+          err => reject(err || new Error("route was not dispatched")),
+        ];
+
+        if (method === "call") {
+          router.call(null, ...args);
+        } else {
+          router.apply(null, args);
+        }
+      });
+
+      assert.strictEqual(body, "ok");
+    });
+  }
 
   it("should inherit extensions from Router.prototype", () => {
     const extension = Symbol("extension");
@@ -102,6 +126,102 @@ describe("Router", () => {
       delete Router.prototype[extension];
     }
   });
+
+  it("should preserve subclass methods and dispatch overrides", async () => {
+    class CustomRouter extends Router {
+      custom() {
+        return this;
+      }
+
+      handle(req, res, next) {
+        req.customDispatch = true;
+        return super.handle(req, res, next);
+      }
+
+      use(...args) {
+        super.use((req, res, next) => {
+          res.setHeader("X-Custom-Router", "yes");
+          next();
+        });
+        return super.use(...args);
+      }
+    }
+
+    const router = new CustomRouter();
+    assert(router instanceof CustomRouter);
+    assert(router instanceof Router);
+    assert(router instanceof Function);
+    assert.strictEqual(router.custom(), router);
+    assert.strictEqual(router.constructor, CustomRouter);
+
+    router.use((req, res, next) => next());
+    router.get("/", (req, res) => res.json({ customDispatch: req.customDispatch }));
+
+    const app = express();
+    app.use(router);
+    await request(app)
+      .get("/")
+      .expect("X-Custom-Router", "yes")
+      .expect(200, { customDispatch: true });
+  });
+
+  it("should support construction through Router.call", async () => {
+    function CustomRouter() {
+      this.handle = (req, res) => res.end("custom");
+      return Router.call(this);
+    }
+    Object.setPrototypeOf(CustomRouter.prototype, Router.prototype);
+
+    const router = new CustomRouter();
+    assert(router instanceof CustomRouter);
+
+    const app = express();
+    app.use(router);
+    await request(app).get("/").expect(200, "custom");
+  });
+
+  it("should honor Router.prototype overrides on existing routers", async () => {
+    const router = Router();
+    router.get("/", (req, res) => res.end("original"));
+    const original = Router.prototype.handle;
+
+    Router.prototype.handle = function customHandle(req, res, next) {
+      res.setHeader("X-Custom-Dispatch", "yes");
+      return original.call(this, req, res, next);
+    };
+
+    try {
+      const app = express();
+      app.use(router);
+      await request(app)
+        .get("/")
+        .expect("X-Custom-Dispatch", "yes")
+        .expect(200, "original");
+    } finally {
+      Router.prototype.handle = original;
+    }
+  });
+
+  for (const method of ["use", "get"]) {
+    it(`should skip five-parameter handlers registered with .${method}`, async () => {
+      const router = Router();
+      router[method]("/", (err, req, res, next, context) => {
+        throw new Error("five-parameter handler must not run");
+      });
+      router[method]("/", (req, res, next) => {
+        req.visited = true;
+        next();
+      });
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const req = { method: "GET", url: "/" };
+        await new Promise((resolve, reject) => {
+          router.handle(req, {}, err => err ? reject(err) : resolve());
+        });
+        assert.strictEqual(req.visited, true);
+      }
+    });
+  }
 
   it("should support .use of other routers", async () => {
     await new Promise((resolve, reject) => {
@@ -434,6 +554,7 @@ describe("Router", () => {
               try {
                 assert.strictEqual(value, "GET, HEAD, PUT");
                 assert.strictEqual(headers.Allow, "GET, HEAD, PUT");
+                assert.strictEqual(headers["Content-Length"], 14);
                 resolve();
               } catch (error) {
                 reject(error);
@@ -441,6 +562,9 @@ describe("Router", () => {
             },
             setHeader(name, value) {
               headers[name] = value;
+            },
+            getHeader(name) {
+              return headers[name];
             },
           },
           reject,

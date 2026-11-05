@@ -5,6 +5,27 @@ import request from "supertest";
 
 describe("req", () => {
   describe(".subdomains", () => {
+    for (const header of ["Host", "X-Forwarded-Host"]) {
+      for (const port of ["", ":3000"]) {
+        for (const offset of [0, 2]) {
+          it(`should preserve an IPv4-mapped IPv6 host with ${header}, port=${port}, offset=${offset}`, async () => {
+            const app = express();
+            const hostname = "[::ffff:127.0.0.1]";
+            app.set("trust proxy", header === "X-Forwarded-Host");
+            app.set("subdomain offset", offset);
+            app.use((req, res) => {
+              res.json({ hostname: req.hostname, subdomains: req.subdomains });
+            });
+
+            await request(app)
+              .get("/")
+              .set(header, hostname + port)
+              .expect(200, { hostname, subdomains: offset === 0 ? [hostname] : [] });
+          });
+        }
+      }
+    }
+
     describe("when present", () => {
       it("should return an array", async () => {
         const app = express();

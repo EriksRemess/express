@@ -466,6 +466,25 @@ describe("express.text()", () => {
     before(() => {
       __testApp = createApp();
     });
+    for (const charset of ["iso-8859-1", "latin1", "iso_8859-1:1987"]) {
+      for (const useDefault of [false, true]) {
+        it(`should preserve Latin-1 bytes for ${charset}, default=${useDefault}`, async (t) => {
+          const app = createApp(useDefault ? { defaultCharset: charset } : {});
+          const test = request(await createListeningServer(t, app)).post("/");
+          test.set("Content-Type", useDefault ? "text/plain" : `text/plain; charset="${charset}"`);
+          test.write(Buffer.from([0x00, 0x7f, 0x80, 0x91, 0x9f, 0xe9, 0xff]));
+          await test.expect(200, JSON.stringify("\u0000\u007f\u0080\u0091\u009f\u00e9\u00ff"));
+        });
+      }
+    }
+
+    it("should retain Windows-1252 decoding when explicitly requested", async (t) => {
+      const test = request(await createListeningServer(t, __testApp)).post("/");
+      test.set("Content-Type", "text/plain; charset=windows-1252");
+      test.write(Buffer.from([0x80, 0x91, 0x9f]));
+      await test.expect(200, JSON.stringify("\u20ac\u2018\u0178"));
+    });
+
     it("should parse utf-8", async (t) => {
       const test = request(await createListeningServer(t, __testApp)).post("/");
       test.set("Content-Type", "text/plain; charset=utf-8");

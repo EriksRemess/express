@@ -5,6 +5,21 @@ import request from "supertest";
 
 describe("req", () => {
   describe(".fresh", () => {
+    it("should send the full response for mixed-case no-cache", async () => {
+      const app = express();
+      const etag = '"12345"';
+
+      app.get("/", (req, res) => {
+        res.set("ETag", etag).send("full response");
+      });
+
+      await request(app)
+        .get("/")
+        .set("If-None-Match", etag)
+        .set("Cache-Control", "No-Cache")
+        .expect(200, "full response");
+    });
+
     it("should return true when the resource is not modified", async () => {
       const app = express();
       const etag = '"12345"';

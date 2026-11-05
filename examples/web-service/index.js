@@ -5,9 +5,8 @@
  */
 
 import express from "#express";
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 
@@ -89,7 +88,7 @@ app.get('/api/repos', (req, res) => {
 // example: http://localhost:3000/api/user/tobi/repos/?api-key=foo
 app.get('/api/user/:name/repos', (req, res, next) => {
   const name = req.params.name;
-  const user = userRepos[name];
+  const user = Object.hasOwn(userRepos, name) ? userRepos[name] : undefined;
 
   if (user) res.send(user);
   else next();

@@ -119,6 +119,9 @@ Open http://localhost:3000 in your browser.
 
 ## Examples
 
+  The example applications serve as fixtures for the acceptance tests. See the
+  [example index](examples/README.md) for the behavior and test covered by each app.
+
   To view the examples, clone this fork:
 
 ```bash

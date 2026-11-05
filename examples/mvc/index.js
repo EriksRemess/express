@@ -11,9 +11,8 @@ import path from 'node:path';
 import session from 'express-session';
 import methodOverride from '#lib/utils/method-override';
 import boot from "#examples/mvc/lib/boot";
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 
@@ -67,7 +66,7 @@ app.use((req, res, next) => {
   res.locals.hasMessages = !! msgs.length;
 
   /* This is equivalent:
-   res.locals({
+   Object.assign(res.locals, {
      messages: msgs,
      hasMessages: !! msgs.length
    });

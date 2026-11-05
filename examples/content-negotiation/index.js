@@ -3,9 +3,8 @@
 import express from "#express";
 import users from "#examples/content-negotiation/db";
 import { html, text, json } from "#examples/content-negotiation/users";
-import { pathToFileURL } from 'node:url';
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 const app = express();
 
 export default app;

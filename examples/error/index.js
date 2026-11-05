@@ -7,9 +7,8 @@
 import express from "#express";
 
 import logger from 'morgan';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 const app = express();
 
 export default app;

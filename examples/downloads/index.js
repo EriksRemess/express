@@ -7,9 +7,8 @@
 import express from "#express";
 
 import path from 'node:path';
-import { pathToFileURL } from "node:url";
 
-const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+const isMain = import.meta.main;
 
 const app = express();
 
@@ -27,8 +26,7 @@ app.get('/', (req, res) => {
     '</ul>')
 });
 
-// /files/* is accessed via req.params[0]
-// but here we name it :file
+// A named wildcard captures path segments in the req.params.file array.
 app.get('/files/*file', (req, res, next) => {
   res.download(req.params.file.join('/'), { root: FILES_DIR }, err => {
     if (!err) return; // file sent
