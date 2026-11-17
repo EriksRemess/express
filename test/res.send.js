@@ -255,6 +255,19 @@ describe("res", () => {
     });
   });
   describe("when Transfer-Encoding is present", () => {
+    it("revalidates a chunked response with the same ETag as a fixed-length response", async () => {
+      const app = express();
+      app.get("/:framing", (req, res) => {
+        if (req.params.framing === "chunked") res.set("Transfer-Encoding", "chunked");
+        res.send("same content");
+      });
+      const fixed = await request(app).get("/fixed").expect("ETag", /^W\//).expect(200);
+      const tag = fixed.headers.etag;
+      await request(app).get("/chunked").expect("Transfer-Encoding", "chunked")
+        .expect(utils.shouldNotHaveHeader("Content-Length")).expect("ETag", tag).expect(200, "same content");
+      await request(app).get("/chunked").set("If-None-Match", tag).expect("ETag", tag).expect(304);
+    });
+
     for (const encoding of ["chunked", "compress", "deflate", "gzip"]) {
       it(`should not add Content-Length for ${encoding}`, async () => {
         const app = express();

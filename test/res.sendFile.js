@@ -1126,6 +1126,11 @@ describe("file range and precondition regressions", () => {
       return app;
     }
 
+    it(`should honor mixed-case byte range units (static=${staticMiddleware})`, async () => {
+      await request(fileApp()).get("/name.txt").set("Range", "Bytes=1-2")
+        .expect(206, "ob").expect("Content-Range", "bytes 1-2/4");
+    });
+
     it(`should return the whole file for an oversized suffix range (static=${staticMiddleware})`, async () => {
       await request(fileApp()).get("/name.txt").set("Range", "bytes=-1000")
         .expect(206, "tobi").expect("Content-Range", "bytes 0-3/4");

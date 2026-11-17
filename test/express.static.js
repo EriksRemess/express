@@ -747,6 +747,17 @@ describe("express.static()", () => {
     });
   });
   describe("setHeaders", () => {
+    it("forwards a setHeaders exception to error middleware", async () => {
+      const app = express();
+      const failure = Object.freeze(new Error("header setup failed"));
+      app.use(express.static(fixtures, { setHeaders() { throw failure; } }));
+      app.use((err, req, res, next) => {
+        assert.strictEqual(err, failure);
+        res.status(500).send("file unavailable");
+      });
+      await request(app).get("/nums.txt").timeout(2000).expect(500, "file unavailable");
+    });
+
     before(() => {
       __testApp = express();
       __testApp.use(

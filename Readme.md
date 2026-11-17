@@ -2,7 +2,7 @@
 
 **Fast, unopinionated, minimalist web framework for [Node.js](https://nodejs.org).**
 
-This is the `eriks-esm` fork of Express: an ESM-only build for Node.js 26 and
+This is the `@eriksremess/express` fork of Express: an ESM-only build for Node.js 26 and
 newer with framework dependencies implemented locally where practical. For the
 official Express package and documentation, see [expressjs/express](https://github.com/expressjs/express).
 
@@ -125,7 +125,7 @@ Open http://localhost:3000 in your browser.
   To view the examples, clone this fork:
 
 ```bash
-git clone --branch eriks-esm --single-branch https://github.com/EriksRemess/express.git
+git clone --branch main --single-branch https://github.com/EriksRemess/express.git
 cd express
 ```
 

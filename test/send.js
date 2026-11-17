@@ -2,9 +2,89 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import fs from 'node:fs';
+import { ServerResponse } from 'node:http';
+import { Writable } from 'node:stream';
+import { finished } from 'node:stream/promises';
 import os from 'node:os';
 import path from 'node:path';
 import send from '#lib/send';
+
+it('forwards a file listener exception during conditional revalidation', () => {
+  const file = path.join(import.meta.dirname, 'fixtures', 'nums.txt');
+  const req = { method: 'GET', headers: { 'if-none-match': '*' } };
+  const stream = send(req, file);
+  stream.res = new ServerResponse(req);
+  const failure = Object.freeze(new Error('file notification failed'));
+  let reported;
+  stream.on('file', () => { throw failure; });
+  stream.on('error', err => { reported = err; });
+  stream.send(file, fs.statSync(file));
+  assert.equal(reported, failure);
+  assert.equal(stream.res.writableEnded, false);
+});
+
+it('closes the opened descriptor before reporting a header setup error', async () => {
+  const file = path.join(import.meta.dirname, 'fixtures', 'nums.txt');
+  const stream = send({ headers: {} }, file);
+  const failure = new Error('header setup failed');
+  stream.on('headers', () => { throw failure; });
+  const error = new Promise(resolve => stream.once('error', resolve));
+  const fd = fs.openSync(file, 'r');
+  try {
+    stream.sendOpenedFile(file, fs.fstatSync(fd), fd);
+  } catch (err) {
+    fs.closeSync(fd);
+    throw err;
+  }
+  assert.equal(await error, failure);
+  assert.throws(() => fs.fstatSync(fd), { code: 'EBADF' });
+});
+
+it('closes the opened descriptor when the read stream rejects an option', async () => {
+  const file = path.join(import.meta.dirname, 'fixtures', 'nums.txt');
+  const req = { method: 'GET', headers: {} };
+  const stream = send(req, file, { highWaterMark: -1 });
+  stream.res = new ServerResponse(req);
+  const error = new Promise(resolve => stream.once('error', resolve));
+  const fd = fs.openSync(file, 'r');
+  try {
+    stream.sendOpenedFile(file, fs.fstatSync(fd), fd);
+  } catch (err) {
+    fs.closeSync(fd);
+    throw err;
+  }
+  assert.equal((await error).code, 'ERR_INVALID_ARG_VALUE');
+  assert.throws(() => fs.fstatSync(fd), { code: 'EBADF' });
+});
+
+it('rejects invalid file offsets before starting a transfer', () => {
+  for (const options of [{ start: 3, end: 1 }, { start: -1 }, { end: 0.5 }]) {
+    assert.throws(() => send({ headers: {} }, '/file.txt', options), RangeError);
+  }
+});
+
+it('keeps an empty file transfer empty when the file grows after stat', async t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'express-send-empty-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const file = path.join(dir, 'growing.txt');
+  fs.writeFileSync(file, '');
+  const req = { method: 'GET', headers: {} };
+  const stream = send(req, file);
+  const headers = new Map();
+  let written = 0;
+  const sink = new Writable({
+    write(chunk, encoding, callback) { written += chunk.length; callback(); },
+  });
+  sink.finished = false;
+  sink.getHeader = name => headers.get(name);
+  sink.setHeader = (name, value) => headers.set(name, value);
+  stream.on('headers', () => fs.appendFileSync(file, 'new data'));
+  const done = finished(sink);
+  stream.pipe(sink);
+  await done;
+  assert.equal(headers.get('Content-Length'), 0);
+  assert.equal(written, 0);
+});
 
 describe('send root resolution', () => {
   for (const missingRoot of [false, true]) {

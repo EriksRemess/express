@@ -820,6 +820,44 @@ describe("Router", () => {
   });
 
   describe("FQDN", () => {
+    for (const [mount, url, replacement, expected] of [
+      ["/items/:id", "/items/42/", "/details", "/items/42/details"],
+      ["/items", "/items", "http://example.test/?q=1", "http://example.test/items/?q=1"],
+    ]) {
+      it(`restores the mount separator when rewriting ${url} to ${replacement}`, async () => {
+        const router = Router();
+        router.use(mount, (req, res, next) => {
+          req.url = replacement;
+          next();
+        });
+        const req = { method: "GET", url };
+        await new Promise((resolve, reject) => router.handle(req, {}, err => err ? reject(err) : resolve()));
+        assert.strictEqual(req.url, expected);
+      });
+    }
+
+    for (const [original, rewritten, child, replacement, restored] of [
+      ["http://old.test/start", "/api/item?q=1", "/item?q=1", "http://new.test/next", "http://new.test/api/next"],
+      ["/start", "http://new.test/api/item", "http://new.test/item", "/next", "/api/next"],
+      ["/start", "/api", "/", "/next", "/api/next"],
+    ]) {
+      it(`preserves mount state when rewriting ${original} to ${rewritten}`, async () => {
+        const router = Router();
+        const seen = [];
+        router.use((req, res, next) => { req.url = rewritten; next(); });
+        router.use("/api", (req, res, next) => {
+          seen.push([req.url, req.baseUrl]);
+          req.url = replacement;
+          next();
+        });
+        router.use((req, res, next) => { seen.push([req.url, req.baseUrl, req.originalUrl]); next(); });
+        await new Promise((resolve, reject) => router.handle(
+          { method: "GET", url: original }, {}, err => err ? reject(err) : resolve(),
+        ));
+        assert.deepStrictEqual(seen, [[child, "/api"], [restored, "", original]]);
+      });
+    }
+
     it("should not obscure FQDNs", async () => {
       await new Promise((resolve, reject) => {
         const request = { hit: 0, url: "http://example.com/foo", method: "GET" };

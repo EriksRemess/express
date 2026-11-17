@@ -6,6 +6,17 @@ import fresh, { isFresh } from "#lib/utils/fresh";
 import { withObjectPrototypeProperties } from "#test/support/object-prototype";
 
 describe("fresh()", () => {
+  it("should revalidate a single Last-Modified value stored as a header array", () => {
+    const date = "Tue, 01 Jan 2019 00:00:00 GMT";
+    assert.strictEqual(isFresh({ "if-modified-since": date }, undefined, [date]), true);
+    assert.strictEqual(isFresh({ "if-modified-since": date }, undefined, [date, date]), false);
+  });
+
+  it("should ignore an ISO date in If-Modified-Since", () => {
+    assert.strictEqual(isFresh({ "if-modified-since": "2099-01-01" }, undefined,
+      "Tue, 01 Jan 2019 00:00:00 GMT"), false);
+  });
+
   it("should use response etag and last-modified headers", () => {
     const reqHeaders = {
       "if-none-match": '"12345"',

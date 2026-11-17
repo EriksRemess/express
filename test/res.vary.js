@@ -130,6 +130,13 @@ describe("vary.append()", () => {
     );
   });
 
+  it("should accept tab whitespace around Vary list members", () => {
+    assert.strictEqual(
+      append("Origin,\tAccept", "Accept,\tAccept-Language"),
+      "Origin,\tAccept, Accept-Language",
+    );
+  });
+
   it("should reject invalid header names", () => {
     assert.throws(() => {
       append("Accept-Encoding", "bad header");

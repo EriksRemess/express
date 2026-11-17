@@ -144,6 +144,17 @@ describe("req", () => {
 describe("range-parser", () => {
   const corpus = [
     {
+      expected: ranges("bytes", [0, 1]),
+      size: 10,
+      options: { combine: true },
+      source: "bytes=0-0\t,\t1-1",
+    },
+    {
+      expected: ranges("bytes", [1, 2]),
+      size: 10,
+      source: "bytes=, ,1-2,",
+    },
+    {
       expected: ranges("bytes", [0, 0], [9, 9], [5, 9]),
       size: 10,
       source: "bytes=0-0,-1,5-",
@@ -158,6 +169,12 @@ describe("range-parser", () => {
       options: { combine: true },
       size: 20,
       source: "bytes=0-2,2-4,10-12",
+    },
+    {
+      expected: ranges("bytes", [0, 10], [20, 22]),
+      options: { combine: true },
+      size: 30,
+      source: "bytes=5-6,20-22,0-10",
     },
     {
       expected: ranges("items", [0, 1], [3, 3]),
@@ -185,6 +202,7 @@ describe("range-parser", () => {
   }
 
   const invalidCorpus = [
+    "bytes=, ,",
     "bytes",
     "bytes=-",
     "bytes=0-1-2",

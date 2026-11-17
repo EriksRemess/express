@@ -72,6 +72,14 @@ describe("express.text()", () => {
       .expect(200, '"user is tobi"');
   });
   describe("with defaultCharset option", () => {
+    it("decodes a big-endian BOM with an uppercase UTF-16 default", async (t) => {
+      const app = createApp({ defaultCharset: "UTF-16" });
+      const test = request(await createListeningServer(t, app)).post("/");
+      test.set("Content-Type", "text/plain");
+      test.write(Buffer.from([0xfe, 0xff, 0, 0x41]));
+      await test.expect(200, '"A"');
+    });
+
     it("should change default charset", async (t) => {
       const server = createApp({
         defaultCharset: "koi8-r",

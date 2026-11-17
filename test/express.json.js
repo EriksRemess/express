@@ -906,6 +906,13 @@ describe("JSON parsing error identity", () => {
 
 
 describe("UTF-16 byte order", () => {
+  it("accepts an uppercase JSON default charset", async (t) => {
+    const test = request(await createListeningServer(t, createApp({ defaultCharset: "UTF-16" }))).post("/");
+    test.set("Content-Type", "application/json");
+    test.write(Buffer.from("feff007b002200610022003a0031007d", "hex"));
+    await test.expect(200, '{"a":1}');
+  });
+
   for (const [charset, hex] of [
     ["utf-16", "feff007b002200610022003a0031007d"],
     ["utf-16", "fffe7b002200610022003a0031007d00"],

@@ -14,6 +14,39 @@ function pad(router, middleware = false) {
 }
 
 describe('static layers in mixed routers', () => {
+  it('dispatches middleware registered before a later callback fails validation', async () => {
+    const router = express.Router();
+    const hits = [];
+    const record = (req, res, next) => { hits.push('middleware'); next(); };
+    assert.throws(() => router.use('/item', record, null), /handler must be a function/);
+    router.get('/item', (req, res, next) => { hits.push('route'); next(); });
+    await new Promise((resolve, reject) => router.handle(
+      { method: 'GET', url: '/item' }, {}, err => err ? reject(err) : resolve(),
+    ));
+    assert.deepEqual(hits, ['middleware', 'route']);
+  });
+
+  for (const kind of ['middleware', 'parameterized route']) {
+    it(`continues into ${kind} appended during static dispatch`, async () => {
+      const router = express.Router();
+      const hits = [];
+      router.get('/item', async (req, res, next) => {
+        hits.push('first');
+        await Promise.resolve();
+        const finish = (req, res) => res.end([...hits, 'appended']);
+        if (kind === 'middleware') router.use(finish);
+        else router.get('/:id', finish);
+        next();
+      });
+      router.get('/item', (req, res, next) => { hits.push('second'); next(); });
+
+      const result = await new Promise((resolve, reject) => router.handle(
+        { method: 'GET', url: '/item' }, { end: resolve }, err => err ? reject(err) : resolve(hits),
+      ));
+      assert.deepEqual(result, ['first', 'second', 'appended']);
+    });
+  }
+
   it('keeps duplicate routes, dynamic barriers, method changes and route skips in order', async () => {
     const app = express();
     const hits = [];

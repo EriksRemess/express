@@ -1076,6 +1076,7 @@ describe("form charset options", () => {
       ["invalid sentinel", { charsetSentinel: true }, "iso-8859-1", "utf8=invalid&name=%F8", { name: "ø" }],
       ["unescaped sentinel", { charsetSentinel: true }, "utf-8", "utf8=invalid&name=plain", { name: "plain" }],
       ["default charset", { charsetSentinel: true, defaultCharset: "iso-8859-1" }, null, "utf8=%E2%9C%93&name=%C3%B8", { name: "ø" }],
+      ["uppercase form default charset", { defaultCharset: "ISO-8859-1" }, null, "name=%F8", { name: "ø" }],
       ["numeric entities", { interpretNumericEntities: true }, "iso-8859-1", "name=%26%239786%3B&name=%26%239787%3B", { name: ["☺", "☻"] }],
       ["UTF-8 entities", { interpretNumericEntities: true }, "utf-8", "name=%26%239786%3B", { name: "&#9786;" }],
       ["disabled entities", {}, "iso-8859-1", "name=%26%239786%3B", { name: "&#9786;" }],

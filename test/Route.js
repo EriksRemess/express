@@ -7,6 +7,28 @@ const Route = express.Route;
 import { httpMethods } from "#lib/utils/methods";
 
 describe("Route", () => {
+  for (const fail of [false, true]) {
+    it(`runs handlers appended during route dispatch with error=${fail}`, async () => {
+      const route = new Route("/item");
+      const hits = [];
+      const failure = new Error("item unavailable");
+      route.all(async (req, res, next) => {
+        hits.push("first");
+        await Promise.resolve();
+        route.post(() => assert.fail("wrong method"));
+        route.get((err, req, res, next) => {
+          assert.strictEqual(err, failure);
+          hits.push("recovered");
+          next();
+        });
+        route.get((req, res, next) => { hits.push("last"); next(); });
+        next(fail ? failure : undefined);
+      });
+      await new Promise((resolve, reject) => route.dispatch({ method: "GET" }, {}, err => err ? reject(err) : resolve()));
+      assert.deepStrictEqual(hits, fail ? ["first", "recovered", "last"] : ["first", "last"]);
+    });
+  }
+
   it("should preserve subclass HTTP method overrides", async () => {
     class CustomRoute extends Route {
       get(...handlers) {

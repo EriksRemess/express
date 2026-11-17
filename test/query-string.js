@@ -288,6 +288,17 @@ describe("mixed query container regressions", () => {
 });
 
 
+describe("Latin-1 numeric entities", () => {
+  for (const parse of [parseSimpleQueryString, parseExtendedQueryString]) {
+    it(`should decode supplementary characters with ${parse.name}`, () => {
+      const options = { charset: "iso-8859-1", interpretNumericEntities: true };
+      const result = parse("a=%26%23128578%3B&b=%26%231114112%3B", options);
+      assert.strictEqual(result.a, "🙂");
+      assert.strictEqual(result.b, "�");
+    });
+  }
+});
+
 describe("query key identity", () => {
   for (const parse of [parseSimpleQueryString, parseExtendedQueryString]) {
     it(`should preserve leading question marks with ${parse.name}`, () => {
