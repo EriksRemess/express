@@ -55,10 +55,10 @@
   "devDependencies": {
     "cookie-session": "^2.1.1",
     "ejs": "^7.0.2",
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "express-session": "^1.19.0",
     "hbs": "^4.4.0",
-    "marked": "^18.2.0",
+    "marked": "^18.2.1",
     "morgan": "^1.12.1",
     "supertest": "^7.3.2"
   },
