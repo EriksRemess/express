@@ -50,6 +50,51 @@ describe('literal prefixes in dynamic route indexes', () => {
     assert.equal(await dispatch(router, '/old/7'), '42');
   });
 
+  it('matches required literal endings in order across prefixes and URL rewrites', async () => {
+    const router = Router();
+    for (let i = 0; i < 16; i++) {
+      router.get(`/items/:id/action-${i}`, (req, res) => res.end([i, req.params.id]));
+    }
+    router.get('/items/:id/go', (req, res, next) => next('route'));
+    router.get('/items/:id/go', (req, res, next) => { req.url = '/items/nested/a%2Fb/Go'; next(); });
+    router.get('/items/nested/:id/go', (req, res) => res.end(req.params.id));
+    assert.deepEqual(await dispatch(router, '/items/hello%20world/AcTion-15/'), [15, 'hello world']);
+    assert.equal(await dispatch(router, '/items/42/go'), 'a/b');
+    assert.equal(await dispatch(router, '/items/%FF/no-such-action'), 'missing');
+    await assert.rejects(dispatch(router, '/items/%FF/action-0'), { status: 400 });
+  });
+
+  it('keeps optional endings and middleware between groups of required endings', async () => {
+    const router = Router({ strict: true, caseSensitive: true });
+    for (let i = 0; i < 16; i++) {
+      router.get(`/p/:id/A${i}`, (req, res) => res.end(req.params.id));
+    }
+    router.get('/p/:id{/tail}', (req, res) => res.end('optional'));
+    router.use('/p/:id/mount', (req, res) => res.end(req.url));
+    for (let i = 0; i < 16; i++) {
+      router.get(`/p/*parts/B${i}`, (req, res) => res.end(req.params.parts));
+    }
+    assert.equal(await dispatch(router, '/p/x/A15'), 'x');
+    assert.equal(await dispatch(router, '/p/x/a15'), 'missing');
+    assert.equal(await dispatch(router, '/p/x/A15/'), 'missing');
+    assert.equal(await dispatch(router, '/p/x'), 'optional');
+    assert.equal(await dispatch(router, '/p/x/mount/child'), '/child');
+    assert.deepEqual(await dispatch(router, '/p/x/y/B15'), ['x', 'y']);
+  });
+
+  it('merges candidates with and without a literal ending in registration order', async () => {
+    const router = Router();
+    const hits = [];
+    for (let i = 0; i < 16; i++) {
+      router.get(`/items/:id/action-${i}`, (req, res, next) => { hits.push(i); next('route'); });
+      if (i === 3 || i === 12) {
+        router.use('/items/:id', (req, res, next) => { hits.push('mount-' + i); next(); });
+      }
+    }
+    router.get('/items/*rest', (req, res) => res.end(hits));
+    assert.deepEqual(await dispatch(router, '/items/x/action-9'), ['mount-3', 9, 'mount-12']);
+  });
+
   it('keeps overlapping dynamic and static mounts in registration order', async () => {
     const router = Router();
     const hits = [];

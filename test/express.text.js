@@ -5,6 +5,7 @@ let __testApp;
 import assert from "node:assert";
 import {AsyncLocalStorage} from "node:async_hooks";
 import {Buffer} from "node:buffer";
+import {Readable} from "node:stream";
 import express from "#express";
 import request from "supertest";
 import {createListeningServer} from "#test/support/utils";
@@ -18,6 +19,23 @@ describe("express.text()", () => {
       .set("Content-Type", "text/plain")
       .send("user is tobi")
       .expect(200, '"user is tobi"');
+  });
+  it("decodes each complete body before later end listeners can reuse its chunks", async () => {
+    const parse = express.text();
+    for (const [chunks, expected] of [
+      [[Buffer.from("\uFEFFRīga")], "Rīga"],
+      [[Buffer.from([0xef, 0xbb]), Buffer.from([0xbf, 0xc4]), Buffer.from([0xab])], "ī"],
+    ]) {
+      const req = Readable.from(chunks);
+      req.headers = { "content-type": "text/plain", "transfer-encoding": "chunked" };
+      await new Promise((resolve, reject) => {
+        parse(req, {}, error => error ? reject(error) : resolve());
+        req.once("end", () => {
+          for (const chunk of chunks) chunk.fill(0);
+        });
+      });
+      assert.strictEqual(req.body, expected);
+    }
   });
   it("should 400 when invalid content-length", async () => {
     const app = express();
