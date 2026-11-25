@@ -42,6 +42,13 @@ describe("http-errors", () => {
     assert.strictEqual(err.message, "bad");
   });
 
+  it("should reject invalid numeric status codes and retain custom error codes", () => {
+    for (const status of [4, 50, 4000, 404.5, Number.NaN, Infinity]) {
+      assert.strictEqual(createError(status).status, 500);
+    }
+    assert.strictEqual(createError(499).status, 499);
+  });
+
   it("should ignore status/statusCode keys in props", () => {
     const err = createError(404, { status: 500, statusCode: 500, code: "X" });
     assert.strictEqual(err.status, 404);

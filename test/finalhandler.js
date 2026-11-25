@@ -141,6 +141,18 @@ describe("finalhandler()", () => {
     assert.match(res.body, /custom boom/);
   });
 
+  it("should use the first valid integer error status", () => {
+    for (const [status, statusCode, responseCode, expected] of [
+      [404.5, 503, 200, 503],
+      [undefined, 499.5, 418, 418],
+      [undefined, undefined, Number.NaN, 500],
+    ]) {
+      const { res } = createRes({ statusCode: responseCode });
+      finalhandler(createReq(), res)({ status, statusCode });
+      assert.strictEqual(res.statusCode, expected);
+    }
+  });
+
   it("should honor err.statusCode when err.status is absent", () => {
     const req = createReq();
     const { headers, res } = createRes();

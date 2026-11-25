@@ -22,6 +22,10 @@
   function methods such as `call()` and `apply()` on routers.
 * Correct file revalidation, range handling, and cache-lifetime parsing. Refresh
   replaced file roots and preserve request async context during file serving.
+* Preserve redirect and error statuses on conditional file requests, honor
+  bodyless file responses, and report files truncated during transfer.
+* Keep existing static routes' case and trailing-slash matching rules when
+  router options change.
 * Correct Latin-1 and UTF-16 body decoding and query/form parsing edge cases.
 * Handle IPv4-mapped IPv6 addresses consistently in proxy trust and subdomains.
 * Correct parsing of quoted cache directives, ETags, and media-type parameters.

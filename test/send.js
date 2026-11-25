@@ -9,6 +9,11 @@ import os from 'node:os';
 import path from 'node:path';
 import send from '#lib/send';
 
+it('recognizes a wildcard precondition with HTTP whitespace', () => {
+  const file = send({ method: 'GET', headers: { 'if-match': '\t*\t' } }, '/file.txt');
+  assert.equal(file.isPreconditionFailure(undefined, undefined), false);
+});
+
 it('forwards a file listener exception during conditional revalidation', () => {
   const file = path.join(import.meta.dirname, 'fixtures', 'nums.txt');
   const req = { method: 'GET', headers: { 'if-none-match': '*' } };

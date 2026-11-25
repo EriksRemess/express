@@ -35,6 +35,17 @@ describe("res", () => {
         .get("/")
         .expect(500, /TypeError: path must be absolute/);
     });
+    for (const status of [204, 205, 304]) {
+      it(`should end a ${status} file response without transferring content`, async () => {
+        const app = express();
+        app.use((req, res) => res.status(status).sendFile(path.join(fixtures, "name.txt")));
+        const response = await request(app).get("/").expect(status);
+        assert.ok(!response.text);
+        if (status === 205) assert.equal(response.headers["content-length"], "0");
+        if (status === 204) assert.equal(response.headers["content-length"], undefined);
+      });
+    }
+
     it("should transfer a file", async () => {
       const app = createApp(path.resolve(fixtures, "name.txt"));
       await request(app).get("/").expect(200, "tobi");
@@ -1146,6 +1157,14 @@ describe("file range and precondition regressions", () => {
       await request(app).get("/name.txt").set("If-None-Match", response.headers.etag).expect(304);
     });
 
+    it(`should revalidate a single ETag set as an array (static=${staticMiddleware})`, async () => {
+      const app = fileApp({ ETag: ['"v1"'] });
+      await request(app).get("/name.txt").set("If-None-Match", '"v1"').expect(304);
+      await request(app).get("/name.txt").set("If-Match", '"v1"').expect(200, "tobi");
+      await request(app).get("/name.txt").set("Range", "bytes=0-1")
+        .set("If-Range", '"v1"').expect(206, "to");
+    });
+
     it(`should accept strong If-Match lists (static=${staticMiddleware})`, async () => {
       const app = fileApp({ ETag: '"strong"' });
       await request(app).get("/name.txt").set("If-Match", '"stale", "strong"').expect(200, "tobi");
@@ -1189,6 +1208,18 @@ describe("file conditional method and validator handling", () => {
         res.sendFile(path.join(fixtures, "name.txt"), customHeaders ? { headers } : undefined);
       });
       return app;
+    }
+
+    for (const status of [302, 404]) {
+      it(`should preserve a file response status of ${status} (headers=${customHeaders})`, async () => {
+        const app = express();
+        app.use((req, res) => res.status(status).sendFile(path.join(fixtures, "name.txt"),
+          customHeaders ? { headers: { ETag: etag } } : undefined));
+        for (const headers of [{ Range: "bytes=1-2" }, { Range: "bytes=20-" }, { "If-Match": '"other"' }]) {
+          await request(app).get("/").set(headers).expect(status, "tobi")
+            .expect(utils.shouldNotHaveHeader("Content-Range"));
+        }
+      });
     }
 
     it(`should compare quoted comma-containing ETags (headers=${customHeaders})`, async () => {

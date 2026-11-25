@@ -110,6 +110,12 @@ describe("quoted ETag lists", () => {
     });
   }
 
+  it("should remove at most one weakness prefix from each ETag", () => {
+    assert.strictEqual(isFresh({ "if-none-match": 'W/W/"value"' }, 'W/"value"'), false);
+    assert.strictEqual(isFresh({ "if-none-match": 'W/"value"' }, ['"value"', '"other"']), false);
+    assert.strictEqual(isFresh({ "if-none-match": 'W/"value"' }, ['"value"']), true);
+  });
+
   it("should not treat a comma inside an unrelated tag as a separator", () => {
     assert.strictEqual(isFresh({ "if-none-match": '"v1,revision2"' }, '"revision2"'), false);
   });

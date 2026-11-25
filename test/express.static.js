@@ -32,6 +32,29 @@ describe("express.static()", () => {
       await request(__testApp).get("/todo.txt").expect(200, "- groceries");
     });
 
+    it("should report a short file read before or after the response starts", async t => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-short-"));
+      t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+      const file = path.join(root, "short.txt");
+      for (const remaining of [0, 2]) {
+        fs.writeFileSync(file, "original");
+        const app = express();
+        app.use(express.static(root, { setHeaders() { fs.truncateSync(file, remaining); } }));
+        let failure;
+        app.use((err, req, res, next) => {
+          failure = err;
+          next(err);
+        });
+        const transfer = request(app).get("/short.txt").timeout(3000);
+        if (remaining === 0) {
+          await transfer.expect(500);
+        } else {
+          await assert.rejects(transfer, { code: "ECONNRESET" });
+        }
+        assert.strictEqual(failure?.code, "ESTALE");
+      }
+    });
+
     for (const replaceParent of [false, true]) {
       it(`should resolve the current root after replacing ${replaceParent ? "its parent" : "the root"} with a symlink`, async () => {
         const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "express-static-"));

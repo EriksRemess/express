@@ -54,6 +54,23 @@ describe("res", () => {
     });
   });
   describe(".redirect(status, url)", () => {
+    for (const [accept, type] of [
+      ["text/html;format=*", "text/html"],
+      ['text/plain;format=""', "text/plain"],
+      ["text/html;format=*, text/plain;q=0.5", "text/html"],
+    ]) {
+      it(`should preserve the redirect body for Accept ${accept}`, async () => {
+        const app = express();
+        app.get("/", (req, res) => res.redirect(301, "/next"));
+
+        const expected = await request(app).get("/").set("Accept", type).expect(301);
+        await request(app).get("/").set("Accept", accept)
+          .expect("Location", "/next")
+          .expect("Content-Type", expected.headers["content-type"])
+          .expect(301, expected.text);
+      });
+    }
+
     it("should set the response status", async () => {
       const app = express();
       app.use((req, res) => {

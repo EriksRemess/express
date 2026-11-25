@@ -112,6 +112,12 @@ describe("cookie utils", () => {
       );
     });
 
+    it("should require the cookie name in both serialization forms", () => {
+      assert.throws(() => serialize(undefined, "value"), TypeError);
+      assert.throws(() => serialize({ value: "value" }), TypeError);
+      assert.strictEqual(serialize("undefined", "value"), "undefined=value");
+    });
+
     it("should reject invalid cookie names", () => {
       assert.throws(() => {
         serialize("bad;name", "value");

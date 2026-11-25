@@ -72,6 +72,21 @@ describe('static layers in mixed routers', () => {
     await request(app).get('/old').expect(200, { url: '/new?changed=1', original: '/old' });
   });
 
+  it('retains the matching options used when each static route was registered', async () => {
+    const router = express.Router({ caseSensitive: true, strict: true });
+    router.get('/ONE', (req, res) => res.end('first'));
+    router.caseSensitive = false;
+    router.strict = false;
+    const dispatch = url => new Promise((resolve, reject) => router.handle(
+      { method: 'GET', url }, { end: resolve }, err => err ? reject(err) : resolve('missing'),
+    ));
+    assert.equal(await dispatch('/one/'), 'missing');
+    router.get('/Two', (req, res) => res.end('second'));
+    assert.equal(await dispatch('/one'), 'missing');
+    assert.equal(await dispatch('/ONE'), 'first');
+    assert.equal(await dispatch('/two/'), 'second');
+  });
+
   it('resumes from the static-only path after a rewrite', async () => {
     const app = express();
     pad(app);

@@ -38,6 +38,17 @@ describe("config", () => {
       assert.strictEqual(app.set("hasOwnProperty"), undefined);
     });
 
+    for (const setting of ["etag", "query parser", "trust proxy"]) {
+      it(`should preserve the active ${setting} setting after a rejected update`, () => {
+        const app = express();
+        const previous = app.get(setting);
+        const compiled = app.get(setting + " fn");
+        assert.throws(() => app.set(setting, "invalid setting"), TypeError);
+        assert.strictEqual(app.get(setting), previous);
+        assert.strictEqual(app.get(setting + " fn"), compiled);
+      });
+    }
+
     describe('"etag"', () => {
       it("should throw on bad value", () => {
         const app = express();
